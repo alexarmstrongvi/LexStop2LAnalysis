@@ -109,7 +109,7 @@ struct Args {
         printf("\tnskipped        : %i\n", n_skipped);
         printf("\tsuffix          : %s\n", name_suffix.c_str());
         printf("\tbaseline_sel    : %i\n", baseline_sel);
-        printf("\tzll_cr         : %i\n", zll_cr);
+        printf("\tzll_cr          : %i\n", zll_cr);
         printf("===========================================================\n");
     }
 
@@ -729,7 +729,7 @@ void add_signallepton_variables(Superflow* superflow) {
       *superflow << [=](Superlink* /*sl*/, var_float_array*) -> vector<double> {
         vector<double> out;
         for(auto& lepton : m_selectLeptons) {
-          if (lepton) out.push_back(lepton->Pt());
+          if (lepton) out.push_back(1.1*lepton->Pt());
           else out.push_back(-DBL_MAX);
         }
         return out;

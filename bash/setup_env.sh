@@ -4,3 +4,12 @@
 # 2) Making flat ntuples
 # 3) Making plots
 ################################################################################
+
+if [ "$(basename $PWD)" == "susynt-read" ]; then
+    source bash/setup_release.sh  
+    lsetup git
+    echo "Environment is setup"
+else
+    echo "ERROR :: Only setup to be run from inside susynt-read"
+fi
+echo ""

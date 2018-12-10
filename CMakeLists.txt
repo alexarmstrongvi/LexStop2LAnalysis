@@ -21,14 +21,13 @@ atlas_depends_on_subdirs (
 # >> ROOT Data Analysis Framework
 #       Tree : TChain, TTree
 #       Physics : TLorentzVector
-find_package ( ROOT COMPONENTS Tree Physics )
+find_package ( ROOT COMPONENTS Tree Physics)
 
 atlas_add_library ( LexStop2LAnalysisLib
     LexStop2LAnalysis/*.h Root/*.cxx
     PUBLIC_HEADERS LexStop2LAnalysis
-    PRIVATE_INCLUDE_DIRS ${ROOT_INCLUDE_DIRS}
-    LINK_LIBRARIES SuperflowLib
-    PRIVATE_LINK_LIBRARIES ${ROOT_LIBRARIES}
+    INCLUDE_DIRS ${ROOT_INCLUDE_DIRS}
+    LINK_LIBRARIES SuperflowLib ${ROOT_LIBRARIES}
 )
 
 # exectuables
