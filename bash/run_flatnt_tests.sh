@@ -40,18 +40,20 @@ function run_flatnt_maker() {
 SAMPLES=
 #MC16a (r9364)
 SAMPLES="$SAMPLES mc16_13TeV.410472.PhPy8EG_A14_ttbar_hdamp258p75_dil.deriv.DAOD_SUSY2.e6348_s3126_r9364_p3652"
-##MC16d ()
-##SAMPLES="$SAMPLES mc16_13TeV."
-##MC16e ()
-##SAMPLES="$SAMPLES mc16_13TeV"
-##Data15
-#SAMPLES="$SAMPLES data15_13TeV.00279515.physics_Main.deriv.DAOD_SUSY2.r9264_p3083_p3637"
-##Data16
-#SAMPLES="$SAMPLES data16_13TeV.00298595.physics_Main.deriv.DAOD_SUSY2.r9264_p3083_p3637"
-##Data17
-#SAMPLES="$SAMPLES data17_13TeV.00326439.physics_Main.deriv.DAOD_SUSY2.r10250_p3399_p3637"
-###MC16a HIGG4D1
-##SAMPLES="$SAMPLES mc16_13TeV.303778.Pythia8EvtGen_A14NNPDF23LO_Ztaumu_LeptonFilter.deriv.DAOD_HIGG4D1.e4245_s3126_r9364_p3563"
+#MC16d (r10201)
+SAMPLES="$SAMPLES mc16_13TeV.410472.PhPy8EG_A14_ttbar_hdamp258p75_dil.deriv.DAOD_SUSY2.e6348_s3126_r10201_p3627"
+#MC16e (r10724)
+SAMPLES="$SAMPLES mc16_13TeV.410472.PhPy8EG_A14_ttbar_hdamp258p75_dil.deriv.DAOD_SUSY2.e6348_s3126_r10724_p3627"
+#Data15
+SAMPLES="$SAMPLES data15_13TeV.00279515.physics_Main.deriv.DAOD_SUSY2.r9264_p3083_p3637"
+#Data16
+SAMPLES="$SAMPLES data16_13TeV.00298595.physics_Main.deriv.DAOD_SUSY2.r9264_p3083_p3637"
+#Data17
+SAMPLES="$SAMPLES data17_13TeV.00326439.physics_Main.deriv.DAOD_SUSY2.r10250_p3399_p3637"
+#Data18
+SAMPLES="$SAMPLES data18_13TeV.00359310.physics_Main.deriv.DAOD_SUSY2.f964_m2020_p3653"
+#MC16a HIGG4D1
+#SAMPLES="$SAMPLES mc16_13TeV.303778.Pythia8EvtGen_A14NNPDF23LO_Ztaumu_LeptonFilter.deriv.DAOD_HIGG4D1.e4245_s3126_r9364_p3563"
 
 REGIONS=""
 REGIONS="$REGIONS --baseline_sel"
@@ -93,7 +95,7 @@ for new_root in *new*root; do
     stripped_name="${new_root%.*}" # remove file extension
     stripped_name=`echo $stripped_name | sed 's/_new//g'`
     log_file="cf_flatnt_${stripped_name}_new.log"
-    ops="$old_root $new_root -t superNt -s --verbose"
+    ops="$old_root $new_root -t superNt --verbose"
     python ../../PlotTools/compare_flat_ntuples.py $ops > $log_file 
 
     files_are_same_pattern="Different: 0"
@@ -101,7 +103,8 @@ for new_root in *new*root; do
         printf "\tPASS :: $new_root and $old_root files are identical\n"
     else
         printf "\tFAIL :: $new_root and $old_root files are NOT identical\n"
-        printf "\tCheck with -> vim $log_file" 
+        printf "\tINFO :: Check with -> vim $log_file\n" 
+        printf "\tINFO :: Make plots with python ../../PlotTools/compare_flat_ntuples.py $ops -s\n"
     fi
 done
 

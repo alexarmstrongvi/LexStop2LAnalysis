@@ -29,9 +29,25 @@ function run_ntmaker() {
     sample=$2
     ofile=$3 # no extension
     nevts=$4
+
+    #Get MC campaign
+    if [[ $sample == "data"* ]]; then
+        mc_op=""
+    elif [[ $sample == "mc16"*"r9364"* ]]; then
+        mc_op="--mctype mc16a"
+    elif [[ $sample == "mc16"*"r10201"* ]]; then
+        mc_op="--mctype mc16d"
+    elif [[ $sample == "mc16"*"r10724"* ]]; then
+        mc_op="--mctype mc16e"
+    else
+        echo "ERROR :: MC Campaign not recognized for $sample"
+        echo "ERROR :: Skipping"
+        return
+    fi
+
     printf '\n'
-    echo NtMaker --mctype mc16a --prw-auto -f $susynt_dir -i $sample --outfilename ${ofile}.root -n $4
-    NtMaker --mctype mc16a --prw-auto -f $susynt_dir -i $sample --outfilename ${ofile}.root -n $nevts 2>&1 | tee ${ofile}.log
+    echo NtMaker $mc_op --prw-auto -f $susynt_dir -i $sample --outfilename ${ofile}.root -n $4
+    NtMaker $mc_op --prw-auto -f $susynt_dir -i $sample --outfilename ${ofile}.root -n $nevts 2>&1 | tee ${ofile}.log
     
     grep "WARNING\|ERROR" ${ofile}.log > ${ofile}_warnings.log
     echo    
@@ -43,18 +59,20 @@ function run_ntmaker() {
 # Test Samples
 SAMPLES=
 #MC16a (r9364)
-SAMPLES="$SAMPLES mc16_13TeV.410472.PhPy8EG_A14_ttbar_hdamp258p75_dil.deriv.DAOD_SUSY2.e6348_s3126_r9364_p3652"
-#MC16d ()
-#SAMPLES="$SAMPLES mc16_13TeV."
-#MC16e ()
-#SAMPLES="$SAMPLES mc16_13TeV"
+#SAMPLES="$SAMPLES mc16_13TeV.410472.PhPy8EG_A14_ttbar_hdamp258p75_dil.deriv.DAOD_SUSY2.e6348_s3126_r9364_p3652"
+#MC16d (r10201)
+SAMPLES="$SAMPLES mc16_13TeV.410472.PhPy8EG_A14_ttbar_hdamp258p75_dil.deriv.DAOD_SUSY2.e6348_s3126_r10201_p3627"
+#MC16e (r10724)
+SAMPLES="$SAMPLES mc16_13TeV.410472.PhPy8EG_A14_ttbar_hdamp258p75_dil.deriv.DAOD_SUSY2.e6348_s3126_r10724_p3627"
 #Data15
-SAMPLES="$SAMPLES data15_13TeV.00279515.physics_Main.deriv.DAOD_SUSY2.r9264_p3083_p3637"
+#SAMPLES="$SAMPLES data15_13TeV.00279515.physics_Main.deriv.DAOD_SUSY2.r9264_p3083_p3637"
 #Data16
-SAMPLES="$SAMPLES data16_13TeV.00298595.physics_Main.deriv.DAOD_SUSY2.r9264_p3083_p3637"
+#SAMPLES="$SAMPLES data16_13TeV.00298595.physics_Main.deriv.DAOD_SUSY2.r9264_p3083_p3637"
 #Data17
-SAMPLES="$SAMPLES data17_13TeV.00326439.physics_Main.deriv.DAOD_SUSY2.r10250_p3399_p3637"
-##MC16a HIGG4D1
+#SAMPLES="$SAMPLES data17_13TeV.00326439.physics_Main.deriv.DAOD_SUSY2.r10250_p3399_p3637"
+#Data18
+#SAMPLES="$SAMPLES data18_13TeV.00359310.physics_Main.deriv.DAOD_SUSY2.f964_m2020_p3653"
+#MC16a HIGG4D1
 #SAMPLES="$SAMPLES mc16_13TeV.303778.Pythia8EvtGen_A14NNPDF23LO_Ztaumu_LeptonFilter.deriv.DAOD_HIGG4D1.e4245_s3126_r9364_p3563"
 
 for SAMPLE in $SAMPLES; do
