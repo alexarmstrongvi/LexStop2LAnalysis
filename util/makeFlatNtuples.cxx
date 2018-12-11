@@ -518,6 +518,54 @@ void add_met_variables(Superflow* superflow) {
 void add_prelepton_variables(Superflow* superflow) {
     ADD_MULTIPLICITY_VAR(preElectrons)
     ADD_MULTIPLICITY_VAR(preMuons)
+    *superflow << NewVar("Pre-electron track pt"); {
+      *superflow << HFTname("preel_trackPt");
+      *superflow << [](Superlink* sl, var_float_array*) -> vector<double> {
+        vector<double> out;
+        for (auto& lep : *sl->preElectrons) {
+            if (lep) out.push_back(lep->trackPt);
+            else out.push_back(-DBL_MAX);
+        }
+        return out;
+      };
+      *superflow << SaveVar();
+    }
+    *superflow << NewVar("Pre-electron track eta"); {
+      *superflow << HFTname("preel_trackEta");
+      *superflow << [](Superlink* sl, var_float_array*) -> vector<double> {
+        vector<double> out;
+        for (auto& lep : *sl->preElectrons) {
+            if (lep) out.push_back(lep->trackEta);
+            else out.push_back(-DBL_MAX);
+        }
+        return out;
+      };
+      *superflow << SaveVar();
+    }
+    *superflow << NewVar("Pre-electron d0sigBSCorr"); {
+      *superflow << HFTname("preel_d0sigBSCorr");
+      *superflow << [](Superlink* sl, var_float_array*) -> vector<double> {
+        vector<double> out;
+        for (auto& lep : *sl->preElectrons) {
+            if (lep) out.push_back(lep->d0sigBSCorr);
+            else out.push_back(-DBL_MAX);
+        }
+        return out;
+      };
+      *superflow << SaveVar();
+    }
+    *superflow << NewVar("Pre-electron z0SinTheta"); {
+      *superflow << HFTname("preel_z0SinTheta");
+      *superflow << [](Superlink* sl, var_float_array*) -> vector<double> {
+        vector<double> out;
+        for (auto& lep : *sl->preElectrons) {
+            if (lep) out.push_back(lep->z0SinTheta());
+            else out.push_back(-DBL_MAX);
+        }
+        return out;
+      };
+      *superflow << SaveVar();
+    }
 }
 void add_baselepton_variables(Superflow* superflow) {
     ADD_MULTIPLICITY_VAR(baseLeptons)
