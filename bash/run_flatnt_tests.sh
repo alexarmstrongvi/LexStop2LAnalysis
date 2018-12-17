@@ -3,6 +3,7 @@
 ################################################################################
 # Make flat ntuples of data15-17 and mc16a/d/e SusyNts, comparing the output
 # logs and branches to those from previous tests
+# Also make sumw files with grabSumw and compare log outputs
 ################################################################################
 
 if [ "$(basename $PWD)" != "run" ]; then
@@ -19,7 +20,8 @@ SUSYNT_DIR='../../susynt-write/run/old_test_results'
 # Test commands for various files
 function strip_file_of_timestamps() {
     echo "Stripping $1 of timestamps"
-    sed -i.bu '/Analysis\ time/d' $1
+    sed -i.bu '/\ 0x/d' $1 # remove printed pointers
+    sed -i '/Analysis\ time/d' $1
     sed -i '/Analysis\ speed/d' $1
 }
 
@@ -32,6 +34,19 @@ function run_flatnt_maker() {
     makeFlatNtuples -i $susynt $region 2>&1 | tee $logfile
     mv CENTRAL*root $ofile
     
+    echo
+    strip_file_of_timestamps $logfile
+    echo
+}
+
+function run_grabSumw() {
+    susynt=$1
+    logfile=$2
+
+    echo "grabSumw -i $susynt"
+    grabSumw -i $susynt 2>&1 | tee $logfile
+    rm sumw_file*.root # Log file is enough for checks
+
     echo
     strip_file_of_timestamps $logfile
     echo
@@ -64,12 +79,23 @@ for REGION in $REGIONS; do
     OFILE="${SAMPLE}_flatnt_new.root"
     LOGFILE="${SAMPLE}_flatnt_new.log"
     run_flatnt_maker $SUSYNT $REGION $OFILE $LOGFILE
+
+    # Test grabSumw
+    if [[ $SAMPLE == "mc16"* ]]; then
+        SUMW_LOGFILE="${SAMPLE}_sumw_new.log"
+        run_grabSumw $SUSYNT $SUMW_LOGFILE
+    fi
+    
 done
 done
 
 printf "\n\n ========== Performing Checks ========== \n\n"
 echo ">> Comparing log files"
 for new_log in *.log; do
+    if [ $new_log == '*log' ]; then
+        echo "No log files to compare"
+        continue
+    fi
     old_log=$STORE_DIR/`echo $new_log | sed 's/new/old/g'`
     if [ ! -e $old_log ]; then
         echo "No old log file found for $new_log"
@@ -86,6 +112,11 @@ done
 
 printf "\n>> Comparing root files\n"
 for new_root in *new*root; do
+    if [ $new_root == '*new*root' ]; then
+        echo "No root files to compare"
+        continue
+    fi
+    echo "TESTING :: $new_root"
     old_root=$STORE_DIR/`echo $new_root | sed 's/new/old/g'`
     if [ ! -e $old_root ]; then
         echo "No old root file found for $new_log"
