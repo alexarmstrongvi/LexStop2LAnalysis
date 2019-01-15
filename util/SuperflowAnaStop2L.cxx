@@ -57,6 +57,7 @@ void set_global_variables(Superflow* cutflow);
 void add_cleaning_cuts(Superflow* cutflow);
 void add_analysis_cuts(Superflow* cutflow);
 void add_event_variables(Superflow* cutflow);
+void add_trigger_variables(Superflow* cutflow);
 void add_lepton_variables(Superflow* cutflow);
 void add_jet_variables(Superflow* cutflow);
 void add_met_variables(Superflow* cutflow);
@@ -71,6 +72,37 @@ void add_shape_systematics(Superflow* cutflow);
 static int m_cutflags = 0;
 static JetVector m_light_jets;
 static TLorentzVector m_dileptonP4;
+static Susy::Electron *m_el0, *m_el1;
+static Susy::Muon *m_mu0, *m_mu1;
+static LeptonVector m_triggerLeptons;
+
+// Helpful functions for trigger matching
+bool is_1lep_trig_matched(Superlink* sl, string trig_name, LeptonVector leptons);
+#define ADD_1LEP_TRIGGER_VAR(trig_name, leptons) { \
+    *cutflow << NewVar(#trig_name" trigger bit"); { \
+        *cutflow << HFTname(#trig_name); \
+        *cutflow << [=](Superlink* sl, var_bool*) -> bool { \
+            return is_1lep_trig_matched(sl, #trig_name, leptons); \
+        }; \
+        *cutflow << SaveVar(); \
+    } \
+}
+// Trig Matching for dilep triggers is buggy
+// so currently not trigger matching
+#define ADD_2LEP_TRIGGER_VAR(trig_name, lep0, lep1) { \
+  *cutflow << NewVar(#trig_name" trigger bit"); { \
+      *cutflow << HFTname(#trig_name); \
+      *cutflow << [=](Superlink* sl, var_bool*) -> bool { \
+          if(!lep0 || ! lep1) return false;\
+          bool trig_fired = sl->tools->triggerTool().passTrigger(sl->nt->evt()->trigBits, #trig_name); \
+          return trig_fired;\
+          if (!trig_fired) return false; \
+          bool trig_matched = sl->tools->triggerTool().dilepton_trigger_match(sl->nt->evt(), lep0, lep1, #trig_name );\
+          return trig_matched; }; \
+      *cutflow << SaveVar(); \
+  } \
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Main function
 ////////////////////////////////////////////////////////////////////////////////
@@ -109,6 +141,7 @@ int main(int argc, char* argv[])
 
     // Output variables
     add_event_variables(cutflow);
+    add_trigger_variables(cutflow);
     add_lepton_variables(cutflow);
     add_jet_variables(cutflow);
     add_met_variables(cutflow);
@@ -150,6 +183,7 @@ Superflow* create_new_superflow(SFOptions sf_options, TChain* chain) {
     cutflow->setCountWeights(m_print_weighted_cutflow);
     cutflow->setChain(chain);
     cutflow->setDebug(sf_options.dbg);
+    cutflow->nttools().initTriggerTool(ChainHelper::firstFile(sf_options.input, 0.0));
     if(sf_options.suffix_name != "") {
         cutflow->setFileSuffix(sf_options.suffix_name);
     }
@@ -168,6 +202,9 @@ void set_global_variables(Superflow* cutflow) {
         m_cutflags = 0;
         m_light_jets.clear();
         m_dileptonP4 = {};
+        m_el0 = m_el1 = 0;
+        m_mu0 = m_mu1 = 0;
+        m_triggerLeptons.clear();
 
         ////////////////////////////////////////////////////////////////////////
         // Set globals
@@ -186,7 +223,20 @@ void set_global_variables(Superflow* cutflow) {
         if (sl->leptons->size() >= 2) {
             m_dileptonP4 = (*sl->leptons->at(0) + *sl->leptons->at(1));
         }
-        
+        for (Susy::Lepton* lep : *sl->leptons) {
+            if (!lep) { continue; }
+            if (m_triggerLeptons.size() < 2) m_triggerLeptons.push_back(lep);
+
+            // For dilepton trigger matching
+            if (lep->isEle()) {
+                if (!m_el0) m_el0 = dynamic_cast<Susy::Electron*>(lep);
+                else if (!m_el1) m_el1 = dynamic_cast<Susy::Electron*>(lep);
+            }
+            else if (lep->isMu()) {
+                if (!m_mu0) m_mu0 = dynamic_cast<Susy::Muon*>(lep);
+                else if (!m_mu1) m_mu1 = dynamic_cast<Susy::Muon*>(lep);
+            }
+        }
         ////////////////////////////////////////////////////////////////////////
         return true; // All events pass this cut
     };
@@ -242,27 +292,59 @@ void add_analysis_cuts(Superflow* cutflow) {
     };
 }
 void add_event_variables(Superflow* cutflow) {
-    *cutflow << NewVar("event weight"); {
-        *cutflow << HFTname("eventweight");
-        *cutflow << [](Superlink* sl, var_double*) -> double {return sl->weights->product(); };
-        *cutflow << SaveVar();
-    }
-
-    *cutflow << NewVar("mcChannel (dsid)"); {
-        *cutflow << HFTname("dsid");
-        *cutflow << [](Superlink* sl, var_double*) -> double {return sl->isMC ? sl->nt->evt()->mcChannel : 0.0;};
-        *cutflow << SaveVar();
-    }
-
     *cutflow << NewVar("Monte-Carlo generator event weight"); {
         *cutflow << HFTname("w");
         *cutflow << [](Superlink* sl, var_double*) -> double {return sl->nt->evt()->w;};
         *cutflow << SaveVar();
     }
 
+    *cutflow << NewVar("event weight"); {
+        *cutflow << HFTname("eventweight");
+        *cutflow << [](Superlink* sl, var_double*) -> double {return sl->weights->product() * sl->nt->evt()->wPileup; };
+        *cutflow << SaveVar();
+    }
+
+    *cutflow << NewVar("event weight (multi period)"); {
+        *cutflow << HFTname("eventweight_multi");
+        *cutflow << [&](Superlink* sl, var_double*) -> double {
+            return sl->weights->product_multi() * sl->nt->evt()->wPileup;
+        };
+        *cutflow << SaveVar();
+    }
+
     *cutflow << NewVar("Pile-up weight"); {
         *cutflow << HFTname("pupw");
         *cutflow << [](Superlink* sl, var_double*) -> double {return sl->nt->evt()->wPileup;};
+        *cutflow << SaveVar();
+    }
+
+    *cutflow << NewVar("Lepton scale factor"); {
+        *cutflow << HFTname("lepSf");
+        *cutflow << [](Superlink* sl, var_double*) -> double {return sl->weights->lepSf;};
+        *cutflow << SaveVar();
+    }
+
+    *cutflow << NewVar("Trigger scale factor"); {
+        *cutflow << HFTname("trigSf");
+        *cutflow << [](Superlink* sl, var_double*) -> double {return sl->weights->trigSf;};
+        *cutflow << SaveVar();
+    }
+
+    *cutflow << NewVar("B-tag scale factor"); {
+        *cutflow << HFTname("btagSf");
+        *cutflow << [](Superlink* sl, var_double*) -> double {return sl->weights->btagSf;};
+        *cutflow << SaveVar();
+    }
+
+    *cutflow << NewVar("JVT scale factor"); {
+        *cutflow << HFTname("jvtSf");
+        *cutflow << [](Superlink* sl, var_double*) -> double {return sl->weights->jvtSf;};
+        *cutflow << SaveVar();
+    }
+
+    *cutflow << NewVar("Period weight"); {
+        *cutflow << HFTname("period_weight");
+        *cutflow << [](Superlink* sl, var_double*) -> double {return sl->nt->evt()->wPileup_period;};
         *cutflow << SaveVar();
     }
 
@@ -283,6 +365,62 @@ void add_event_variables(Superflow* cutflow) {
         *cutflow << [](Superlink* sl, var_bool*) -> bool { return sl->nt->evt()->isMC ? true : false; };
         *cutflow << SaveVar();
     }
+
+    *cutflow << NewVar("mcChannel (dsid)"); {
+        *cutflow << HFTname("dsid");
+        *cutflow << [](Superlink* sl, var_double*) -> double {return sl->isMC ? sl->nt->evt()->mcChannel : 0.0;};
+        *cutflow << SaveVar();
+    }
+    
+    *cutflow << NewVar("treatAsYear"); {
+        // 15/16 Year ID
+        *cutflow << HFTname("treatAsYear");
+        *cutflow << [](Superlink* sl, var_double*) -> int { return sl->nt->evt()->treatAsYear; };
+        *cutflow << SaveVar();
+  }
+}
+void add_trigger_variables(Superflow* cutflow) {
+    ////////////////////////////////////////////////////////////////////////////
+    // Trigger Variables
+    // ADD_*_TRIGGER_VAR preprocessor defined
+
+    ////////////////////////////////////////////////////////////////////////////
+    // 2015
+    ADD_2LEP_TRIGGER_VAR(HLT_e17_lhloose_mu14, m_el0, m_mu0)
+    ADD_2LEP_TRIGGER_VAR(HLT_e24_lhmedium_L1EM20VHI_mu8noL1, m_el0, m_mu0)
+    ADD_2LEP_TRIGGER_VAR(HLT_e7_lhmedium_mu24, m_mu0, m_el0)
+    ADD_2LEP_TRIGGER_VAR(HLT_2e12_lhloose_L12EM10VH, m_el0, m_el1)
+    // TODO: Add to SusyNts HLT_2mu10)
+
+    // Single Electron Triggers
+    ADD_1LEP_TRIGGER_VAR(HLT_e24_lhmedium_L1EM20VH, m_triggerLeptons)
+    ADD_1LEP_TRIGGER_VAR(HLT_e60_lhmedium, m_triggerLeptons)
+    ADD_1LEP_TRIGGER_VAR(HLT_e120_lhloose, m_triggerLeptons)
+
+    // Single Muon Triggers
+    ADD_1LEP_TRIGGER_VAR(HLT_mu20_iloose_L1MU15, m_triggerLeptons)
+    ADD_1LEP_TRIGGER_VAR(HLT_mu40, m_triggerLeptons)
+
+
+    ////////////////////////////////////////////////////////////////////////////
+    // 2016
+
+    // Dilepton Triggers
+    ADD_2LEP_TRIGGER_VAR(HLT_e17_lhloose_nod0_mu14, m_el0, m_mu0)
+    // TODO: Add to SusyNts HLT_e24_lhmedium_nod0_L1EM20VHI_mu8noL1, m_el0, m_mu0)
+    ADD_2LEP_TRIGGER_VAR(HLT_e7_lhmedium_nod0_mu24, m_mu0, m_el0)
+    ADD_2LEP_TRIGGER_VAR(HLT_2e17_lhvloose_nod0, m_el0, m_el1)
+    // TODO: Add to SusyNts HLT_2mu14)
+
+    // Single Electron Triggers
+    ADD_1LEP_TRIGGER_VAR(HLT_e26_lhtight_nod0_ivarloose, m_triggerLeptons)
+    ADD_1LEP_TRIGGER_VAR(HLT_e60_lhmedium_nod0, m_triggerLeptons)
+    ADD_1LEP_TRIGGER_VAR(HLT_e140_lhloose_nod0, m_triggerLeptons)
+
+    // Single Muon Triggers
+    ADD_1LEP_TRIGGER_VAR(HLT_mu26_ivarmedium, m_triggerLeptons)
+    ADD_1LEP_TRIGGER_VAR(HLT_mu50, m_triggerLeptons)
+     
 }
 void add_lepton_variables(Superflow* cutflow) {
     *cutflow << NewVar("lepton-1 Pt"); {
@@ -355,6 +493,101 @@ void add_lepton_variables(Superflow* cutflow) {
         *cutflow << HFTname("lept2Flav");
         *cutflow << [](Superlink* sl, var_int*) -> int { return sl->leptons->at(1)->isEle() ? 0 : 1; };
         *cutflow << SaveVar();
+    }
+    *cutflow << NewVar("Lepton0 Iso"); {
+      *cutflow << HFTname("l_iso0");
+      *cutflow << [](Superlink* sl, var_int_array*) -> vector<int> {
+        vector<int> out;
+        if (sl->leptons->size() <= 0) return out;
+        Susy::Lepton* lep = sl->leptons->at(0);
+        out.push_back(-1);  // for tracking all entries and normalizing bins
+        bool flag = false;
+        if (lep->isoGradient)               { flag=true; out.push_back(0);}
+        if (lep->isoGradientLoose)          { flag=true; out.push_back(1);}
+        if (lep->isoLoose)                  { flag=true; out.push_back(2);}
+        if (lep->isoLooseTrackOnly)         { flag=true; out.push_back(3);}
+        if (lep->isoFixedCutTightTrackOnly) { flag=true; out.push_back(4);}
+        if (!flag) out.push_back(5);
+        return out;
+      };
+      *cutflow << SaveVar();
+    }
+    *cutflow << NewVar("Lepton1 Iso"); {
+      *cutflow << HFTname("l_iso1");
+      *cutflow << [](Superlink* sl, var_int_array*) -> vector<int> {
+        vector<int> out;
+        if (sl->leptons->size() <= 1) return out;
+        Susy::Lepton* lep = sl->leptons->at(1);
+        out.push_back(-1);  // for tracking all entries and normalizing bins
+        bool flag = false;
+        if (lep->isoGradient)               { flag=true; out.push_back(0);}
+        if (lep->isoGradientLoose)          { flag=true; out.push_back(1);}
+        if (lep->isoLoose)                  { flag=true; out.push_back(2);}
+        if (lep->isoLooseTrackOnly)         { flag=true; out.push_back(3);}
+        if (lep->isoFixedCutTightTrackOnly) { flag=true; out.push_back(4);}
+        if (!flag) out.push_back(5);
+        return out;
+      };
+      *cutflow << SaveVar();
+    }
+    *cutflow << NewVar("Lepton d0sigBSCorr"); {
+      *cutflow << HFTname("lep_d0sigBSCorr");
+      *cutflow << [](Superlink* sl, var_float_array*) -> vector<double> {
+        vector<double> out;
+        for (auto& lep : *sl->leptons) {
+            if (lep) out.push_back(lep->d0sigBSCorr);
+            else out.push_back(-DBL_MAX);
+        }
+        return out;
+      };
+      *cutflow << SaveVar();
+    }
+    *cutflow << NewVar("Lepton z0SinTheta"); {
+      *cutflow << HFTname("lep_z0SinTheta");
+      *cutflow << [](Superlink* sl, var_float_array*) -> vector<double> {
+        vector<double> out;
+        for (auto& lep : *sl->leptons) {
+            if (lep) out.push_back(lep->z0SinTheta());
+            else out.push_back(-DBL_MAX);
+        }
+        return out;
+      };
+      *cutflow << SaveVar();
+    }
+    //////////////////////////////////////////////////////////////////////////////
+    // Electrons
+    *cutflow << NewVar("Electron ID (non-inclusive)"); {
+      *cutflow << HFTname("El_ID");
+      *cutflow << [](Superlink* sl, var_int_array*) -> vector<int> {
+        vector<int> out;
+        for (auto& el : *sl->electrons) {
+          if (el->tightLLH) out.push_back(0);
+          else if (el->mediumLLH) out.push_back(1);
+          else if (el->looseLLHBLayer) out.push_back(2);
+          else if (el->looseLLH) out.push_back(3);
+          else if (el->veryLooseLLH) out.push_back(4);
+          else out.push_back(5);
+        }
+        return out;
+      };
+      *cutflow << SaveVar();
+    }
+    //////////////////////////////////////////////////////////////////////////////
+    // Muons
+    *cutflow << NewVar("Muon ID (non-inclusive)"); {
+      *cutflow << HFTname("Mu_ID");
+      *cutflow << [](Superlink* sl, var_int_array*) -> vector<int> {
+        vector<int> out;
+        for (auto& mu : *sl->muons) {
+          if (mu->tight) out.push_back(0);
+          else if (mu->medium) out.push_back(1);
+          else if (mu->loose) out.push_back(2);
+          else if (mu->veryLoose) out.push_back(3);
+          else if (!mu->veryLoose) out.push_back(4);
+        }
+        return out;
+      };
+      *cutflow << SaveVar();
     }
 }
 void add_jet_variables(Superflow* cutflow) {
@@ -513,7 +746,7 @@ void add_dilepton_variables(Superflow* cutflow) {
 
     *cutflow << NewVar("delta Phi of di-lepton system"); {
         *cutflow << HFTname("dphi_ll");
-        *cutflow << [](Superlink* sl, var_float*) -> double { return abs(sl->leptons->at(0)->Phi() - sl->leptons->at(1)->Phi()); };
+        *cutflow << [](Superlink* sl, var_float*) -> double { return sl->leptons->at(0)->DeltaPhi(*sl->leptons->at(1)); };
         *cutflow << SaveVar();
     }
 }
@@ -626,6 +859,15 @@ void add_shape_systematics(Superflow* cutflow) {
     }
 }
 
-
+bool is_1lep_trig_matched(Superlink* sl, string trig_name, LeptonVector leptons) {
+    for (Susy::Lepton* lep : leptons) {
+        if(!lep) continue;
+        bool trig_fired = sl->tools->triggerTool().passTrigger(sl->nt->evt()->trigBits, trig_name);
+        if (!trig_fired) continue;
+        bool trig_matched = sl->tools->triggerTool().lepton_trigger_match(lep, trig_name);
+        if (trig_matched) return true;
+    }
+    return false;
+}
 
 
