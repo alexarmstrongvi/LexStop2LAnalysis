@@ -1,192 +1,28 @@
 #!/bin/usr/env python
 
-import os
+import sys, os, traceback, argparse
+import time
+import importlib
 import ROOT as r
 import atlasrootstyle.AtlasStyle
 r.SetAtlasStyle()
 from copy import deepcopy
-from analysis_DSIDs import DSID_GROUPS
-import glob
-
-################################################################################
-# Globals
-_work_dir = '/data/uclhc/uci/user/armstro1/SusyNt/Stop2l/SusyNt_master/susynt-read'
-_sample_path = '%s/run/batch/SuperflowAnaStop2l_output' % _work_dir
-_sample_path_tmp = '%s/run/batch/test_SuperflowAnaStop2L' % _work_dir #TMP
-_event_list_dir = '%s/run/lists/teventlists' % _work_dir
-_plot_save_dir = '%s/run/plots/' % _work_dir
-
-#         2015      2016      2017      2018
-_lumi = (3219.56 + 32988.1 + 44307.4 + 59937.2) / 1000.0 # inverse fb
-
-_samples_to_use = [
-    'data',
-    'ttbar',
-    #'Wt',
-]
-
-_regions_to_use = [
-    #'no_sel',
-    'ttbar_CR',
-]
-
-_vars_to_plot = [
-    #'eventweight',
-    #'eventweight_multi',
-    #'pupw',
-    #'lepSf', # bug with trigSf overwritten
-    #'btagSf',
-    #'jvtSf',
-    #'period_weight',
-    'lept1Pt',
-]
-################################################################################
-# Make samples
-
-# Initialize
-from PlotTools.sample import Sample, Data, MCsample
-Sample.input_file_treename = 'superNt'
-MCsample.weight_str = 'eventweight'
-MCsample.scale_factor = _lumi
-SAMPLES = []
-
-# Setup samples and store if requested
-data_dsids = (DSID_GROUPS['data15']
-            + DSID_GROUPS['data16']
-            + DSID_GROUPS['data17']
-            + DSID_GROUPS['data18'])
-data = Data('data','Data')
-data.color = r.kBlack
-if data.name in _samples_to_use:
-    data.set_chain_from_dsid_list(data_dsids, _sample_path)
-    SAMPLES.append(data)
-
-ttbar = MCsample('ttbar',"t#bar{t}","t\bar{t}")
-ttbar.color = r.kRed
-if ttbar.name in _samples_to_use:
-    ttbar.set_chain_from_dsid_list(DSID_GROUPS['ttbar'], _sample_path_tmp)
-    SAMPLES.append(ttbar)
-
-Wt = MCsample('Wt')
-Wt.color = r.kRed
-if Wt.name in _samples_to_use:
-    Wt.set_chain_from_dsid_list(DSID_GROUPS['WtPP8'], _sample_path)
-    SAMPLES.append(Wt)
-
-# Remove samples not properly setup
-SAMPLES = [s for s in SAMPLES if s.is_setup()]
-
-# Check for at least 1 sample
-assert SAMPLES, "ERROR :: No samples are setup"
-
-################################################################################
-# Make Regions
-from PlotTools.region import Region
-REGIONS = []
-
-# Define common selections
-elel = '(lept1Flav == 0 && lept2Flav == 0)' 
-elmu = '(lept1Flav == 0 && lept2Flav == 1)' 
-muel = '(lept1Flav == 1 && lept2Flav == 0)' 
-mumu = '(lept1Flav == 1 && lept2Flav == 1)' 
-DF = '(lept1Flav != lept2Flav)'
-SF = '(lept1Flav == lept2Flav)'
-OS = '(lept1q != lept2q)'
-SS = '(lept1q == lept2q)'
-
-e15_trig    = '(HLT_e24_lhmedium_L1EM20VH || HLT_e60_lhmedium || HLT_e120_lhloose)'
-mu15_trig   = '(HLT_mu20_iloose_L1MU15 || HLT_mu40)'
-e16_trig    = '(HLT_e26_lhtight_nod0_ivarloose || HLT_e60_lhmedium_nod0 || HLT_e140_lhloose_nod0)'
-mu16_trig   = '(HLT_mu26_ivarmedium || HLT_mu50)'
-singlep_trig = "(%s)" % (' || '.join([e15_trig, mu15_trig, e16_trig, mu16_trig]))
-
-# No selection
-region = Region('no_sel','No Selection')
-region.tcut = '1'
-REGIONS.append(region)
-
-# Preselection
-preselection = singlep_trig
-preselection += ' && ' + DF + ' && ' + OS
-
-# Baseline
-
-# Control regions
-region = Region('ttbar_CR', 't#bar{t} CR', 't\bar{t} CR')
-region.tcut = preselection
-region.tcut += ' && nBJets == 2'
-REGIONS.append(region)
-
-# Check all requested regions correspond to one defined region
-all_reg_names = [r.name for r in REGIONS]
-if len(all_reg_names) > len(set(all_reg_names)):
-    print "ERROR :: Duplicate region names:", all_reg_names
-for reg_name in _regions_to_use:
-    if reg_name not in all_reg_names:
-        print 'ERROR :: Region %s not defined: %s' % (reg_name, all_reg_names)
-
-################################################################################
-# Yield Table
-
-
-################################################################################
-# Make Plots
-from PlotTools.plot import PlotBase, Plot1D, Types
-PlotBase.output_format = 'pdf'
-PlotBase.save_dir = _plot_save_dir 
-Plot1D.doLogY = False
-Plot1D.auto_set_ylimits = True
-Plot1D.type_default = Types.stack 
-PlotBase.atlas_status = 'Internal'
-
-plots_defaults = {
-    'eventweight' : Plot1D(bin_range=[-0.001, 0.01], nbins=100, xlabel='Event Weight', add_underflow=True, doLogY=True, doNorm=True),
-    'eventweight_multi' : Plot1D(bin_range=[-0.002, 0.003], nbins=100, xlabel='Multi-period Event Weight', add_underflow=True, doLogY=True, doNorm=True),
-    'pupw' : Plot1D(bin_range=[0, 4], nbins=100, xlabel='Pilup Weight', add_underflow=True, doLogY=True, doNorm=True),
-    'lepSf' : Plot1D(bin_range=[0, 2], nbins=100, xlabel='Lepton SF', add_underflow=True, doLogY=True, doNorm=True),
-    'trigSf' : Plot1D(bin_range=[0, 2], nbins=100, xlabel='Lepton SF', add_underflow=True, doLogY=True, doNorm=True),
-    'btagSf' : Plot1D(bin_range=[0, 2], nbins=100, xlabel='B-tag SF', add_underflow=True, doLogY=True, doNorm=True),
-    'jvtSf' : Plot1D(bin_range=[0, 2], nbins=100, xlabel='JVT SF', add_underflow=True, doLogY=True, doNorm=True),
-    'period_weight' : Plot1D(bin_range=[0, 3], nbins=100, xlabel='Period weight', add_underflow=True, doLogY=True, doNorm=True),
-    'lept1Pt' : Plot1D(bin_range=[0,200], bin_width = 5, xlabel='p_{T}^{leading lep}', xunits='GeV')
-}
-
-PLOTS = []
-
-for reg in _regions_to_use:
-    for var in _vars_to_plot:
-        p = deepcopy(plots_defaults[var])
-        
-        # Set common plot properties
-        p.update(region.name, var)  # sets other plot variables (e.g. name)
-        if p.ptype == Types.ratio: 
-            p.setRatioPads(p.name)
-        elif p.ptype == Types.stack:
-            p.setStackPads(p.name)
-        elif p.ptype == Types.default:
-            p.setRatioPads(p.name)
-        else:
-            print "WARNING :: %s plots are not yet setup"%p.ptype.name
-            continue
-
-        PLOTS.append(p)
 
 ################################################################################
 # Main plot looper
 def main():
     import PlotTools.hist as Hist
     
-    for reg_name in _regions_to_use:
+    for reg in REGIONS:
         # Get plots for region
-        plots_with_reg = [p for p in PLOTS if p.region == reg_name]
+        plots_with_reg = [p for p in PLOTS if p.region == reg.name]
         if not len(plots_with_reg): continue
-        reg = next(r for r in REGIONS if r.name == reg_name)
         print '\n', 20*'-', "Plots for %s region"%reg.name, 20*'-', '\n'
 
         ########################################################################
         print "Setting EventLists for %s"%reg.name 
         for sample in SAMPLES:
-            sample.set_event_list(reg.tcut, '', _event_list_dir)
+            sample.set_event_list(reg.tcut, '', EVENT_LIST_DIR)
         
         ########################################################################
         # Loop over each plot and save image
@@ -194,15 +30,151 @@ def main():
         for ii, plot in enumerate(plots_with_reg, 1):
             print "[%d/%d] Plotting %s"%(ii, n_plots, plot.name), 40*'-'
             if len(SAMPLES) == 1:
-                with Hist.SampleCompare1D(plot, region, SAMPLES) as hists:
-                    plot.make_overlay_plot(region.displayname, hists)
+                with Hist.SampleCompare1D(plot, reg, SAMPLES) as hists:
+                    plot.make_overlay_plot(reg.displayname, hists)
             elif len(SAMPLES) == 2:
-                with Hist.SampleCompare1D(plot, region, SAMPLES) as hists:
+                with Hist.SampleCompare1D(plot, reg, SAMPLES) as hists:
                     num = hists.hists[0]
                     den = hists.hists[1]
                     with Hist.RatioHist1D(plot, num, den, ymax = 2, ymin = 0) as ratio_hist:
                         ratio_label = "%s / %s" % (SAMPLES[0].displayname, SAMPLES[1].displayname)
-                        plot.make_overlay_with_ratio_plot(region.displayname, ratio_label, hists, ratio_hist)
+                        plot.make_overlay_with_ratio_plot(reg.displayname, ratio_label, hists, ratio_hist)
+            elif len(SAMPLES) >= 2:
+                backgrounds = [s for s in SAMPLES if s.isMC and not s.isSignal]
+                data = next(s for s in SAMPLES if not s.isMC)
+                signals = [s for s in SAMPLES if s.isMC and s.isSignal]
+                with Hist.DataMCStackHist1D(plot, reg, data=data, bkgds=backgrounds, sigs=signals) as main_hist:
+                    with Hist.DataMCRatioHist1D(plot, reg, main_hist) as ratio_hist:
+                        plot.make_data_mc_stack_with_ratio_plot(reg.displayname, main_hist, ratio_hist)
 
+################################################################################
+# SETUP FUNCTIONS
+def check_args(args):
+    """ Check the input arguments are as expected """
+    configuration_file = os.path.normpath(args.plotConfig)
+    if not os.path.exists(configuration_file):
+        print "ERROR :: Cannot find config file:", configuration_file
+        sys.exit()
+
+def check_environment():
+    """ Check if the shell environment is setup as expected """
+    python_ver = sys.version_info[0] + 0.1*sys.version_info[1]
+    if python_ver < 2.7:
+        print "ERROR :: Running old version of python\n", sys.version
+        sys.exit()
+
+def print_inputs(args):
+    """ Print the program inputs """
+    full_path = os.path.abspath(__file__)
+    prog_name = os.path.basename(full_path)
+    prog_dir = os.path.dirname(full_path)
+
+    print " ==================================================================\n"
+    print " Program : %s "%prog_name
+    print " Run from: %s "%prog_dir
+    print ""
+    print " Options:"
+    print "     plot config      :  %s "%args.plotConfig
+    print "     output directory :  %s "%args.outdir
+    print "     verbose          :  %s "%args.verbose
+    print ""
+    print "===================================================================\n"
+
+    # print out the loaded samples and plots
+    print " ============================"
+    if SAMPLES :
+        print "Loaded samples:    "
+        for sample in SAMPLES :
+            print '\t',
+            sample.Print()
+    if args.verbose:
+        print "Loaded plots:"
+        for plot in PLOTS :
+            plot.Print()
+    print " ============================"
+
+def check_for_consistency() :
+    '''
+    Make sure that the plots are not asking for undefined region
+
+    param:
+        plots : list(plot class)
+            plots defined in config file
+        regions : list(region class)
+            regions defined in config file
+    '''
+    region_names = [r.name for r in REGIONS]
+    bad_regions = set([p.region for p in PLOTS if p.region not in region_names])
+    if len(bad_regions) > 0 :
+        print 'check_for_consistency ERROR    '\
+        'You have configured a plot for a region that is not defined. '\
+        'Here is the list of "bad regions":'
+        print bad_regions
+        print 'check_for_consistency ERROR    The regions that are defined in the configuration ("%s") are:'%args.plotConfig
+        print region_names
+        print "check_for_consistency ERROR    Exiting."
+        sys.exit()
+
+################################################################################
+# Run main
 if __name__ == "__main__":
-    main()
+    try:
+        start_time = time.time()
+        parser = argparse.ArgumentParser(
+                description=__doc__,
+                formatter_class=argparse.RawDescriptionHelpFormatter)
+        parser.add_argument("-c", "--plotConfig",
+                                default="",
+                                help='name of the config file')
+        parser.add_argument("-s", "--suffix",
+                                default="",
+                                help='Suffix to append to output plot names')
+        parser.add_argument("-o", "--outdir",
+                                default="./",
+                                help='name of the output directory to save plots.')
+        parser.add_argument("-v", "--verbose",
+                                action="store_true",
+                                help='set verbosity mode')
+        args = parser.parse_args()
+
+        if args.verbose:
+            print '>'*40
+            print 'Running {}...'.format(os.path.basename(__file__))
+            print time.asctime()
+
+        check_args(args)
+        check_environment()
+
+        # Import configuration file
+        import_conf = args.plotConfig.replace(".py","")
+        conf = importlib.import_module(import_conf)
+
+        SAMPLES = conf.SAMPLES
+        REGIONS = conf.REGIONS
+        PLOTS = conf.PLOTS
+        EVENT_LIST_DIR = conf.EVENT_LIST_DIR
+        YLD_TABLE = conf.YLD_TABLE
+
+        check_for_consistency()
+        print_inputs(args)
+
+        main()
+
+        if args.verbose:
+            print time.asctime()
+            time = (time.time() - start_time)
+            print 'TOTAL TIME: %fs'%time,
+            print ''
+            print '<'*40
+    except KeyboardInterrupt, e: # Ctrl-C
+        print 'Program ended by keyboard interruption'
+        raise e
+    except SystemExit, e: # sys.exit()
+        print 'Program ended by system exit'
+        raise e
+    except Exception, e:
+        print 'ERROR, UNEXPECTED EXCEPTION'
+        print str(e)
+        traceback.print_exc()
+        os._exit(1)
+
