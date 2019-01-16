@@ -13,7 +13,7 @@ fi
 
 ################################################################################
 # Globals
-STORE_DIR='./old_test_results' # dont add trailing backslash
+STORE_DIR='./old_test_results/SuperflowAnaStop2L_results' # dont add trailing backslash
 SUSYNT_DIR='../../susynt-write/run/old_test_results'
 
 ################################################################################
@@ -39,6 +39,18 @@ function run_flatnt_maker() {
     echo
 }
 
+function run_SuperflowAnaStop2l() {
+    susynt=$1
+    ofile=$2
+    logfile=$3
+    echo "SuperflowAnaStop2L -i $susynt -c"
+    SuperflowAnaStop2L -i $susynt -c 2>&1 | tee $logfile
+    mv CENTRAL*root $ofile
+    
+    echo
+    strip_file_of_timestamps $logfile
+    echo
+}
 function run_grabSumw() {
     susynt=$1
     logfile=$2
@@ -74,19 +86,21 @@ REGIONS=""
 REGIONS="$REGIONS --baseline_sel"
 
 for SAMPLE in $SAMPLES; do
-for REGION in $REGIONS; do
     SUSYNT="${SUSYNT_DIR}/${SAMPLE}_susynt_old.root" # Assumed formatting for SusyNts 
     OFILE="${SAMPLE}_flatnt_new.root"
     LOGFILE="${SAMPLE}_flatnt_new.log"
-    run_flatnt_maker $SUSYNT $REGION $OFILE $LOGFILE
+    run_SuperflowAnaStop2l $SUSYNT $OFILE $LOGFILE
 
     # Test grabSumw
     if [[ $SAMPLE == "mc16"* ]]; then
         SUMW_LOGFILE="${SAMPLE}_sumw_new.log"
         run_grabSumw $SUSYNT $SUMW_LOGFILE
     fi
-    
-done
+
+    # No longer using old ntuple maker
+    #for REGION in $REGIONS; do
+    #    run_flatnt_maker $SUSYNT $REGION $OFILE $LOGFILE
+    #done
 done
 
 printf "\n\n ========== Performing Checks ========== \n\n"
@@ -116,7 +130,6 @@ for new_root in *new*root; do
         echo "No root files to compare"
         continue
     fi
-    echo "TESTING :: $new_root"
     old_root=$STORE_DIR/`echo $new_root | sed 's/new/old/g'`
     if [ ! -e $old_root ]; then
         echo "No old root file found for $new_log"
