@@ -3,6 +3,7 @@
 from pyTools import get_cmd_output
 import glob
 import os
+import re
 
 ################################################################################
 # Configuration
@@ -47,11 +48,16 @@ if len(get_input_files):
     print "INFO :: Searching through %d input files to build rerun list" % len(input_files)
     files_to_rerun = []
     for f in get_input_files:
-        if f.endswith("%s.out" % susynt_tag): # Not a split sample
+        pattern = "%s[a-z]?.out" % susynt_tag
+        if re.search(pattern, f): # Not a split sample
             for ifile in input_files:
                 basename = os.path.basename(ifile).replace(".txt","")
                 if basename in f:
                     files_to_rerun.append(ifile.strip())
+                    break
+            else:
+                print "WARNING :: Unable to find input file for", f.strip()
+
         else:
             # Split file was incomplete grabbing only the incomplete xrootd link"
             for line in open(f.strip(),'r'):
@@ -61,6 +67,8 @@ if len(get_input_files):
                     xrootd_link = line[start:end]
                     files_to_rerun.append(xrootd_link)
                     break
+            else:
+                print "WARNING :: Unable to find input xrootd file", f.strip()
 
 if len(not_complete_files):
     print "INFO :: %d files are incomplete" % len(not_complete_files)
@@ -68,7 +76,7 @@ if len(not_complete_files):
     print "INFO :: %d likely failed and should be rerun" % len(files_to_rerun)
     with open(ofile_name,'w') as ofile:
         ofile.write('\n'.join(files_to_rerun))
-    print "INFO :: Files to rerun were written to %s" % ofile_name
+    print "INFO :: Files to rerun were written to %s" % os.path.relpath(ofile_name, os.getcwd())
     print rerun_cmd
 else:
     print "INFO :: All files passed :)"
