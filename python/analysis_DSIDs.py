@@ -123,7 +123,7 @@ DSID_GROUPS = {
     ],
     
     # Z(->ll)+jets
-    "zjets_sherpa" : [
+    "zjets_mumu_sherpa" : [
                 "364100", #Sherpa221_Zmumu_0_70_CVBV
                 "364101", #Sherpa221_Zmumu_0_70_CFiltBV
                 "364102", #Sherpa221_Zmumu_0_70_BFilt
@@ -138,6 +138,8 @@ DSID_GROUPS = {
                 "364111", #Sherpa221_Zmumu_280_500_BFilt
                 "364112", #Sherpa221_Zmumu_500_1000
                 "364113", #Sherpa221_Zmumu_1000_E_CMS
+    ],
+    "zjets_ee_sherpa" : [
                 "364114", #Sherpa221_Zee_0_70_CVBV
                 "364115", #Sherpa221_Zee_0_70_CFiltBV
                 "364116", #Sherpa221_Zee_0_70_BFilt
@@ -152,6 +154,8 @@ DSID_GROUPS = {
                 "364125", #Sherpa221_Zee_280_500_BFilt
                 "364126", #Sherpa221_Zee_500_1000
                 "364127", #Sherpa221_Zee_1000_E_CMS
+    ],
+    "zjets_tautau_sherpa" : [
                 "364128", #Sherpa221_Ztautau_0_70_CVBV
                 "364129", #Sherpa221_Ztautau_0_70_CFiltBV
                 "364130", #Sherpa221_Ztautau_0_70_BFilt
