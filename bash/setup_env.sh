@@ -7,6 +7,7 @@
 
 if [ "$(basename $PWD)" == "susynt-read" ]; then
     source bash/setup_release.sh  
+    source source/jigsawcalculator/bash/setup.sh
     lsetup git
     echo "Environment is setup"
 else
