@@ -1,0 +1,10 @@
+410472 PhPy8EG_A14_ttbar_hdamp258p75_dil (mc16a-e)
+364161 Sherpa221_Wmunu_70_140_BFilt.SusyNt (mc16e)
+349268 (data18)
+364108 Sherpa221_Zmumu_140_280_BFilt (mc16d)
+364122 Sherpa221_Zee_140_280_BFilt.SusyNt (mc16e)
+
+    
+Consider
+349693 (data18)
+364116 Sherpa221_Zee_0_70_BFilt (mc16e)
