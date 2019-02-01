@@ -76,8 +76,8 @@ static int m_cutflags = 0;
 static JetVector m_light_jets;
 static TLorentzVector m_dileptonP4;
 static TLorentzVector m_MET;
-static Susy::Lepton m_lept1;
-static Susy::Lepton m_lept2;
+static Susy::Lepton* m_lept1;
+static Susy::Lepton* m_lept2;
 static Susy::Electron *m_el0, *m_el1;
 static Susy::Muon *m_mu0, *m_mu1;
 static LeptonVector m_triggerLeptons;
@@ -221,6 +221,8 @@ void set_global_variables(Superflow* cutflow) {
         m_cutflags = 0;
         m_light_jets.clear();
         m_dileptonP4 = {};
+        m_MET = {};
+        m_lept1 = m_lept2 = 0;
         m_el0 = m_el1 = 0;
         m_mu0 = m_mu1 = 0;
         m_triggerLeptons.clear();
@@ -247,10 +249,10 @@ void set_global_variables(Superflow* cutflow) {
 
         // Commonly used leptons
         if (sl->leptons->size() >= 1) {
-            m_lept1 = *sl->leptons->at(0);
+            m_lept1 = sl->leptons->at(0);
             if (sl->leptons->size() >= 2) {
-                m_lept2 = *sl->leptons->at(1);
-                m_dileptonP4 = m_lept1 + m_lept2;
+                m_lept2 = sl->leptons->at(1);
+                m_dileptonP4 = *m_lept1 + *m_lept2;
             }
         }
         for (Susy::Lepton* lep : *sl->leptons) {
@@ -273,7 +275,7 @@ void set_global_variables(Superflow* cutflow) {
             // build the object map for the calculator
             // the TTMET2LW calculator expects "leptons" and "met"
             std::map<std::string, std::vector<TLorentzVector>> object_map;
-            object_map["leptons"] = { m_lept1, m_lept2 };
+            object_map["leptons"] = { *m_lept1, *m_lept2 };
             object_map["met"] = { m_MET };
             m_calculator.load_event(object_map);
             m_jigsaw_vars = m_calculator.variables();
@@ -324,11 +326,11 @@ void add_analysis_cuts(Superflow* cutflow) {
     };
 
     *cutflow << CutName("opposite sign") << [](Superlink* /*sl*/) -> bool {
-        return (m_lept1.q * m_lept2.q < 0);
+        return (m_lept1->q * m_lept2->q < 0);
     };
 
-    *cutflow << CutName("dilepton flavor (emu/mue)") << [](Superlink* sl) -> bool {
-        return (m_lept1.isEle() != m_lept2.isEle());
+    *cutflow << CutName("dilepton flavor (emu/mue)") << [](Superlink* /*sl*/) -> bool {
+        return (m_lept1->isEle() != m_lept2->isEle());
     };
 }
 void add_event_variables(Superflow* cutflow) {
@@ -432,18 +434,20 @@ void add_trigger_variables(Superflow* cutflow) {
 
     ////////////////////////////////////////////////////////////////////////////
     // 2015
-    ADD_2LEP_TRIGGER_VAR(HLT_e17_lhloose_mu14, m_el0, m_mu0)
-    ADD_2LEP_TRIGGER_VAR(HLT_e24_lhmedium_L1EM20VHI_mu8noL1, m_el0, m_mu0)
-    ADD_2LEP_TRIGGER_VAR(HLT_e7_lhmedium_mu24, m_el0, m_mu0)
-    ADD_2LEP_TRIGGER_VAR(HLT_2e12_lhloose_L12EM10VH, m_el0, m_el1)
-    ADD_2LEP_TRIGGER_VAR(HLT_mu18_mu8noL1, m_mu0, m_mu1)
-
     ADD_1LEP_TRIGGER_VAR(HLT_e24_lhmedium_L1EM20VH, m_triggerLeptons)
     ADD_1LEP_TRIGGER_VAR(HLT_e60_lhmedium, m_triggerLeptons)
     ADD_1LEP_TRIGGER_VAR(HLT_e120_lhloose, m_triggerLeptons)
-
+    
+    ADD_2LEP_TRIGGER_VAR(HLT_2e12_lhloose_L12EM10VH, m_el0, m_el1)
+    
     ADD_1LEP_TRIGGER_VAR(HLT_mu20_iloose_L1MU15, m_triggerLeptons)
     ADD_1LEP_TRIGGER_VAR(HLT_mu40, m_triggerLeptons)
+    
+    // TODO: HLT_2mu10
+    ADD_2LEP_TRIGGER_VAR(HLT_mu18_mu8noL1, m_mu0, m_mu1)
+    
+    ADD_2LEP_TRIGGER_VAR(HLT_e17_lhloose_mu14, m_el0, m_mu0)
+    ADD_2LEP_TRIGGER_VAR(HLT_e7_lhmedium_mu24, m_el0, m_mu0)
 
     ////////////////////////////////////////////////////////////////////////////
     // 2016
@@ -453,10 +457,6 @@ void add_trigger_variables(Superflow* cutflow) {
     ////////////////////////////////////////////////////////////////////////////
     // 2016-2018
 
-    ADD_2LEP_TRIGGER_VAR(HLT_e17_lhloose_nod0_mu14, m_el0, m_mu0)
-    ADD_2LEP_TRIGGER_VAR(HLT_e7_lhmedium_nod0_mu24, m_el0, m_mu0)
-    ADD_2LEP_TRIGGER_VAR(HLT_mu22_mu8noL1, m_mu0, m_mu1)
-    
     ADD_1LEP_TRIGGER_VAR(HLT_e26_lhtight_nod0_ivarloose, m_triggerLeptons)
     ADD_1LEP_TRIGGER_VAR(HLT_e60_lhmedium_nod0, m_triggerLeptons)
     ADD_1LEP_TRIGGER_VAR(HLT_e140_lhloose_nod0, m_triggerLeptons)
@@ -464,62 +464,66 @@ void add_trigger_variables(Superflow* cutflow) {
     ADD_1LEP_TRIGGER_VAR(HLT_mu26_ivarmedium, m_triggerLeptons)
     ADD_1LEP_TRIGGER_VAR(HLT_mu50, m_triggerLeptons)
     
-    ////////////////////////////////////////////////////////////////////////////
-    // 2017
-    ADD_2LEP_TRIGGER_VAR(HLT_2e24_lhvloose_nod0, m_el0, m_el1)
-    ADD_2LEP_TRIGGER_VAR(HLT_2e17_lhvloose_nod0_L12EM15VHI, m_el0, m_el1)
-     
+    // TODO: HLT_2mu14
+    ADD_2LEP_TRIGGER_VAR(HLT_mu22_mu8noL1, m_mu0, m_mu1)
+    
+    ADD_2LEP_TRIGGER_VAR(HLT_e17_lhloose_nod0_mu14, m_el0, m_mu0)
+    ADD_2LEP_TRIGGER_VAR(HLT_e7_lhmedium_nod0_mu24, m_el0, m_mu0)
+    
     ////////////////////////////////////////////////////////////////////////////
     // 2017-2018
+    ADD_2LEP_TRIGGER_VAR(HLT_2e24_lhvloose_nod0, m_el0, m_el1)
+    
     ADD_2LEP_TRIGGER_VAR(HLT_e26_lhmedium_nod0_mu8noL1, m_el0, m_mu0)
     
     ////////////////////////////////////////////////////////////////////////////
     // 2018
-    ADD_2LEP_TRIGGER_VAR(HLT_e17_lhloose_mu14, m_el0, m_mu0)
-
+    // L1_2EM15VHI was accidentally prescaled in periods B5-B8 of 2017
+    // (runs 326834-328393) with an effective reduction of 0.6 fb-1
+    ADD_2LEP_TRIGGER_VAR(HLT_2e17_lhvloose_nod0_L12EM15VHI, m_el0, m_el1)
 }
 void add_lepton_variables(Superflow* cutflow) {
     *cutflow << NewVar("lepton-1 Pt"); {
         *cutflow << HFTname("lept1Pt");
-        *cutflow << [](Superlink* /*sl*/, var_float*) -> double { return m_lept1.Pt(); };
+        *cutflow << [](Superlink* /*sl*/, var_float*) -> double { return m_lept1->Pt(); };
         *cutflow << SaveVar();
     }
 
     *cutflow << NewVar("lepton-1 Eta"); {
         *cutflow << HFTname("lept1Eta");
-        *cutflow << [](Superlink* /*sl*/, var_float*) -> double { return m_lept1.Eta(); };
+        *cutflow << [](Superlink* /*sl*/, var_float*) -> double { return m_lept1->Eta(); };
         *cutflow << SaveVar();
     }
 
     *cutflow << NewVar("lepton-1 Phi"); {
         *cutflow << HFTname("lept1Phi");
-        *cutflow << [](Superlink* /*sl*/, var_float*) -> double { return m_lept1.Phi(); };
+        *cutflow << [](Superlink* /*sl*/, var_float*) -> double { return m_lept1->Phi(); };
         *cutflow << SaveVar();
     }
 
     *cutflow << NewVar("lepton-1 Energy"); {
         *cutflow << HFTname("lept1E");
-        *cutflow << [](Superlink* /*sl*/, var_float*) -> double { return m_lept1.E(); };
+        *cutflow << [](Superlink* /*sl*/, var_float*) -> double { return m_lept1->E(); };
         *cutflow << SaveVar();
     }
 
     *cutflow << NewVar("lepton-1 charge"); {
         *cutflow << HFTname("lept1q");
-        *cutflow << [](Superlink* /*sl*/, var_int*) -> int { return m_lept1.q; };
+        *cutflow << [](Superlink* /*sl*/, var_int*) -> int { return m_lept1->q; };
         *cutflow << SaveVar();
     }
 
     *cutflow << NewVar("lepton-1 flavor"); { // 0=el, 1=mu, see HistFitterTree.h
         *cutflow << HFTname("lept1Flav");
-        *cutflow << [](Superlink* /*sl*/, var_int*) -> int { return m_lept1.isEle() ? 0 : 1; };
+        *cutflow << [](Superlink* /*sl*/, var_int*) -> int { return m_lept1->isEle() ? 0 : 1; };
         *cutflow << SaveVar();
     }
     
     *cutflow << NewVar("lepton-1 transverse mass"); {
         *cutflow << HFTname("lept1mT");
         *cutflow << [](Superlink* /*sl*/, var_int*) -> int {
-            double dphi = m_lept1.DeltaPhi(m_MET);
-            double pT2 = m_lept1.Pt()*m_MET.Pt();
+            double dphi = m_lept1->DeltaPhi(m_MET);
+            double pT2 = m_lept1->Pt()*m_MET.Pt();
             double lep_mT = sqrt(2 * pT2 * ( 1 - cos(dphi) ));
             return lep_mT;
         };
@@ -528,45 +532,45 @@ void add_lepton_variables(Superflow* cutflow) {
 
     *cutflow << NewVar("lepton-2 Pt"); {
         *cutflow << HFTname("lept2Pt");
-        *cutflow << [](Superlink* /*sl*/, var_float*) -> double { return m_lept2.Pt(); };
+        *cutflow << [](Superlink* /*sl*/, var_float*) -> double { return m_lept2->Pt(); };
         *cutflow << SaveVar();
     }
 
     *cutflow << NewVar("lepton-2 Eta"); {
         *cutflow << HFTname("lept2Eta");
-        *cutflow << [](Superlink* /*sl*/, var_float*) -> double { return m_lept2.Eta(); };
+        *cutflow << [](Superlink* /*sl*/, var_float*) -> double { return m_lept2->Eta(); };
         *cutflow << SaveVar();
     }
 
     *cutflow << NewVar("lepton-2 Phi"); {
         *cutflow << HFTname("lept2Phi");
-        *cutflow << [](Superlink* /*sl*/, var_float*) -> double { return m_lept2.Phi(); };
+        *cutflow << [](Superlink* /*sl*/, var_float*) -> double { return m_lept2->Phi(); };
         *cutflow << SaveVar();
     }
 
     *cutflow << NewVar("lepton-2 Energy"); {
         *cutflow << HFTname("lept2E");
-        *cutflow << [](Superlink* /*sl*/, var_float*) -> double { return m_lept2.E(); };
+        *cutflow << [](Superlink* /*sl*/, var_float*) -> double { return m_lept2->E(); };
         *cutflow << SaveVar();
     }
 
     *cutflow << NewVar("lepton-2 charge"); {
         *cutflow << HFTname("lept2q");
-        *cutflow << [](Superlink* /*sl*/, var_int*) -> int { return m_lept2.q; };
+        *cutflow << [](Superlink* /*sl*/, var_int*) -> int { return m_lept2->q; };
         *cutflow << SaveVar();
     }
 
     *cutflow << NewVar("lepton-2 flavor"); {
         *cutflow << HFTname("lept2Flav");
-        *cutflow << [](Superlink* /*sl*/, var_int*) -> int { return m_lept2.isEle() ? 0 : 1; };
+        *cutflow << [](Superlink* /*sl*/, var_int*) -> int { return m_lept2->isEle() ? 0 : 1; };
         *cutflow << SaveVar();
     }
 
     *cutflow << NewVar("lepton-2 transverse mass"); {
         *cutflow << HFTname("lept2mT");
         *cutflow << [](Superlink* /*sl*/, var_int*) -> int {
-            double dphi = m_lept2.DeltaPhi(m_MET);
-            double pT2 = m_lept2.Pt()*m_MET.Pt();
+            double dphi = m_lept2->DeltaPhi(m_MET);
+            double pT2 = m_lept2->Pt()*m_MET.Pt();
             double lep_mT = sqrt(2 * pT2 * ( 1 - cos(dphi) ));
             return lep_mT;
         };
@@ -580,11 +584,11 @@ void add_lepton_variables(Superflow* cutflow) {
         if (sl->leptons->size() <= 0) return out;
         out.push_back(-1);  // for tracking all entries and normalizing bins
         bool flag = false;
-        if (m_lept1.isoGradient)               { flag=true; out.push_back(0);}
-        if (m_lept1.isoGradientLoose)          { flag=true; out.push_back(1);}
-        if (m_lept1.isoLoose)                  { flag=true; out.push_back(2);}
-        if (m_lept1.isoLooseTrackOnly)         { flag=true; out.push_back(3);}
-        if (m_lept1.isoFixedCutTightTrackOnly) { flag=true; out.push_back(4);}
+        if (m_lept1->isoGradient)               { flag=true; out.push_back(0);}
+        if (m_lept1->isoGradientLoose)          { flag=true; out.push_back(1);}
+        if (m_lept1->isoLoose)                  { flag=true; out.push_back(2);}
+        if (m_lept1->isoLooseTrackOnly)         { flag=true; out.push_back(3);}
+        if (m_lept1->isoFixedCutTightTrackOnly) { flag=true; out.push_back(4);}
         if (!flag) out.push_back(5);
         return out;
       };
@@ -597,11 +601,11 @@ void add_lepton_variables(Superflow* cutflow) {
         if (sl->leptons->size() <= 1) return out;
         out.push_back(-1);  // for tracking all entries and normalizing bins
         bool flag = false;
-        if (m_lept2.isoGradient)               { flag=true; out.push_back(0);}
-        if (m_lept2.isoGradientLoose)          { flag=true; out.push_back(1);}
-        if (m_lept2.isoLoose)                  { flag=true; out.push_back(2);}
-        if (m_lept2.isoLooseTrackOnly)         { flag=true; out.push_back(3);}
-        if (m_lept2.isoFixedCutTightTrackOnly) { flag=true; out.push_back(4);}
+        if (m_lept2->isoGradient)               { flag=true; out.push_back(0);}
+        if (m_lept2->isoGradientLoose)          { flag=true; out.push_back(1);}
+        if (m_lept2->isoLoose)                  { flag=true; out.push_back(2);}
+        if (m_lept2->isoLooseTrackOnly)         { flag=true; out.push_back(3);}
+        if (m_lept2->isoFixedCutTightTrackOnly) { flag=true; out.push_back(4);}
         if (!flag) out.push_back(5);
         return out;
       };
@@ -755,50 +759,50 @@ void add_met_variables(Superflow* cutflow) {
 
     *cutflow << NewVar("delta Phi of leading lepton and met"); {
         *cutflow << HFTname("deltaPhi_met_l1");
-        *cutflow << [](Superlink* /*sl*/, var_float*) -> double { return abs(m_lept1.DeltaPhi(m_MET)); };
+        *cutflow << [](Superlink* /*sl*/, var_float*) -> double { return abs(m_lept1->DeltaPhi(m_MET)); };
         *cutflow << SaveVar();
     }
 
     *cutflow << NewVar("delta Phi of subleading lepton and met"); {
         *cutflow << HFTname("deltaPhi_met_l2");
-        *cutflow << [](Superlink* /*sl*/, var_float*) -> double { return abs(m_lept2.DeltaPhi(m_MET)); };
+        *cutflow << [](Superlink* /*sl*/, var_float*) -> double { return abs(m_lept2->DeltaPhi(m_MET)); };
         *cutflow << SaveVar();
     }
 }
 void add_dilepton_variables(Superflow* cutflow) {
     *cutflow << NewVar("is e + e"); {
         *cutflow << HFTname("isElEl");
-        *cutflow << [](Superlink* /*sl*/, var_bool*) -> bool { return m_lept1.isEle() && m_lept2.isEle(); };
+        *cutflow << [](Superlink* /*sl*/, var_bool*) -> bool { return m_lept1->isEle() && m_lept2->isEle(); };
         *cutflow << SaveVar();
     }
 
     *cutflow << NewVar("is e + mu"); {
         *cutflow << HFTname("isElMu");
-        *cutflow << [](Superlink* /*sl*/, var_bool*) -> bool { return m_lept1.isEle() ^ m_lept2.isEle(); };
+        *cutflow << [](Superlink* /*sl*/, var_bool*) -> bool { return m_lept1->isEle() ^ m_lept2->isEle(); };
         *cutflow << SaveVar();
     }
 
     *cutflow << NewVar("is mu + mu"); {
         *cutflow << HFTname("isMuMu");
-        *cutflow << [](Superlink* /*sl*/, var_bool*) -> bool { return m_lept1.isMu() && m_lept2.isMu(); };
+        *cutflow << [](Superlink* /*sl*/, var_bool*) -> bool { return m_lept1->isMu() && m_lept2->isMu(); };
         *cutflow << SaveVar();
     }
 
     *cutflow << NewVar("is opposite-sign"); {
         *cutflow << HFTname("isOS");
-        *cutflow << [](Superlink* /*sl*/, var_bool*) -> bool { return m_lept1.q * m_lept2.q < 0; };
+        *cutflow << [](Superlink* /*sl*/, var_bool*) -> bool { return m_lept1->q * m_lept2->q < 0; };
         *cutflow << SaveVar();
     }
 
     *cutflow << NewVar("is Mu (lead) + E (sub)"); {
         *cutflow << HFTname("isME");
-        *cutflow << [](Superlink* /*sl*/, var_bool*) -> bool { return m_lept1.isMu() && m_lept2.isEle(); };
+        *cutflow << [](Superlink* /*sl*/, var_bool*) -> bool { return m_lept1->isMu() && m_lept2->isEle(); };
         *cutflow << SaveVar();
     }
 
     *cutflow << NewVar("is E (lead) + Mu (sub)"); {
         *cutflow << HFTname("isEM");
-        *cutflow << [](Superlink* /*sl*/, var_bool*) -> bool { return m_lept1.isEle() && m_lept2.isMu(); };
+        *cutflow << [](Superlink* /*sl*/, var_bool*) -> bool { return m_lept1->isEle() && m_lept2->isMu(); };
         *cutflow << SaveVar();
     }
 
@@ -816,25 +820,25 @@ void add_dilepton_variables(Superflow* cutflow) {
 
     *cutflow << NewVar("Pt difference of di-lepton system"); {
         *cutflow << HFTname("dpTll");
-        *cutflow << [](Superlink* /*sl*/, var_float*) -> double { return m_lept1.Pt() - m_lept2.Pt(); };
+        *cutflow << [](Superlink* /*sl*/, var_float*) -> double { return m_lept1->Pt() - m_lept2->Pt(); };
         *cutflow << SaveVar();
     }
     
     *cutflow << NewVar("delta Eta of di-lepton system"); {
         *cutflow << HFTname("deta_ll");
-        *cutflow << [](Superlink* /*sl*/, var_float*) -> double { return abs(m_lept1.Eta() - m_lept2.Eta()); };
+        *cutflow << [](Superlink* /*sl*/, var_float*) -> double { return abs(m_lept1->Eta() - m_lept2->Eta()); };
         *cutflow << SaveVar();
     }
 
     *cutflow << NewVar("delta Phi of di-lepton system"); {
         *cutflow << HFTname("dphi_ll");
-        *cutflow << [](Superlink* /*sl*/, var_float*) -> double { return abs(m_lept1.DeltaPhi(m_lept2)); };
+        *cutflow << [](Superlink* /*sl*/, var_float*) -> double { return abs(m_lept1->DeltaPhi(*m_lept2)); };
         *cutflow << SaveVar();
     }
     
     *cutflow << NewVar("delta R of di-lepton system"); {
         *cutflow << HFTname("dR_ll");
-        *cutflow << [](Superlink* /*sl*/, var_float*) -> double { return m_lept1.DeltaR(m_lept2); };
+        *cutflow << [](Superlink* /*sl*/, var_float*) -> double { return m_lept1->DeltaR(*m_lept2); };
         *cutflow << SaveVar();
     }
     
@@ -858,6 +862,7 @@ void add_jigsaw_variables(Superflow* cutflow) {
     ADD_JIGSAW_VAR(H_21_SS_T)
     ADD_JIGSAW_VAR(H_22_SS_T)
     ADD_JIGSAW_VAR(H_11_S1_T)
+    ADD_JIGSAW_VAR(shat)
     ADD_JIGSAW_VAR(pTT_T)
     ADD_JIGSAW_VAR(pTT_Z)
     ADD_JIGSAW_VAR(RPT)
@@ -883,52 +888,6 @@ void add_jigsaw_variables(Superflow* cutflow) {
     ADD_JIGSAW_VAR(dphi_s1_s2_ss)
     ADD_JIGSAW_VAR(dphi_S_I_ss)
     ADD_JIGSAW_VAR(dphi_S_I_s1)
-
-    *cutflow << NewVar("Super-Razor Var: shatr"); {
-        *cutflow << HFTname("shatr");
-        *cutflow << [](Superlink* sl, var_float*) -> double {
-            double   mDeltaR              = 0.0;
-            double   SHATR                = 0.0;
-            double   cosThetaRp1          = 0.0;
-            double   dphi_LL_vBETA_T      = 0.0;
-            double   dphi_L1_L2           = 0.0;
-            double   gamma_R              = 0.0;
-            double   dphi_vBETA_R_vBETA_T = 0.0;
-            TVector3 vBETA_z;
-            TVector3 pT_CM;
-            TVector3 vBETA_T_CMtoR;
-            TVector3 vBETA_R;
-            kin::superRazor(*sl->leptons, sl->met, vBETA_z, pT_CM,
-                                    vBETA_T_CMtoR, vBETA_R, SHATR, dphi_LL_vBETA_T,
-                                    dphi_L1_L2, gamma_R, dphi_vBETA_R_vBETA_T,
-                                    mDeltaR, cosThetaRp1);
-            return SHATR;
-        };
-        *cutflow << SaveVar();
-    }
-
-    *cutflow << NewVar("Super-Razor Var: mDeltaR"); {
-        *cutflow << HFTname("mDeltaR");
-        *cutflow << [](Superlink* sl, var_double*) -> double {
-            double   mDeltaR              = 0.0;
-            double   SHATR                = 0.0;
-            double   cosThetaRp1          = 0.0;
-            double   dphi_LL_vBETA_T      = 0.0;
-            double   dphi_L1_L2           = 0.0;
-            double   gamma_R              = 0.0;
-            double   dphi_vBETA_R_vBETA_T = 0.0;
-            TVector3 vBETA_z;
-            TVector3 pT_CM;
-            TVector3 vBETA_T_CMtoR;
-            TVector3 vBETA_R;
-            kin::superRazor(*sl->leptons, sl->met, vBETA_z, pT_CM,
-                                    vBETA_T_CMtoR, vBETA_R, SHATR, dphi_LL_vBETA_T,
-                                    dphi_L1_L2, gamma_R, dphi_vBETA_R_vBETA_T,
-                                    mDeltaR, cosThetaRp1);
-            return mDeltaR;
-        };
-        *cutflow << SaveVar();
-    }
 }
 void add_miscellaneous_variables(Superflow* cutflow) {
     *cutflow << NewVar("Ht (m_Eff: lep + met + jet)"); {
@@ -936,7 +895,7 @@ void add_miscellaneous_variables(Superflow* cutflow) {
         *cutflow << [](Superlink* sl, var_float*) -> double {
             double ht = 0.0;
 
-            ht += m_lept1.Pt() + m_lept2.Pt();
+            ht += m_lept1->Pt() + m_lept2->Pt();
             ht += sl->met->Et;
             for (int i = 0; i < (int)sl->jets->size(); i++) {
                 if (sl->jets->at(i)->Pt() > 20.0) {
@@ -944,6 +903,26 @@ void add_miscellaneous_variables(Superflow* cutflow) {
                 }
             }
             return ht;
+        };
+        *cutflow << SaveVar();
+    }
+    
+    *cutflow << NewVar("cos(theta_b)"); {
+        *cutflow << HFTname("costheta_b");
+        *cutflow << [](Superlink* /*sl*/, var_float*) -> double {
+            TLorentzVector lp, lm, ll;
+            lp = m_lept1->q > 0 ? *m_lept1 : *m_lept2;
+            lm = m_lept1->q < 0 ? *m_lept1 : *m_lept2;
+            ll = lp + lm;
+            
+            TVector3 boost = ll.BoostVector();
+            lp.Boost(-boost);
+            lm.Boost(-boost);
+            
+            double deta = lp.Eta() - lm.Eta();
+            double costheta_b = tanh(0.5 * deta);
+            
+            return costheta_b;
         };
         *cutflow << SaveVar();
     }
