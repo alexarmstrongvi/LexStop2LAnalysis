@@ -65,6 +65,7 @@ void add_lepton_variables(Superflow* cutflow);
 void add_jet_variables(Superflow* cutflow);
 void add_met_variables(Superflow* cutflow);
 void add_dilepton_variables(Superflow* cutflow);
+void add_multi_object_variables(Superflow* cutflow);
 void add_jigsaw_variables(Superflow* cutflow);
 void add_miscellaneous_variables(Superflow* cutflow);
 
@@ -162,6 +163,7 @@ int main(int argc, char* argv[])
     add_jet_variables(cutflow);
     add_met_variables(cutflow);
     add_dilepton_variables(cutflow);
+    add_multi_object_variables(cutflow);
     add_jigsaw_variables(cutflow);
     add_miscellaneous_variables(cutflow);
 
@@ -328,7 +330,7 @@ void add_analysis_cuts(Superflow* cutflow) {
     *cutflow << CutName("opposite sign") << [](Superlink* /*sl*/) -> bool {
         return (m_lept1->q * m_lept2->q < 0);
     };
-
+    
     *cutflow << CutName("dilepton flavor (emu/mue)") << [](Superlink* /*sl*/) -> bool {
         return (m_lept1->isEle() != m_lept2->isEle());
     };
@@ -342,7 +344,7 @@ void add_event_variables(Superflow* cutflow) {
 
     *cutflow << NewVar("event weight"); {
         *cutflow << HFTname("eventweight");
-        *cutflow << [](Superlink* sl, var_double*) -> double {return sl->weights->product() * sl->nt->evt()->wPileup; };
+        *cutflow << [](Superlink* sl, var_double*) -> double { return sl->weights->product() * sl->nt->evt()->wPileup; };
         *cutflow << SaveVar();
     }
 
@@ -519,17 +521,6 @@ void add_lepton_variables(Superflow* cutflow) {
         *cutflow << SaveVar();
     }
     
-    *cutflow << NewVar("lepton-1 transverse mass"); {
-        *cutflow << HFTname("lept1mT");
-        *cutflow << [](Superlink* /*sl*/, var_int*) -> int {
-            double dphi = m_lept1->DeltaPhi(m_MET);
-            double pT2 = m_lept1->Pt()*m_MET.Pt();
-            double lep_mT = sqrt(2 * pT2 * ( 1 - cos(dphi) ));
-            return lep_mT;
-        };
-        *cutflow << SaveVar();
-    }
-
     *cutflow << NewVar("lepton-2 Pt"); {
         *cutflow << HFTname("lept2Pt");
         *cutflow << [](Superlink* /*sl*/, var_float*) -> double { return m_lept2->Pt(); };
@@ -563,17 +554,6 @@ void add_lepton_variables(Superflow* cutflow) {
     *cutflow << NewVar("lepton-2 flavor"); {
         *cutflow << HFTname("lept2Flav");
         *cutflow << [](Superlink* /*sl*/, var_int*) -> int { return m_lept2->isEle() ? 0 : 1; };
-        *cutflow << SaveVar();
-    }
-
-    *cutflow << NewVar("lepton-2 transverse mass"); {
-        *cutflow << HFTname("lept2mT");
-        *cutflow << [](Superlink* /*sl*/, var_int*) -> int {
-            double dphi = m_lept2->DeltaPhi(m_MET);
-            double pT2 = m_lept2->Pt()*m_MET.Pt();
-            double lep_mT = sqrt(2 * pT2 * ( 1 - cos(dphi) ));
-            return lep_mT;
-        };
         *cutflow << SaveVar();
     }
 
@@ -750,24 +730,6 @@ void add_met_variables(Superflow* cutflow) {
         *cutflow << [](Superlink* sl, var_float*) -> double { return sl->met->phi; };
         *cutflow << SaveVar();
     }
-
-    *cutflow << NewVar("Etmiss Rel"); {
-        *cutflow << HFTname("metrel");
-        *cutflow << [](Superlink* sl, var_float*) -> double { return kin::getMetRel(sl->met, *sl->leptons, *sl->jets); };
-        *cutflow << SaveVar();
-    }
-
-    *cutflow << NewVar("delta Phi of leading lepton and met"); {
-        *cutflow << HFTname("deltaPhi_met_l1");
-        *cutflow << [](Superlink* /*sl*/, var_float*) -> double { return abs(m_lept1->DeltaPhi(m_MET)); };
-        *cutflow << SaveVar();
-    }
-
-    *cutflow << NewVar("delta Phi of subleading lepton and met"); {
-        *cutflow << HFTname("deltaPhi_met_l2");
-        *cutflow << [](Superlink* /*sl*/, var_float*) -> double { return abs(m_lept2->DeltaPhi(m_MET)); };
-        *cutflow << SaveVar();
-    }
 }
 void add_dilepton_variables(Superflow* cutflow) {
     *cutflow << NewVar("is e + e"); {
@@ -841,7 +803,43 @@ void add_dilepton_variables(Superflow* cutflow) {
         *cutflow << [](Superlink* /*sl*/, var_float*) -> double { return m_lept1->DeltaR(*m_lept2); };
         *cutflow << SaveVar();
     }
-    
+}
+void add_multi_object_variables(Superflow* cutflow) {
+    // Leptons and MET
+    *cutflow << NewVar("lepton-1 transverse mass"); {
+        *cutflow << HFTname("lept1mT");
+        *cutflow << [](Superlink* /*sl*/, var_int*) -> int {
+            double dphi = m_lept1->DeltaPhi(m_MET);
+            double pT2 = m_lept1->Pt()*m_MET.Pt();
+            double lep_mT = sqrt(2 * pT2 * ( 1 - cos(dphi) ));
+            return lep_mT;
+        };
+        *cutflow << SaveVar();
+    }
+
+    *cutflow << NewVar("lepton-2 transverse mass"); {
+        *cutflow << HFTname("lept2mT");
+        *cutflow << [](Superlink* /*sl*/, var_int*) -> int {
+            double dphi = m_lept2->DeltaPhi(m_MET);
+            double pT2 = m_lept2->Pt()*m_MET.Pt();
+            double lep_mT = sqrt(2 * pT2 * ( 1 - cos(dphi) ));
+            return lep_mT;
+        };
+        *cutflow << SaveVar();
+    }
+
+    *cutflow << NewVar("delta Phi of leading lepton and met"); {
+        *cutflow << HFTname("deltaPhi_met_l1");
+        *cutflow << [](Superlink* /*sl*/, var_float*) -> double { return abs(m_lept1->DeltaPhi(m_MET)); };
+        *cutflow << SaveVar();
+    }
+
+    *cutflow << NewVar("delta Phi of subleading lepton and met"); {
+        *cutflow << HFTname("deltaPhi_met_l2");
+        *cutflow << [](Superlink* /*sl*/, var_float*) -> double { return abs(m_lept2->DeltaPhi(m_MET)); };
+        *cutflow << SaveVar();
+    }
+
     *cutflow << NewVar("stransverse mass"); {
         *cutflow << HFTname("MT2");
         *cutflow << [](Superlink* sl, var_float*) -> double {
@@ -851,7 +849,41 @@ void add_dilepton_variables(Superflow* cutflow) {
         *cutflow << SaveVar();
     }
 
+    // Leptons and Jets
+    *cutflow << NewVar("dR between lepton-1 and closest jet"); {
+      *cutflow << HFTname("dR_lept1_jet");
+      *cutflow << [=](Superlink* sl, var_double*) -> double {
+          double dPhi = sl->jets->size() ? DBL_MAX : -DBL_MAX;
+          for (Susy::Jet* jet : *sl->jets) {
+            float tmp_dphi = fabs(jet->DeltaPhi(*m_lept1));
+            if (tmp_dphi < dPhi) dPhi = tmp_dphi; 
+          }
+          return dPhi;
+      };
+      *cutflow << SaveVar();
+    }
+
+    *cutflow << NewVar("dR between lepton-2 and closest jet"); {
+      *cutflow << HFTname("dR_lept2_jet");
+      *cutflow << [=](Superlink* sl, var_double*) -> double {
+          double dPhi = sl->jets->size() ? DBL_MAX : -DBL_MAX;
+          for (Susy::Jet* jet : *sl->jets) {
+            float tmp_dphi = fabs(jet->DeltaPhi(*m_lept2));
+            if (tmp_dphi < dPhi) dPhi = tmp_dphi; 
+          }
+          return dPhi;
+      };
+      *cutflow << SaveVar();
+    }
+    
+    // Leptons, Jets, and MET
+    *cutflow << NewVar("Etmiss Rel"); {
+        *cutflow << HFTname("metrel");
+        *cutflow << [](Superlink* sl, var_float*) -> double { return kin::getMetRel(sl->met, *sl->leptons, *sl->jets); };
+        *cutflow << SaveVar();
+    }
 }
+
 void add_jigsaw_variables(Superflow* cutflow) {
     ADD_JIGSAW_VAR(H_11_SS)
     ADD_JIGSAW_VAR(H_21_SS)

@@ -12,8 +12,7 @@ import glob
 ################################################################################
 # Globals (not imported)
 _work_dir = '/data/uclhc/uci/user/armstro1/SusyNt/Stop2l/SusyNt_master/susynt-read'
-_mc_sample_path = '%s/run/batch/SuperflowAnaStop2l_output/MC' % _work_dir
-_data_sample_path = '%s/run/batch/SuperflowAnaStop2l_output/Data' % _work_dir
+_sample_path = '%s/run/batch/SuperflowAnaStop2l_output/' % _work_dir
 _plot_save_dir = '%s/run/plots/' % _work_dir
 
 _only2015_16 = True
@@ -283,13 +282,23 @@ for s in SAMPLES:
     if s.name not in _samples_to_use: continue
     # Assume sample name is the same as the DSID group key
     if _only2015_16:
-        checklist = ['mc16a'] if s.isMC else []
-        search_str = ['mc16a'] if s.isMC else []
+        if s.isMC:
+            checklist = ['mc16a']
+            search_str = ['mc16a']
+            exclude_str = []
+        else:
+            checklist = search_str = []
+            exclude_str = ['mc16']
     else:
-        checklist = ['mc16a','mc16d','mc16e'] if s.isMC else []
-        search_str = []
-    path = _mc_sample_path if s.isMC else _data_sample_path
-    s.set_chain_from_dsid_list(DSID_GROUPS[s.name], path, checklist, search_str)
+        if s.isMC:
+            checklist = ['mc16a','mc16d','mc16e'] if s.isMC else []
+            search_str = ['mc16']
+            exclude_str = []
+        else:
+            checklist = search_str = []
+            exclude_str = ['mc16']
+
+    s.set_chain_from_dsid_list(DSID_GROUPS[s.name], _sample_path, checklist, search_str)
 
 # Remove samples not properly setup
 SAMPLES = [s for s in SAMPLES if s.is_setup()]
