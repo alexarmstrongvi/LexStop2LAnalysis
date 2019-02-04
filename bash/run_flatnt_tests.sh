@@ -92,10 +92,10 @@ for SAMPLE in $SAMPLES; do
     run_SuperflowAnaStop2l $SUSYNT $OFILE $LOGFILE
 
     # Test grabSumw
-    if [[ $SAMPLE == "mc16"* ]]; then
-        SUMW_LOGFILE="${SAMPLE}_sumw_new.log"
-        run_grabSumw $SUSYNT $SUMW_LOGFILE
-    fi
+    #if [[ $SAMPLE == "mc16"* ]]; then
+    #    SUMW_LOGFILE="${SAMPLE}_sumw_new.log"
+    #    run_grabSumw $SUSYNT $SUMW_LOGFILE
+    #fi
 
     # No longer using old ntuple maker
     #for REGION in $REGIONS; do
@@ -124,7 +124,7 @@ for new_log in *.log; do
     fi
 done
 
-printf "\n>> Comparing root files\n"
+printf "\n>> Comparing shared branches in root files\n"
 for new_root in *new*root; do
     if [ $new_root == '*new*root' ]; then
         echo "No root files to compare"
