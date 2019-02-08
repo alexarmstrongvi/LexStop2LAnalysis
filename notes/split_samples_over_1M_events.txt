@@ -1,0 +1,399 @@
+--split-dsids 300655
+--split-dsids 300687
+--split-dsids 300800
+--split-dsids 300863
+--split-dsids 300908
+--split-dsids 301932
+--split-dsids 301973
+--split-dsids 302053
+--split-dsids 302137
+--split-dsids 302300
+--split-dsids 302347
+--split-dsids 302393
+--split-dsids 302872
+--split-dsids 302956
+--split-dsids 303208
+--split-dsids 303266
+--split-dsids 303304
+--split-dsids 303338
+--split-dsids 303421
+--split-dsids 303499
+--split-dsids 303560
+--split-dsids 303638
+--split-dsids 303846
+--split-dsids 303892
+--split-dsids 303943
+--split-dsids 304008
+--split-dsids 304128
+--split-dsids 304178
+--split-dsids 304243
+--split-dsids 304337
+--split-dsids 305380
+--split-dsids 305543
+--split-dsids 305618
+--split-dsids 305723
+--split-dsids 305777
+--split-dsids 305811
+--split-dsids 305920
+--split-dsids 306278
+--split-dsids 306310
+--split-dsids 306384
+--split-dsids 306451
+--split-dsids 307195
+--split-dsids 307259
+--split-dsids 307306
+--split-dsids 307358
+--split-dsids 307394
+--split-dsids 307454
+--split-dsids 307514
+--split-dsids 307569
+--split-dsids 307601
+--split-dsids 307656
+--split-dsids 307716
+--split-dsids 307732
+--split-dsids 307861
+--split-dsids 307935
+--split-dsids 308047
+--split-dsids 308084
+--split-dsids 309390
+--split-dsids 309440
+--split-dsids 309516
+--split-dsids 309640
+--split-dsids 309674
+--split-dsids 309759
+--split-dsids 310249
+--split-dsids 310341
+--split-dsids 310405
+--split-dsids 310473
+--split-dsids 310634
+--split-dsids 310691
+--split-dsids 310738
+--split-dsids 310809
+--split-dsids 310872
+--split-dsids 311071
+--split-dsids 311170
+--split-dsids 311244
+--split-dsids 311287
+--split-dsids 311321
+--split-dsids 311365
+--split-dsids 311402
+--split-dsids 311481
+--split-dsids 326834
+--split-dsids 327057
+--split-dsids 327265
+--split-dsids 327342
+--split-dsids 327490
+--split-dsids 327636
+--split-dsids 327662
+--split-dsids 327764
+--split-dsids 327862
+--split-dsids 328042
+--split-dsids 328099
+--split-dsids 328263
+--split-dsids 328333
+--split-dsids 329780
+--split-dsids 329869
+--split-dsids 330025
+--split-dsids 330203
+--split-dsids 330294
+--split-dsids 331085
+--split-dsids 331129
+--split-dsids 331239
+--split-dsids 331710
+--split-dsids 331742
+--split-dsids 331804
+--split-dsids 331825
+--split-dsids 331860
+--split-dsids 331875
+--split-dsids 331975
+--split-dsids 332304
+--split-dsids 333487
+--split-dsids 333650
+--split-dsids 333778
+--split-dsids 333828
+--split-dsids 334350
+--split-dsids 334413
+--split-dsids 334443
+--split-dsids 334487
+--split-dsids 334737
+--split-dsids 334907
+--split-dsids 334960
+--split-dsids 334993
+--split-dsids 335022
+--split-dsids 335083
+--split-dsids 335170
+--split-dsids 335177
+--split-dsids 335222
+--split-dsids 336548
+--split-dsids 336567
+--split-dsids 336630
+--split-dsids 336678
+--split-dsids 336719
+--split-dsids 336782
+--split-dsids 336832
+--split-dsids 336852
+--split-dsids 336915
+--split-dsids 336927
+--split-dsids 337052
+--split-dsids 337107
+--split-dsids 337176
+--split-dsids 337215
+--split-dsids 337263
+--split-dsids 337335
+--split-dsids 337371
+--split-dsids 337451
+--split-dsids 337491
+--split-dsids 337542
+--split-dsids 337662
+--split-dsids 337705
+--split-dsids 337833
+--split-dsids 338183
+--split-dsids 338220
+--split-dsids 338259
+--split-dsids 338263
+--split-dsids 338349
+--split-dsids 338480
+--split-dsids 338498
+--split-dsids 338608
+--split-dsids 338712
+--split-dsids 338767
+--split-dsids 338846
+--split-dsids 338897
+--split-dsids 338933
+--split-dsids 338987
+--split-dsids 339037
+--split-dsids 339070
+--split-dsids 339205
+--split-dsids 339387
+--split-dsids 339396
+--split-dsids 339435
+--split-dsids 339500
+--split-dsids 339535
+--split-dsids 339758
+--split-dsids 339849
+--split-dsids 339957
+--split-dsids 340030
+--split-dsids 340072
+--split-dsids 340368
+--split-dsids 340453
+--split-dsids 349114
+--split-dsids 349169
+--split-dsids 349309
+--split-dsids 349451
+--split-dsids 349481
+--split-dsids 349498
+--split-dsids 349526
+--split-dsids 349637
+--split-dsids 349646
+--split-dsids 349693
+--split-dsids 349842
+--split-dsids 349944
+--split-dsids 350013
+--split-dsids 350067
+--split-dsids 350121
+--split-dsids 350144
+--split-dsids 350160
+--split-dsids 350184
+--split-dsids 350361
+--split-dsids 350440
+--split-dsids 350479
+--split-dsids 350531
+--split-dsids 350682
+--split-dsids 350803
+--split-dsids 350842
+--split-dsids 350848
+--split-dsids 350880
+--split-dsids 350923
+--split-dsids 351062
+--split-dsids 351223
+--split-dsids 351325
+--split-dsids 351364
+--split-dsids 351455
+--split-dsids 351636
+--split-dsids 351671
+--split-dsids 351698
+--split-dsids 351894
+--split-dsids 351969
+--split-dsids 352056
+--split-dsids 352340
+--split-dsids 352394
+--split-dsids 352436
+--split-dsids 352448
+--split-dsids 352514
+--split-dsids 355261
+--split-dsids 355544
+--split-dsids 355563
+--split-dsids 355754
+--split-dsids 355995
+--split-dsids 356124
+--split-dsids 356177
+--split-dsids 356205
+--split-dsids 356250
+--split-dsids 356259
+--split-dsids 357409
+--split-dsids 357451
+--split-dsids 357500
+--split-dsids 357539
+--split-dsids 357679
+--split-dsids 357713
+--split-dsids 357821
+--split-dsids 357887
+--split-dsids 357962
+--split-dsids 358031
+--split-dsids 358096
+--split-dsids 358115
+--split-dsids 358175
+--split-dsids 358215
+--split-dsids 358233
+--split-dsids 358300
+--split-dsids 358333
+--split-dsids 358395
+--split-dsids 358516
+--split-dsids 358541
+--split-dsids 358577
+--split-dsids 358615
+--split-dsids 358656
+--split-dsids 359010
+--split-dsids 359058
+--split-dsids 359124
+--split-dsids 359171
+--split-dsids 359191
+--split-dsids 359286
+--split-dsids 359310
+--split-dsids 359355
+--split-dsids 359472
+--split-dsids 359541
+--split-dsids 359593
+--split-dsids 359678
+--split-dsids 359717
+--split-dsids 359735
+--split-dsids 359766
+--split-dsids 359823
+--split-dsids 359918
+--split-dsids 360026
+--split-dsids 360063
+--split-dsids 360129
+--split-dsids 360161
+--split-dsids 360293
+--split-dsids 360309
+--split-dsids 360373
+--split-dsids 360402
+--split-dsids 361738
+--split-dsids 361795
+--split-dsids 361862
+--split-dsids 362204
+--split-dsids 362297
+--split-dsids 362345
+--split-dsids 362354
+--split-dsids 362388
+--split-dsids 362445
+--split-dsids 362552
+--split-dsids 362619
+--split-dsids 362661
+--split-dsids 362776
+--split-dsids 363033
+--split-dsids 363129
+--split-dsids 363198
+--split-dsids 363400
+--split-dsids 363710
+--split-dsids 363738
+--split-dsids 363830
+--split-dsids 363910
+--split-dsids 363979
+--split-dsids 364030
+--split-dsids 364076
+--split-dsids 364098
+--split-dsids 364214
+--split-dsids 364292
+--split-dsids 410472
+--split-dsids 364161
+--split-dsids 349268
+--split-dsids 364108
+--split-dsids 345120 mc16e
+--split-dsids 345324 mc16a
+--split-dsids 345324 mc16d
+--split-dsids 364100 mc16a
+--split-dsids 364100 mc16d
+--split-dsids 364100 mc16e
+--split-dsids 364101 mc16a
+--split-dsids 364101 mc16d
+--split-dsids 364101 mc16e
+--split-dsids 364102 mc16a
+--split-dsids 364102 mc16d
+--split-dsids 364102 mc16e
+--split-dsids 364103 mc16d
+--split-dsids 364104 mc16a
+--split-dsids 364104 mc16d
+--split-dsids 364104 mc16e
+--split-dsids 364105 mc16a
+--split-dsids 364105 mc16d
+--split-dsids 364105 mc16e
+--split-dsids 364106 mc16a
+--split-dsids 364106 mc16d
+--split-dsids 364106 mc16e
+--split-dsids 364107 mc16a
+--split-dsids 364107 mc16d
+--split-dsids 364107 mc16e
+--split-dsids 364109 mc16a
+--split-dsids 364109 mc16d
+--split-dsids 364109 mc16e
+--split-dsids 364110 mc16e
+--split-dsids 364111 mc16a
+--split-dsids 364111 mc16e
+--split-dsids 364112 mc16a
+--split-dsids 364112 mc16d
+--split-dsids 364112 mc16e
+--split-dsids 364113 mc16e
+--split-dsids 364114 mc16a
+--split-dsids 364114 mc16d
+--split-dsids 364114 mc16e
+--split-dsids 364115 mc16a
+--split-dsids 364115 mc16d
+--split-dsids 364115 mc16e
+--split-dsids 364116 mc16a
+--split-dsids 364116 mc16d
+--split-dsids 364116 mc16e
+--split-dsids 364117 mc16a
+--split-dsids 364117 mc16d
+--split-dsids 364117 mc16e
+--split-dsids 364118 mc16d
+--split-dsids 364118 mc16e
+--split-dsids 364119 mc16d
+--split-dsids 364119 mc16e
+--split-dsids 364120 mc16a
+--split-dsids 364120 mc16d
+--split-dsids 364120 mc16e
+--split-dsids 364121 mc16a
+--split-dsids 364121 mc16d
+--split-dsids 364121 mc16e
+--split-dsids 364122 mc16a
+--split-dsids 364122 mc16d
+--split-dsids 364122 mc16e
+--split-dsids 364123 mc16d
+--split-dsids 364123 mc16e
+--split-dsids 364124 mc16e
+--split-dsids 364125 mc16d
+--split-dsids 364125 mc16e
+--split-dsids 364126 mc16a
+--split-dsids 364126 mc16d
+--split-dsids 364126 mc16e
+--split-dsids 364127 mc16e
+--split-dsids 364164 mc16a
+--split-dsids 364164 mc16d
+--split-dsids 364164 mc16e
+--split-dsids 364168 mc16e
+--split-dsids 364169 mc16e
+--split-dsids 364175 mc16e
+--split-dsids 364182 mc16e
+--split-dsids 364183 mc16d
+--split-dsids 364183 mc16e
+--split-dsids 364200 mc16d
+--split-dsids 364284 mc16e
+--split-dsids 410155 mc16a
+--split-dsids 410155 mc16d
+--split-dsids 410218 mc16a
+--split-dsids 410218 mc16d
+--split-dsids 410218 mc16e
+--split-dsids 410219 mc16a
+--split-dsids 410219 mc16d
+--split-dsids 410219 mc16e
