@@ -1,0 +1,9 @@
+The following samples are either not available or have no files in the container:
+Data16: Run 297730, 307539
+group.phys-susy:group.phys-susy.mc16_13TeV.343366.AMCP8_ttH125_semilep.SusyNt.mc16a.p3663_n0306_nt
+group.phys-susy:group.phys-susy.mc16_13TeV.345073.PowhegPy8EG_NNPDF30_AZNLOCTEQ6L1_VBFH125_tautaul13l7.SusyNt.mc16a.p3663_n0306_nt
+group.phys-susy:group.phys-susy.mc16_13TeV.345323.PowhegPy8EG_NNPDF30_AZNLOCTEQ6L1_VBFH125_WWlvlv.SusyNt.mc16a.p3663_n0306_nt
+group.phys-susy:group.phys-susy.mc16_13TeV.364187.Sherpa221_Wtaunu_70_140_CVBV.SusyNt.mc16a.p3636_n0306_nt
+group.phys-susy:group.phys-susy.mc16_13TeV.363507.Sherpa_222_WWZ_3l1v2j_EW6.SusyNt.mc16a.p3636_n0306_nt
+group.phys-susy:group.phys-susy.mc16_13TeV.363508.Sherpa_222_WZZ_4l2j_EW6.SusyNt.mc16a.p3636_n0306_nt
+group.phys-susy:group.phys-susy.mc16_13TeV.363509.Sherpa_222_WZZ_3l1v2j_EW6.SusyNt.mc16a.p3636_n0306_nt
