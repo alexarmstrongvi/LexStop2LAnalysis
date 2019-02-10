@@ -5,14 +5,14 @@ import glob
 import os
 import re
 import sys
-from collections import defaultdict
+import subprocess
 
 ################################################################################
 # Configuration
 ################################################################################
 work_dir = '/data/uclhc/uci/user/armstro1/SusyNt/Stop2l/SusyNt_master/susynt-read'
 input_files_dir = '%s/run/lists/file_lists_prefixed' % work_dir
-superflow = False; sumw = True
+superflow = True; sumw = False
 dumb_run = False
 
 if superflow:
@@ -25,6 +25,7 @@ elif sumw:
     log_file_dir = '%s/run/batch/sumw_output' % (work_dir)
 
 finished_phrase = "Normal termination"
+abort_phrase = 'via condor_rm'
 
 # This command might help clear old log information from previous submissions
 #bash_cmd = 'sed -i "1,/TotalReceivedBytes/d" `grep -ro "TotalReceivedBytes" %s | uniq -c | grep -oP "(?<=[2-9] ).*log"`' % log_glob_cmd
@@ -43,8 +44,14 @@ condor_resubmit_file = "%s/resubmit.condor" % os.path.relpath(log_file_dir, os.g
 
 def start_of_job_queue_line(line): return line.startswith("arguments")
 def end_of_job_queue_line(line): return line == 'queue\n'
+def extract_info(name):
+    dsid = re.search("[1-9][0-9]{5}", name).group()
+    campaign = re.search('mc16[ade]|(?<=_20)1[5678]|(?<=data)1[5678]', name).group()
+    match = re.search('(?<=_)[0-9]*$', name.replace(dsid,"X"))
+    suffix = match.group() if match else ""
+    return dsid, campaign, suffix
 
-n_root_files = len(glob.glob(root_glob_cmd))
+root_files = set(x.replace('.root','') for x in glob.glob(root_glob_cmd))
 all_files = set(x.replace('.log','') for x in glob.glob(log_glob_cmd))
 all_files2 = set(x.replace('.out','') for x in glob.glob(out_glob_cmd))
 all_files3 = set(x.replace('.err','') for x in glob.glob(err_glob_cmd))
@@ -74,15 +81,26 @@ else:
 
     # Extra checks
     print "INFO :: Getting number of active jobs"
-    bash_cmd = "condor_q | tail -n1 | grep -Eo \"^[0-9]*\""
+    bash_cmd = "condor_q | tail -n1 | grep -Po \"[0-9]*(?= jobs)\""
+    print "INFO :: >>", bash_cmd
+    n_total_jobs = int(get_cmd_output(bash_cmd)[0])
+    bash_cmd = "condor_q | tail -n1 | grep -Po \"[0-9]*(?= removed)\""
     print "INFO :: >>", bash_cmd, '\n' 
-    n_active_files = int(get_cmd_output(bash_cmd)[0])
+    n_removed_jobs = int(get_cmd_output(bash_cmd)[0])
+    n_active_files = n_total_jobs - n_removed_jobs
+
 
     print "INFO :: Looking for empty files"
     bash_cmd = "find %s -type f -empty" % (out_glob_cmd)
     print "INFO :: >>", bash_cmd, '\n' 
     empty_files = get_cmd_output(bash_cmd)
     empty_files = set(f.strip().replace(".out","") for f in empty_files)
+
+    print "INFO :: Looking for aborted files"
+    bash_cmd = 'grep -l "%s" %s' % (abort_phrase, log_glob_cmd)
+    print "INFO :: >>", bash_cmd, '\n' 
+    aborted_files = get_cmd_output(bash_cmd)
+    aborted_files = set(f.strip().replace(".log","") for f in aborted_files)
 
     #if n_active_files != len(empty_files):
     #    print "INFO :: condor_q returns %d running jobs but %s output files are empty" % (n_active_files, len(empty_files))
@@ -98,14 +116,23 @@ else:
     #    active_files = active_files2
     #else:
     #    active_files = empty_files
-    active_files = empty_files - norm_term_files
+    
     failed_files = norm_term_files - complete_files
-    aborted_files = empty_files & norm_term_files
+    active_files = all_files - norm_term_files - aborted_files
     resubmit_files = failed_files | aborted_files
     finished_files = failed_files | aborted_files | complete_files
 
     # Checks
-    assert len(complete_files) == n_root_files
+    if len(complete_files) != len(root_files):
+        rf = set(extract_info(x) for x in root_files)
+        cf = set(extract_info(x) for x in complete_files)
+        print "TESTING"
+
+        for x in rf - cf:
+            print x
+    assert len(complete_files) == len(root_files), (
+        "ERROR :: %d complete files but %d root files exist" % (len(complete_files), len(root_files))
+    )
     assert not (failed_files & aborted_files), (
         "Failed and aborted files:", failed_files & aborted_files
     )
@@ -114,12 +141,12 @@ else:
     )
     assert len(active_files) + len(finished_files) == len(all_files), (
         "ERROR :: %d active files + %d finished != %d total files" % (len(active_files), len(finished_files), len(all_files)),
-        #"INFO :: Overlapping samples:\n", active_files & finished_files & all_files
+        all_files - active_files - finished_files 
     )
     assert n_active_files == len(active_files), (
         "ERROR :: condor_q gives %d active files but %d do not have \"Normal Termination\" in them" % (n_active_files, len(active_files))
     )
-    assert len(aborted_files) + len(active_files) == len(empty_files)
+    assert len(aborted_files) + len(active_files) >= len(empty_files) # active files might dump partially into .out
     assert len(failed_files) + len(aborted_files) == len(resubmit_files) 
     assert len(complete_files) + len(failed_files) + len(aborted_files) == len(finished_files)
 
@@ -131,7 +158,6 @@ else:
             print "INFO :: Summarizing errors occurrances for failed jobs"
             bash_cmd = 'grep -ih error %s | grep -v "tar:" | sort | uniq -c | sort -rn' % (" ".join(err_files))
 
-            import subprocess
             subprocess.call(bash_cmd, shell=True)
 
         # Summarize results 
@@ -151,12 +177,17 @@ if not len(resubmit_files):
     print "All files are complete or still running" 
     sys.exit()
 
+matched_resub = set()
 with open(condor_resubmit_file, 'w') as ofile:
     ofile_str = ''
     resub_files = set(os.path.basename(f) for f in resubmit_files)
     with open(condor_submit_file, 'r') as ifile:
         gathering_job_cmd = False
         tmp_job_queue_cmd = ''
+        # At first add all lines from header
+        # Once the first job queue cmd is found, collect the full cmd
+        # without adding it the resubmit file. Check if is supposed to 
+        # be resubmitted and, if so, add it the resubmit file
         for line in ifile:
             if not line.strip(): continue
             if start_of_job_queue_line(line):
@@ -168,11 +199,21 @@ with open(condor_resubmit_file, 'w') as ofile:
                 ofile_str += line
             
             if gathering_job_cmd and end_of_job_queue_line(line):
-                if any("%s.log" % f in tmp_job_queue_cmd for f in resub_files):
+                #if any("%s.log" % f in tmp_job_queue_cmd for f in resub_files):
+                for f in resub_files:
+                    if not "%s.log" % f in tmp_job_queue_cmd: continue
                     ofile_str += '\n' + tmp_job_queue_cmd
+                    matched_resub.add(f)
                 tmp_job_queue_cmd = ''
     ofile.write(ofile_str)
 
+if resub_files - matched_resub:
+    print '\n', "="*80
+    print "WARNING :: The following jobs for resubmission were not found ",
+    print "in the original condor submission script:"
+    print resub_files - matched_resub
+
+print '\n', "="*80
 usr_msg = "Would you like to resubmit jobs?\n"
 usr_msg += "NOTE: This will clear the .log, .out, and .err files of jobs being resubmitted\n"
 usr_msg += "Input your answer [Y/N]: "
@@ -197,62 +238,7 @@ if user_op == "Y":
     sub_file = os.path.basename(condor_resubmit_file)
     cmd = 'cd %s; condor_submit %s; cd -' % (directory, sub_file)
     subprocess.call(cmd, shell=True)
-    print "\n"
+    print '\n', "="*80
 else:
-    print "We hope you enjoyed your experience. Come back soon. :)\n"
-
-
-# OLD CODE
-#split_dsid_ops = defaultdict(list)
-#files_to_rerun = set()
-#if len(get_input_files):
-#    print "INFO :: Searching through %d input files to build rerun list" % len(input_files)
-#    for f in get_input_files:
-#        for ifile in input_files:
-#            basename = os.path.basename(ifile).replace(".txt","")
-#            if basename in f:
-#                files_to_rerun.add(ifile.strip())
-#                break
-#        else:
-#            print "WARNING :: Unable to find input file for", f.strip()
-#
-#        pattern = "%s[a-z]?$" % susynt_tag
-#        if not re.search(pattern, f): # Split sample
-#            # Split file was incomplete grabbing only the incomplete xrootd link"
-#            dsid = re.search(r'[1-9][0-9]{5}(?=\.)', f).group()
-#            campaign = re.search(r'mc16[ade]|data1[5678]', f).group()
-#            empty_file = True
-#            for line in open(f.strip()+'.out','r'):
-#                empty_file = False
-#                if "root://" in line and "susyNt.root" in line:
-#                    start = line.find("root://")
-#                    end = line.find("susyNt.root") + len("susyNt.root")
-#                    xrootd_link = line[start:end]
-#                    split_dsid_ops[(dsid, campaign)].append(xrootd_link) 
-#                    break
-#            else:
-#                if not empty_file: print "WARNING :: Unable to find input xrootd file", f.strip()
-#
-## Build rerun command
-#split_dsids_cmd = ''
-#n_split_files = 0
-#for (dsid, campaign), file_names in split_dsid_ops.iteritems():
-#    split_dsids_cmd += ' --split-dsids %s %s' % (dsid, campaign)
-#    n_split_files += len(file_names) - 1
-#    for f in file_names:
-#        split_dsids_cmd += ' %s' % f
-#rerun_cmd += split_dsids_cmd
-#
-#if len(not_complete_files):
-#    print "INFO :: %d files are incomplete" % len(not_complete_files)
-#    print "INFO :: %d of those are empty" % len(empty_files)
-#    print "INFO :: \t%d of those are active" % len(active_files)
-#    print "INFO :: \t%d of those are aborted" % len(aborted_files)
-#    print "INFO :: %d of those (%d samples) selected to be rerun" % (len(files_to_rerun) + n_split_files, len(files_to_rerun))
-#    with open(ofile_name,'w') as ofile:
-#        ofile.write('\n'.join(files_to_rerun))
-#    print "INFO :: Files to rerun were written to %s" % os.path.relpath(ofile_name, os.getcwd())
-#    print rerun_cmd
-#else:
-#    print "INFO :: All files passed :)"
-
+    print "We hope you enjoyed your experience. Come back soon. :)"
+    print '\n', "="*80

@@ -5,7 +5,7 @@ import glob
 import os
 import re
 from datetime import datetime, date, timedelta
-from collections import defaultdict
+from collections import defaultdict, Counter
 
 ################################################################################
 # Configuration
@@ -13,21 +13,93 @@ from collections import defaultdict
 _work_dir = '/data/uclhc/uci/user/armstro1/SusyNt/Stop2l/SusyNt_master/susynt-read'
 _input_files_dir = '%s/run/lists/file_lists_prefixed' % _work_dir
 _pass_phrase = "SuperflowAnaStop2L    Done." # For SuperflowAnaStop2L
+_condor_event_pattern = '"^[0-9]{3}( )"'
 # Example time pattern: 01/15 16:13:06
 _time_pattern = " [0-9][0-9]\/[0-9][0-9] [0-9][0-9]:[0-9][0-9]:[0-9][0-9] "
 _log_file_dir = '%s/run/batch/SuperflowAnaStop2l_output' % (_work_dir)
 _ofile_name = "%s/condor_summary_ranking.txt" % _log_file_dir
 _csv_ofile_name = "%s/condor_summary.csv" % _log_file_dir 
 
+EVENT_TYPES = {
+    # See Condor Manual 2.6.7 Managing a Job: In the Job Event Log File
+    # http://research.cs.wisc.edu/htcondor/manual/v8.6/2_6Managing_Job.html
+    '000' : 'Job submitted',
+    '001' : 'Job executing',
+    '002' : 'Error in executable',
+    '003' : 'Job was checkpointed',
+    '004' : 'Job evicted from machine',
+    '005' : 'Job terminated',
+    '006' : 'Image size of job updated',
+    '007' : 'Shadow exception',
+    '008' : 'Generic log event',
+    '009' : 'Job aborted',
+    '010' : 'Job was suspended',
+    '011' : 'Job was unsuspended',
+    '012' : 'Job was held',
+    '013' : 'Job was released',
+    '014' : 'Parallel node executed',
+    '015' : 'Parallel node terminated',
+    '016' : 'POST script terminated',
+    '017' : 'Job submitted to Globus',
+    '018' : 'Globus submit failed',
+    '019' : 'Globus resource up',
+    '020' : 'Detected Down Globus Resource',
+    '021' : 'Remote error',
+    '022' : 'Remote system call socket lost',  # Job disconnected
+    '023' : 'Remote system call socket reestablished',  # Job reconnected
+    '024' : 'Remote system call reconnect failure',  # Job reconnection failed
+    '025' : 'Grid Resource Back Up',
+    '026' : 'Detected Down Grid Resource',
+    '027' : 'Job submitted to grid resource',
+    '028' : 'Job ad information event triggered',
+    '029' : 'The job\'s remote status is unknown',
+    '030' : 'The job\'s remote status is known again',
+    '031' : 'Job stage in',
+    '032' : 'Job stage out',
+    '033' : 'Job ClassAd attribute update',
+    '034' : 'Pre Skip event'
+}
+
+# These events tend to be updates without really indicating a change of state
+# or indicating a return to some other state that we care about
+IGNORE_EVENTS = ['006','028']
+
+KNOWN_TRANSITIONS = [
+    'Job submitted -> Job executing',
+    'Job submitted -> Remote system call socket lost',
+    'Job submitted -> Shadow exception',
+    #
+    'Job executing -> Remote system call socket lost',
+    'Job executing -> Job evicted from machine',
+    'Job executing -> Job terminated',
+    'Remote system call socket lost -> Remote system call socket reestablished',
+    'Remote system call socket lost -> Remote system call reconnect failure',
+    'Shadow exception -> Job executing',
+    #
+    'Remote system call socket reestablished -> Job terminated',
+    'Remote system call socket reestablished -> Remote system call socket lost',
+    'Remote system call socket reestablished -> Shadow exception',
+    'Job evicted from machine -> Job executing',
+    'Remote system call reconnect failure -> Remote system call socket lost',
+    'Remote system call reconnect failure -> Job executing',
+    #
+]
+KNOWN_STATES = set()
+for x in KNOWN_TRANSITIONS:
+    x1, x2 = x.split(' -> ')
+    KNOWN_STATES.add(x1) 
+    KNOWN_STATES.add(x2) 
+
 ################################################################################
 # Main Function 
 ################################################################################
 def main():
     log_glob_cmd = "%s/*log" % os.path.relpath(_log_file_dir, os.getcwd())
-    log_files = sorted(glob.glob(log_glob_cmd))
     out_glob_cmd = "%s/*out" % os.path.relpath(_log_file_dir, os.getcwd())
-    out_files = sorted(glob.glob(out_glob_cmd))
     input_glob_cmd = '%s/*/*' % _input_files_dir
+    
+    log_files = sorted(glob.glob(log_glob_cmd))
+    out_files = sorted(glob.glob(out_glob_cmd))
     input_files = sorted(glob.glob(input_glob_cmd))
 
     durations = {}
@@ -35,24 +107,28 @@ def main():
     memory_usage = {}
     assert len(out_files) == len(log_files)
     print "INFO :: Looping over %d output files" % len(out_files)
+    n_skipped = 0
+    transitions = Counter()
     for ii, (out_file, log_file) in enumerate(zip(out_files, log_files)):
         if ii%100 == 0:
             print "INFO :: Processing %d of %d" % (ii, len(out_files))
-        if _pass_phrase not in open(out_file, 'r').read(): continue
+        if _pass_phrase not in open(out_file, 'r').read():
+            n_skipped += 1
+            continue
         
         file_name = parse_file_name_from_log_name(log_file)
         #print "TESTING :: [%d/%d] Processing file: %s" % (ii, len(out_files), log_file)
         
-        time_stamps = get_time_stamps(log_file)
-        #for t in time_stamps:
+        event_st = get_event_statements(log_file)
+        #for t in event_st:
         #    print t
         
-        times = extract_times(time_stamps)
+        times = extract_times(event_st)
         #for t, v in times:
         #    print t, ":", v
         
-        check_times(time_stamps, times)
-        #print "All good"
+        tr = summarize_transitions(times)
+        transitions.update(tr)
         
         durations[file_name] = determine_durations(times)
         #for k, v in durations[file_name].items():
@@ -65,11 +141,18 @@ def main():
 
         memory_usage[file_name] = determine_mem_usage(log_file)
         #print memory_usage[file_name]
-    print "INFO :: Processed all files :)"
+    if n_skipped:
+        print "INFO :: Processed all but %d files" % n_skipped
+    else:
+        print "INFO :: Processed all files :)"
 
+    print "Looking for unseen transitions..."
+    for f in transitions.most_common(): 
+        if f[0] in KNOWN_TRANSITIONS: continue
+        print f
     print_summary_info(durations, looper_info)
-    write_out_rankings(durations, looper_info, memory_usage)
-    write_out_csv(durations, looper_info, memory_usage)
+    #write_out_rankings(durations, looper_info, memory_usage)
+    #write_out_csv(durations, looper_info, memory_usage)
  
 ################################################################################
 # Format sensative functions
@@ -79,7 +162,7 @@ def parse_file_name_from_log_name(log_file_name):
     # Desired output: group.phys-susy.data15_13TeV.00276329.physics_Main.SusyNt.p3637_n0306b_13
     return os.path.basename(log_file_name).replace("log_","").replace(".log","")
 
-def time_str_to_datetime(time_str):
+def event_line_to_datetime(time_str):
     # Example time_str: 004 (856768.001.000) 01/15 16:26:21 Job was evicted.
     s = re.search(_time_pattern, time_str).group().strip()
     # s = '01/15 16:26:21'
@@ -97,7 +180,7 @@ def extract_looper_info(out_file):
     with open(out_file) as f:
         for line in f:
             l = line.strip()
-            pattern = 'Number of events processed: '
+            pattern = 'Number of events processed:'
             if pattern in l:
                 start_idx = l.find(pattern)+len(pattern) + 1
                 events = int(l[start_idx:])
@@ -117,123 +200,62 @@ def extract_looper_info(out_file):
     time = timedelta(hours=int(time[0]), minutes=int(time[1]), seconds=int(time[2]))
     return events, rate, time
         
-
-def is_submit_line(line):
-    return 'Job submitted from host' in line
-def is_execute_line(line):
-    return 'Job executing on host' in line
-def is_evict_line(line):
-    return 'Job was evicted' in line
-def is_abort_line(line):
-    return 'Job was aborted by the user' in line
-def is_terminate_line(line):
-    return 'Job terminated' in line
-def is_add_info_line(line):
-    return 'Job ad information event triggered' in line
-def is_update_size_line(line):
-    return 'Image size of job updated:' in line
-def is_disconnect_line(line):
-    return 'Job disconnected' in line
-def is_failed_reconnect_line(line):
-    return 'Job reconnection failed' in line
-def is_reconnect_line(line):
-    return 'Job reconnected' in line
-def is_shadow_exception_line(line):
-    return 'Shadow exception' in line
-
 ################################################################################
 # Supporting functions
 ################################################################################
-def ignore_time_line(line):
-    return (is_add_info_line(line) 
-         or is_update_size_line(line)
-         or is_failed_reconnect_line(line)
-         or is_shadow_exception_line(line))
+def get_event_statements(log_file):
+    bash_cmd = "egrep %s %s"% (_condor_event_pattern, log_file)
+    event_statement = get_cmd_output(bash_cmd)
+    return [s.strip() for s in event_statement if not any(s.startswith(x) for x in IGNORE_EVENTS)]
 
-def get_time_stamps(log_file):
-    bash_cmd = "grep -E \"%s\" %s"% (_time_pattern, log_file)
-    time_stamps = get_cmd_output(bash_cmd)
-    return [s.strip() for s in time_stamps if not ignore_time_line(s)]
-
-def extract_times(time_stamps):
+def extract_times(event_statements):
     '''
     args:
         time_stamps (list[str]) - list of lines from log file with important time stamps
     returns:
-        (dict[str]=list[datetime]) - dictionary with lists of date-time objects keyed by condor operations (e.g. submit, execute, etc.)
+        (list[tuple(str, datetime)] - lists of tuples with the event number and time 
     '''
     times = [] 
-    for t in time_stamps:
-        if is_submit_line(t):       type_str = 'submit'
-        elif is_execute_line(t):    type_str = 'execute'
-        elif is_evict_line(t):      type_str = 'evict'
-        elif is_abort_line(t):      type_str = 'abort'
-        elif is_terminate_line(t):  type_str = 'terminate'
-        elif is_disconnect_line(t): type_str = 'disconnect'
-        elif is_reconnect_line(t):  type_str = 'reconnect'
-        ntup = (type_str, time_str_to_datetime(t))
+    for s in event_statements:
+        # Ex: s = '004 (856768.001.000) 01/15 16:26:21 Job was evicted.' 
+        evt_num = s[0:3]
+        ntup = (evt_num, event_line_to_datetime(s))
         times.append(ntup)
     return times
 
-def check_times(time_stamps, times):
-    # Check ordering is as expected
-    # Normal: Submit -> Execute -> Evict -> Abort -> Resubmit -> (repeat) -> Terminate
-    # Other: Submit -> Execute -> Evict -> Re-execute -> (repeat) -> Terminate
-    # Other: Submit -> Abort -> Resubmit -> (repeat) -> Execute -> ...
-    # Other: Submit -> Execute -> Terminate -> Resubmit -> (repeat) -> Terminate
-    # Other: Submit -> Execute -> Disconnect -> Re-execute -> (repeat) -> Terminate
-    # Other: Submit -> Execute -> Disconnect -> Failed reconnect -> Shadow exception -> Disconnect -> (repeat) -> Terminate
-    # Other: Submit -> Execute -> Disconnect -> Re-connect (like Re-execute) -> (repeat) -> Terminate
-    # Other: Submit -> Disconnect -> Execute -> (repeat) -> Terminate
-    # Probably bugs
-    # Bug?: Submit -> Execute -> Submit -> (repeat)
-    # Bug?: Terminate -> Terminate
-    # Bug?: Submit -> Evict
-    # Bug?: Abort -> Terminate
+def summarize_transitions(times):
+    transitions = Counter()
+    for idx in range(1,len(times)):
+        evt1 = EVENT_TYPES[times[idx-1][0]]
+        evt2 = EVENT_TYPES[times[idx][0]]
+        relation = "%s -> %s" % (evt1, evt2)
+        if relation not in KNOWN_TRANSITIONS:
+            print "DEBUG :: Unknown relation:", relation
+        transitions.update({relation:1})
+    return transitions
 
-    prev_line = None
-    for line in time_stamps:
-        if is_submit_line(line):
-            assert not prev_line or is_abort_line(prev_line) or is_terminate_line(prev_line) or is_execute_line(prev_line), (prev_line, line) 
-        elif is_execute_line(line):
-            assert is_submit_line(prev_line) or is_evict_line(prev_line) or is_disconnect_line(prev_line) or is_execute_line(prev_line), (prev_line, line)
-        elif is_evict_line(line):
-            assert is_execute_line(prev_line) or is_submit_line(prev_line), (prev_line, line)
-        elif is_abort_line(line):
-            assert is_evict_line(prev_line) or is_submit_line(prev_line), (prev_line, line)
-        elif is_terminate_line(line):
-            assert is_execute_line(prev_line) or is_reconnect_line(prev_line) or is_terminate_line(prev_line), (prev_line, line)
-        elif is_disconnect_line(line):
-            assert is_execute_line(prev_line) or is_submit_line(prev_line) or is_reconnect_line(prev_line) or is_disconnect_line(prev_line), (prev_line, line)
-        elif is_reconnect_line(line):
-            assert is_disconnect_line(prev_line)
-        else:
-            print "ERROR :: Unrecognized time stamp line:", line
-        prev_line = line
 
-    prev_time = times[0]
-    for t in times[1:]:
-        assert t[1] >= prev_time[1], (prev_time, t)
-        prev_time = t
-
+    
 def determine_durations(times):
     durations = {}
-    durations['user'] = timedelta()
-    durations['system_submit'] = timedelta() 
-    durations['system_other'] = timedelta() 
+    #durations['user'] = timedelta()
+    #durations['system_submit'] = timedelta() 
+    #durations['system_other'] = timedelta() 
     durations['total'] = times[-1][1] - times[0][1]
+    
+    for s in KNOWN_STATES:
+        if s == 'Job terminated': continue
+        durations[s] = timedelta()
 
-    prev_time = times[0]
-    for t in times[1:]:
-        if prev_time[0] in ['execute', 'reconnect']:
-            durations['user'] += t[1] - prev_time[1]
-        elif prev_time[0] == 'submit':
-            durations['system_submit'] += t[1] - prev_time[1]
-        else:
-            durations['system_other'] += t[1] - prev_time[1]
-        prev_time = t
+    for idx in range(1, len(times)):
+        prev_n, prev_t = times[idx-1]
+        now_n, now_t = times[idx]
+        key = EVENT_TYPES[prev_n]
 
-    assert durations['system_submit'] + durations['user'] + durations['system_other'] == durations['total']
+        if prev_n not in durations:
+            durations[key] = timedelta()
+        durations[key] += now_t - prev_t
+    
     return durations
 
 def determine_mem_usage(log_file):
@@ -263,8 +285,15 @@ def print_summary_info(durations, looper_info):
     # Exec time
     looper_times = [t['times'] for k, t in looper_info.iteritems()]
     print_info("Looper Time", looper_times)
-    total_times = [t['total'] for k, t in durations.iteritems()]
-    print_info("Total Time", total_times)
+
+    inv_dict = {}
+    for f, d in durations.iteritems():
+        for k, t in d.iteritems():
+            if k not in inv_dict:
+                inv_dict[k] = []
+            inv_dict[k].append(t)
+    for k, l in inv_dict.iteritems():
+        print_info(k,l)
 
 def write_out_rankings(durations, looper_info, memory_usage):
     def make_rank_str(header, dic, reverse=True, nresults_to_plot=10):
