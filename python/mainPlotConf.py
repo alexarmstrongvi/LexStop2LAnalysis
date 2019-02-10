@@ -16,8 +16,10 @@ _sample_path = '%s/run/batch/SuperflowAnaStop2l_output/' % _work_dir
 _plot_save_dir = '%s/run/plots/' % _work_dir
 
 _only2015_16 = True
+_only17 = False
+_only18 = False
 _only_dilep_trig = True
-
+assert _only2015_16 + _only17 + _only18 <= 1
 # Globals (imported)
 EVENT_LIST_DIR = '%s/run/lists/teventlists' % _work_dir
 YIELD_TBL_DIR = '%s/run/yields' % _work_dir
@@ -30,6 +32,12 @@ YLD_TABLE = None
 if _only2015_16:
 #             2015      2016
     _lumi = (3219.56 + 32988.1) / 1000.0 # inverse fb
+elif _only17:
+#             2017
+    _lumi = 44307.4 / 1000.0 # inverse fb
+elif _only18:
+#             2018
+    _lumi = 59937.2 / 1000.0 # inverse fb
 else:
 #             2015      2016      2017      2018
     _lumi = (3219.56 + 32988.1 + 44307.4 + 59937.2) / 1000.0 # inverse fb
@@ -48,14 +56,19 @@ _samples_to_use = [
     'diboson',
     #'triboson',
     #'higgs',
-    'fnp', # Fake non-prompt 
-    'other', # Combination: defined below
+    #'higgs_ggH',
+    #'higgs_VBF',
+    #'higgs_ttH',
+    #'higgs_VH',
+    #'fnp', # Fake non-prompt 
+    #'other', # Combination: defined below
 ]
 
 _regions_to_use = [
     #'no_sel',
+    #'trig_only',
     
-    #'ttbar_CR_loose',
+    'ttbar_CR_loose',
     #'ttbar_CR_loose_elmu', 
     #'ttbar_CR_loose_muel',
     
@@ -71,23 +84,23 @@ _regions_to_use = [
     #'wjets_CR_loose_elmu',
     #'wjets_CR_loose_muel',
 
-    'ttbar_CR',
+    #'ttbar_CR',
     #'ttbar_CR_elmu', 
     #'ttbar_CR_muel',
     
-    'VV_CR_DF',
+    #'VV_CR_DF',
     #'VV_CR_DF_elmu',
     #'VV_CR_DF_muel',
 
-    #'VV_CR_SF',
+    ##'VV_CR_SF',
     #'VV_CR_SF_elmu',
     #'VV_CR_SF_muel',
     
-    'ttbar_VR',
+    #'ttbar_VR',
     #'ttbar_VR_elmu', 
     #'ttbar_VR_muel',
     
-    'VV_VR_DF',
+    #'VV_VR_DF',
     #'VV_VR_DF_elmu',
     #'VV_VR_DF_muel',
 
@@ -115,7 +128,16 @@ _vars_to_plot = [
     #'btagSf',
     #'jvtSf',
     #'period_weight',
-    #TODO: add pileup or average pileup
+    #'avgMu',
+    #'avgMuDataSF',
+    #'nVtx',
+    #'actualMu',
+    #'actualMuDataSF',
+    #'avgMuDataSF/avgMu',
+    #'actualMuDataSF/actualMu',
+    #'actualMu/avgMu',
+    #'actualMuDataSF/avgMuDataSF',
+    #'avgMuDataSF/nVtx',
 
     ## Basic Kinematics
     'lept1Pt',
@@ -126,24 +148,24 @@ _vars_to_plot = [
     #'met',
     #'dpTll',
     #'lept1mT',
-    # TODO: add pTll
+    #'lept2mT',
+    #'pTll',
 
     ## Angles
     #'dR_ll',
 
     ## Multiplicites
     #'nLightJets',
-    'nBJets',
+    #'nBJets',
     #'nForwardJets',
-    'nLightJets+nForwardJets',
-    # TODO: nSigJets
+    #'nNonBJets',
 
     ## Super-razor
-    'MDR',
-    'RPT',
-    'gamInvRp1',
-    'DPB_vSS',
-    'fabs(costheta_b)',
+    #'MDR',
+    #'RPT',
+    #'gamInvRp1',
+    #'DPB_vSS',
+    #'abs_costheta_b',
 
     ## 2-Dimensional (y:x)
     #'DPB_vSS:costheta_b'
@@ -158,28 +180,28 @@ Sample.input_file_treename = 'superNt'
 # HACK :: only remove pupw when ttbar mc16e sample
 ttbar_mc16e = '(dsid==410472)'
 pupw_fix = '(%s * pupw + (1 - %s))' % (ttbar_mc16e, ttbar_mc16e)
-if _only2015_16:
+if _only2015_16 or _only17 or _only18:
     # Single campaign w/ PRW
-    MCsample.weight_str = 'eventweight / period_weight'
+    MCsample.weight_str = 'eventweight_single'
 
     # Single campaign w/o PRW
-    #MCsample.weight_str = 'eventweight / pupw' 
+    #MCsample.weight_str = 'eventweight_single / pupw' 
 else:
     # Multi-campaign w/ PRW
-    MCsample.weight_str = 'eventweight_multi / %s ' % pupw_fix
+    MCsample.weight_str = 'eventweight_multi' # / %s ' % pupw_fix
 
     # Multi-campaign w/o PRW
     #MCsample.weight_str = 'eventweight_multi / pupw'
-
 
 MCsample.scale_factor = _lumi
 
 # Build combined DSID groups
 if _only2015_16:
-    DSID_GROUPS['data'] = (
-            DSID_GROUPS['data15']
-          + DSID_GROUPS['data16']
-          )
+    DSID_GROUPS['data'] = ( DSID_GROUPS['data15'] + DSID_GROUPS['data16'])
+elif _only17:
+    DSID_GROUPS['data'] = DSID_GROUPS['data17']
+elif _only18:
+    DSID_GROUPS['data'] = DSID_GROUPS['data18']
 else:
     DSID_GROUPS['data'] = (
             DSID_GROUPS['data15']
@@ -194,6 +216,7 @@ DSID_GROUPS['diboson'] = (
       + DSID_GROUPS['3l_diboson_sherpa']
       + DSID_GROUPS['4l_diboson_sherpa']
       )
+DSID_GROUPS['triboson'] = DSID_GROUPS['triboson_sherpa']
 DSID_GROUPS['zjets'] = (
         DSID_GROUPS['zjets_tautau_sherpa']
       + DSID_GROUPS['zjets_mumu_sherpa']
@@ -220,6 +243,8 @@ SAMPLES.append(data)
 # Top Samples
 ttbar = MCsample('ttbar',"t#bar{t}","$t\\bar{t}$")
 ttbar.color = r.TColor.GetColor("#FFFF04")
+#sf = 0.96 if _only2015_16 else 0.93 if _only17 else 0.66 if _only18 else 0.94
+#ttbar.scale_factor *= sf
 SAMPLES.append(ttbar)
 
 Wt = MCsample('Wt')
@@ -258,6 +283,8 @@ SAMPLES.append(DY)
 # Multi-boson
 diboson = MCsample('diboson','VV')
 diboson.color = r.TColor.GetColor("#33CCFF")
+#sf = 1.36 if _only2015_16 else 1.46 if _only17 else 1.55 if _only18 else 1.35
+#diboson.scale_factor *= sf
 SAMPLES.append(diboson)
 
 triboson = MCsample('triboson','VVV')
@@ -269,9 +296,26 @@ higgs = MCsample('higgs', 'Higgs')
 higgs.color = r.TColor.GetColor("#009933")
 SAMPLES.append(higgs)
 
+higgs_ggH = MCsample('higgs_ggH', 'ggH')
+higgs_ggH.color = r.TColor.GetColor("#009933")
+SAMPLES.append(higgs_ggH)
+
+higgs_VBF = MCsample('higgs_VBF', 'Higgs VBF')
+higgs_VBF.color = r.TColor.GetColor("#009933")
+SAMPLES.append(higgs_VBF)
+
+higgs_ttH = MCsample('higgs_ttH', 'Higgs ttH')
+higgs_ttH.color = r.TColor.GetColor("#009933")
+SAMPLES.append(higgs_ttH)
+
+higgs_VH = MCsample('higgs_VH', 'Higgs VH')
+higgs_VH.color = r.TColor.GetColor("#009933")
+SAMPLES.append(higgs_VH)
+
 # Other
 fnp = MCsample('fnp','FNP (Wjets MC)')
 fnp.color = r.TColor.GetColor("#FF8F02")
+
 SAMPLES.append(fnp)
 
 other = MCsample('other','Other (VVV+DY)')
@@ -281,22 +325,31 @@ SAMPLES.append(other)
 for s in SAMPLES:
     if s.name not in _samples_to_use: continue
     # Assume sample name is the same as the DSID group key
-    if _only2015_16:
-        if s.isMC:
+    if s.isMC:
+        if _only2015_16:
             checklist = ['mc16a']
             search_str = ['mc16a']
             exclude_str = []
+        elif _only17:
+            checklist = ['mc16d']
+            search_str = ['mc16d']
+            exclude_str = []
+        elif _only18:
+            checklist = ['mc16e']
+            search_str = ['mc16e']
+            exclude_str = []
         else:
-            checklist = search_str = []
-            exclude_str = ['mc16']
-    else:
-        if s.isMC:
             checklist = ['mc16a','mc16d','mc16e'] if s.isMC else []
             search_str = ['mc16']
             exclude_str = []
-        else:
-            checklist = search_str = []
-            exclude_str = ['mc16']
+    else:
+        checklist = []
+        search_str = []
+        exclude_str = ['mc16']
+
+    # Exceptions
+    #if s.name = 'wjets_sherpa':
+    #    sample_path = 
 
     s.set_chain_from_dsid_list(DSID_GROUPS[s.name], _sample_path, checklist, search_str)
 
@@ -366,6 +419,10 @@ for year, tr in triggers.iteritems():
 # Combine trigger strategy for each year
 if _only2015_16:
     trigger_sel = join_trig(triggers['15']['final'],triggers['16']['final'])
+elif _only17:
+    trigger_sel = triggers['17']['final']
+elif _only18:
+    trigger_sel = triggers['18']['final']
 else:
     trigger_sel = join_trig(triggers['15']['final'],triggers['16']['final'],
                             triggers['17']['final'],triggers['18']['final'])
@@ -395,6 +452,10 @@ def if_cut(iif,then):
 # No selection
 region = Region('no_sel','No Selection')
 region.tcut = '1'
+REGIONS.append(region)
+
+region = Region('trig_only','Trigger Only')
+region.tcut = trigger_sel
 REGIONS.append(region)
 
 # Loose control regions
@@ -451,7 +512,7 @@ region.tcut += ' && ' + DF + ' && ' + OS
 region.tcut += ' && nBJets > 0'
 region.tcut += ' && MDR > 80'
 region.tcut += ' && RPT > 0.7'
-region.tcut += ' && (DPB_vSS < 0.9 * fabs(costheta_b) + 1.6)'
+region.tcut += ' && (DPB_vSS < 0.9 * abs_costheta_b + 1.6)'
 REGIONS.append(region)
 add_DF_channels(region, REGIONS)
 
@@ -461,7 +522,7 @@ region.tcut += ' && nBJets == 0'
 region.tcut += ' && MDR > 50'
 region.tcut += ' && RPT < 0.5'
 region.tcut += ' && gamInvRp1 > 0.7'
-region.tcut += ' && (DPB_vSS < 0.9 * fabs(costheta_b) + 1.6)'
+region.tcut += ' && (DPB_vSS < 0.9 * abs_costheta_b + 1.6)'
 REGIONS.append(region)
 add_DF_channels(region, REGIONS)
 
@@ -472,7 +533,7 @@ region.tcut += ' && nBJets == 0'
 region.tcut += ' && MDR > 70'
 region.tcut += ' && RPT < 0.5'
 region.tcut += ' && gamInvRp1 > 0.7'
-region.tcut += ' && (DPB_vSS < 0.9 * fabs(costheta_b) + 1.6)'
+region.tcut += ' && (DPB_vSS < 0.9 * abs_costheta_b + 1.6)'
 REGIONS.append(region)
 add_SF_channels(region, REGIONS)
 
@@ -484,7 +545,7 @@ region.tcut += ' && ' + DF + ' && ' + OS
 region.tcut += ' && nBJets == 0' # orthogonal to CR
 region.tcut += ' && MDR > 80'
 region.tcut += ' && RPT < 0.7' # closer to SR
-region.tcut += ' && (DPB_vSS > 0.9 * fabs(costheta_b) + 1.6)'
+region.tcut += ' && (DPB_vSS > 0.9 * abs_costheta_b + 1.6)'
 REGIONS.append(region)
 add_DF_channels(region, REGIONS)
 
@@ -494,7 +555,7 @@ region.tcut += ' && nBJets == 0'
 region.tcut += ' && 50 < MDR && MDR < 95' # tighter than CR
 region.tcut += ' && RPT < 0.7' # looser than CR
 region.tcut += ' && gamInvRp1 > 0.7'
-region.tcut += ' && (DPB_vSS > 0.9 * fabs(costheta_b) + 1.6)'
+region.tcut += ' && (DPB_vSS > 0.9 * abs_costheta_b + 1.6)'
 REGIONS.append(region)
 add_DF_channels(region, REGIONS)
 
@@ -505,7 +566,7 @@ region.tcut += ' && nBJets == 0'
 region.tcut += ' && 60 < MDR && MDR < 95' #tighter than CR
 region.tcut += ' && RPT < 0.4' # tighter than CR
 region.tcut += ' && gamInvRp1 > 0.7'
-region.tcut += ' && (DPB_vSS > 0.9 * fabs(costheta_b) + 1.6)'
+region.tcut += ' && (DPB_vSS > 0.9 * abs_costheta_b + 1.6)'
 REGIONS.append(region)
 add_SF_channels(region, REGIONS)
 
@@ -514,7 +575,7 @@ add_SF_channels(region, REGIONS)
 signal_selection = base_selection
 signal_selection += ' && RPT > 0.7'
 signal_selection += ' && gamInvRp1 > 0.7'
-signal_selection += ' && DPB_vSS > 0.9 * fabs(costheta_b) + 1.6'
+signal_selection += ' && DPB_vSS > 0.9 * abs_costheta_b + 1.6'
 
 region = Region('mW_SR', 'SR (#Deltam ~ m_{W})', 'SR ($\Delta m ~ m_{W}$)')
 region.tcut = signal_selection
@@ -588,6 +649,16 @@ plots_defaults = {
     'btagSf' : Plot1D(bin_range=[0, 2], nbins=100, xlabel='B-tag SF', add_underflow=True, doLogY=True, doNorm=True),
     'jvtSf' : Plot1D(bin_range=[0, 2], nbins=100, xlabel='JVT SF', add_underflow=True, doLogY=True, doNorm=True),
     'period_weight' : Plot1D(bin_range=[0, 3], nbins=100, xlabel='Period weight', add_underflow=True, doLogY=True, doNorm=True),
+    'avgMu' : Plot1D(bin_range=[0, 80, 0, 140E3], bin_width=1, xlabel='Average pileup', add_underflow=True),
+    'avgMuDataSF' : Plot1D(bin_range=[0, 80, 0, 140E3], bin_width=1, xlabel='Average pileup (Data SF)', add_underflow=True),
+    'nVtx' : Plot1D(bin_range=[0, 80, 0, 300E3], bin_width=1, xlabel='N_{vertices}', add_underflow=True),
+    'actualMu' : Plot1D(bin_range=[0, 80, 0, 140E3], bin_width=1, xlabel='Actual pileup', add_underflow=True),
+    'actualMuDataSF' : Plot1D(bin_range=[0, 80, 0, 140E3], bin_width=1, xlabel='Actual pileup (Data SF)', add_underflow=True),
+    'avgMuDataSF/avgMu' : Plot1D(bin_range=[0,2], nbins=100, xlabel='Average Pileup: DataSF/noDataSF', add_underflow=True),
+    'actualMuDataSF/actualMu' : Plot1D(bin_range=[0,2], nbins=100, xlabel='Actual Pileup: DataSF/noDataSF', add_underflow=True),
+    'actualMu/avgMu' : Plot1D(bin_range=[0,2], nbins=100, xlabel='Pileup: actual/average', add_underflow=True),
+    'actualMuDataSF/avgMuDataSF' : Plot1D(bin_range=[0,2], nbins=100, xlabel='Pileup (Data SF): actual/average', add_underflow=True),
+    'avgMuDataSF/nVtx' : Plot1D(bin_range=[0,10], nbins=100, xlabel='Actual pileup / nVertices', add_underflow=True),
     
     # Kinematics
     'lept1Pt' : Plot1D(bin_range=[0,150], bin_width = 5, xlabel='p_{T}^{leading lep}', xunits='GeV'),
@@ -596,8 +667,10 @@ plots_defaults = {
     'jet2Pt'  : Plot1D(bin_range=[0,150], bin_width = 5, xlabel='p_{T}^{subleading jet}', xunits='GeV'),
     'mll'     : Plot1D(bin_range=[0, 300], bin_width=5, xlabel='M_{ll}', xunits='GeV'),
     'met'     : Plot1D(bin_range=[0, 200], bin_width=5, xlabel='E_{T}^{miss}', xunits='GeV'),
-    'dpTll'  : Plot1D(bin_range=[0, 100], bin_width=5, xlabel='#Deltap_{T}(l_{1},l_{2})', xunits='GeV'),
+    'dpTll'   : Plot1D(bin_range=[0, 100], bin_width=5, xlabel='#Deltap_{T}(l_{1},l_{2})', xunits='GeV'),
+    'pTll'    : Plot1D(bin_range=[0, 300], bin_width=10, xlabel='p_{T}^{ll}', xunits='GeV'),
     'lept1mT' : Plot1D(bin_range=[0, 150], bin_width=5, xlabel='m_{T}^{l_{1}}', xunits='GeV'),
+    'lept2mT' : Plot1D(bin_range=[0, 150], bin_width=5, xlabel='m_{T}^{l_{2}}', xunits='GeV'),
 
     # Angles
     'dR_ll' : Plot1D(bin_range=[0, 6], bin_width=0.1, xlabel='#DeltaR(l_{1},l_{2})'),
@@ -606,14 +679,14 @@ plots_defaults = {
     'nLightJets' : Plot1D(bin_range=[-1.5, 10.5], bin_width=1, xlabel='N_{light jets}'),
     'nBJets'     : Plot1D(bin_range=[-1.5, 10.5], bin_width=1, xlabel='N_{B jets}'),
     'nForwardJets' : Plot1D(bin_range=[-1.5, 10.5], bin_width=1, xlabel='N_{forward jets}'),
-    'nLightJets+nForwardJets' : Plot1D(bin_range=[-1.5, 10.5], bin_width=1, xlabel='N_{Signal jets}'),
+    'nNonBJets' : Plot1D(bin_range=[-1.5, 10.5], bin_width=1, xlabel='N_{Signal jets}'),
 
     # Super-razor
     'MDR' : Plot1D(bin_range=[0, 200], bin_width=5, xlabel='E_{V}^{P} or M_{#Delta}^{R}', xunits='GeV'),
     'RPT' : Plot1D(bin_range=[0, 1], bin_width=0.05, xlabel='R_{p_{T}}'),
     'gamInvRp1' : Plot1D(bin_range=[0, 1], bin_width=0.05, xlabel='1/#gamma_{R+1}'),
     'DPB_vSS'   : Plot1D(bin_range=[0, 3.2], bin_width=0.1, xlabel='#Delta#phi(#vec{#beta}_{PP}^{LAB},#vec{p}_{V}^{PP})'),
-    'fabs(costheta_b)': Plot1D(bin_range=[0, 1.1], bin_width=0.1, xlabel='|cos#theta_{b}|'),
+    'abs_costheta_b': Plot1D(bin_range=[0, 1.1], bin_width=0.1, xlabel='|cos#theta_{b}|'),
     
     # 2-Dimensional (y:x)
     'DPB_vSS:costheta_b' : Plot2D(bin_range=[-1, 1, 0, 3.2], xbin_width = 0.1, ybin_width = 0.1, xlabel='cos#theta_{b}', ylabel='#Delta#phi(#vec{#Beta}_{PP}^{LAB},#vec{p}_{V}^{PP})'), 
@@ -623,12 +696,12 @@ region_plots = {}
 region_plots['ttbar_CR'] = {
   'lept1Pt'                 : deepcopy(plots_defaults['lept1Pt']),
   'nBJets'                  : deepcopy(plots_defaults['nBJets']),
-  'nLightJets+nForwardJets' : deepcopy(plots_defaults['nLightJets+nForwardJets']),
+  'nNonBJets' : deepcopy(plots_defaults['nNonBJets']),
   'MDR'                     : deepcopy(plots_defaults['MDR']),
   'RPT'                     : deepcopy(plots_defaults['RPT']),
   'gamInvRp1'               : deepcopy(plots_defaults['gamInvRp1']),
   'DPB_vSS'                 : deepcopy(plots_defaults['DPB_vSS']),
-  'fabs(costheta_b)'        : deepcopy(plots_defaults['fabs(costheta_b)']),
+  'abs_costheta_b'        : deepcopy(plots_defaults['abs_costheta_b']),
 }
 region_plots['ttbar_VR'] = deepcopy(region_plots['ttbar_CR'])
 region_plots['VV_CR_DF'] = deepcopy(region_plots['ttbar_CR']) 
@@ -636,39 +709,39 @@ region_plots['VV_VR_DF'] = deepcopy(region_plots['ttbar_CR'])
 
 region_plots['ttbar_CR']['lept1Pt'].update(bin_range = [25, 600, 1E-1, 1E8], nbins=19, doLogY=True)
 region_plots['ttbar_CR']['nBJets'].update(bin_range = [0, 10, 1E-1, 1E9], bin_width=1, doLogY=True)
-region_plots['ttbar_CR']['nLightJets+nForwardJets'].update(bin_range = [0, 12, 1E-1, 1E9], bin_width=1, doLogY=True)
+region_plots['ttbar_CR']['nNonBJets'].update(bin_range = [0, 12, 1E-1, 1E9], bin_width=1, doLogY=True)
 region_plots['ttbar_CR']['MDR'].update(bin_range = [80, 200, 1E-1, 1E9], bin_width=5, doLogY=True)
 region_plots['ttbar_CR']['RPT'].update(bin_range = [0.7, 1, 1E-1, 1E8], bin_width=0.02, doLogY=True)
 region_plots['ttbar_CR']['gamInvRp1'].update(bin_range = [0, 1, 1E-1, 1E9], bin_width=0.1, doLogY=True)
 region_plots['ttbar_CR']['DPB_vSS'].update(bin_range = [0, 2.8, 1E-1, 1E8], bin_width=0.2, doLogY=True)
-region_plots['ttbar_CR']['fabs(costheta_b)'].update(bin_range = [0, 1, 1E-1, 1E9], bin_width=0.05, doLogY=True)
+region_plots['ttbar_CR']['abs_costheta_b'].update(bin_range = [0, 1, 1E-1, 1E9], bin_width=0.05, doLogY=True)
 
 region_plots['ttbar_VR']['lept1Pt'].update(bin_range = [25, 300], nbins=13)
 region_plots['ttbar_VR']['nBJets'].update(bin_range = [0, 3], bin_width=1)
-region_plots['ttbar_VR']['nLightJets+nForwardJets'].update(bin_range = [0, 10], bin_width=1)
+region_plots['ttbar_VR']['nNonBJets'].update(bin_range = [0, 10], bin_width=1)
 region_plots['ttbar_VR']['MDR'].update(bin_range = [80, 135], bin_width=5)
 region_plots['ttbar_VR']['RPT'].update(bin_range = [0, 0.7], bin_width=0.05)
 region_plots['ttbar_VR']['gamInvRp1'].update(bin_range = [0, 1], bin_width=0.1)
 region_plots['ttbar_VR']['DPB_vSS'].update(bin_range = [1.8, 3.2], bin_width=0.2)
-region_plots['ttbar_VR']['fabs(costheta_b)'].update(bin_range = [0, 1], bin_width=0.1)
+region_plots['ttbar_VR']['abs_costheta_b'].update(bin_range = [0, 1], bin_width=0.1)
 
 region_plots['VV_CR_DF']['lept1Pt'].update(bin_range = [25, 100], nbins=7)
 region_plots['VV_CR_DF']['nBJets'].update(bin_range = [0, 3], bin_width=1)
-region_plots['VV_CR_DF']['nLightJets+nForwardJets'].update(bin_range = [0, 7], bin_width=1)
+region_plots['VV_CR_DF']['nNonBJets'].update(bin_range = [0, 7], bin_width=1)
 region_plots['VV_CR_DF']['MDR'].update(bin_range = [50, 140], bin_width=10)
 region_plots['VV_CR_DF']['RPT'].update(bin_range = [0, 0.5], bin_width=0.05)
 region_plots['VV_CR_DF']['gamInvRp1'].update(bin_range = [0.7, 1], bin_width=0.02)
 region_plots['VV_CR_DF']['DPB_vSS'].update(bin_range = [0, 2.8], nbins=6)
-region_plots['VV_CR_DF']['fabs(costheta_b)'].update(bin_range = [0, 1], nbins=7)
+region_plots['VV_CR_DF']['abs_costheta_b'].update(bin_range = [0, 1], nbins=7)
 
 region_plots['VV_VR_DF']['lept1Pt'].update(bin_range = [25, 70], bin_width=5)
 region_plots['VV_VR_DF']['nBJets'].update(bin_range = [0, 3], bin_width=1)
-region_plots['VV_VR_DF']['nLightJets+nForwardJets'].update(bin_range = [0, 7], bin_width=1)
+region_plots['VV_VR_DF']['nNonBJets'].update(bin_range = [0, 7], bin_width=1)
 region_plots['VV_VR_DF']['MDR'].update(bin_range = [50, 95], nbins=5)
 region_plots['VV_VR_DF']['RPT'].update(bin_range = [0, 0.7], bin_width=0.1)
 region_plots['VV_VR_DF']['gamInvRp1'].update(bin_range = [0.7, 1], nbins=6)
 region_plots['VV_VR_DF']['DPB_vSS'].update(bin_range = [1.8, 3.2], nbins=7)
-region_plots['VV_VR_DF']['fabs(costheta_b)'].update(bin_range = [0, 1], bin_width=0.2)
+region_plots['VV_VR_DF']['abs_costheta_b'].update(bin_range = [0, 1], bin_width=0.2)
 
 # Make a plot for reach region and variable
 for reg in REGIONS:

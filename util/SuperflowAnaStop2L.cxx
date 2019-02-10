@@ -336,12 +336,7 @@ void add_analysis_cuts(Superflow* cutflow) {
     };
 }
 void add_event_variables(Superflow* cutflow) {
-    *cutflow << NewVar("Monte-Carlo generator event weight"); {
-        *cutflow << HFTname("w");
-        *cutflow << [](Superlink* sl, var_double*) -> double {return sl->nt->evt()->w;};
-        *cutflow << SaveVar();
-    }
-
+    // Event weights
     *cutflow << NewVar("event weight"); {
         *cutflow << HFTname("eventweight");
         *cutflow << [](Superlink* sl, var_double*) -> double { return sl->weights->product() * sl->nt->evt()->wPileup; };
@@ -350,9 +345,7 @@ void add_event_variables(Superflow* cutflow) {
 
     *cutflow << NewVar("event weight (multi period)"); {
         *cutflow << HFTname("eventweight_multi");
-        *cutflow << [](Superlink* sl, var_double*) -> double {
-            return sl->weights->product_multi() * sl->nt->evt()->wPileup;
-        };
+        *cutflow << [](Superlink* sl, var_double*) -> double { return sl->weights->product_multi() * sl->nt->evt()->wPileup; };
         *cutflow << SaveVar();
     }
 
@@ -361,19 +354,38 @@ void add_event_variables(Superflow* cutflow) {
         *cutflow << [](Superlink* sl, var_double*) -> double {return sl->weights->product() * sl->nt->evt()->wPileup / sl->nt->evt()->wPileup_period; };
         *cutflow << SaveVar();
     }
+   
+    *cutflow << NewVar("event weight (no scale factors)"); {
+        *cutflow << HFTname("eventweight_noSF");
+        *cutflow << [](Superlink* sl, var_double*) -> double {return sl->weights->susynt;};
+        *cutflow << SaveVar();
+    }
+    
+    *cutflow << NewVar("multiperiod event weight (no scale factors)"); {
+        *cutflow << HFTname("eventweight_noSF_multi");
+        *cutflow << [](Superlink* sl, var_double*) -> double {return sl->weights->susynt_multi;};
+        *cutflow << SaveVar();
+    }
 
+    *cutflow << NewVar("Period weight"); {
+        *cutflow << HFTname("period_weight");
+        *cutflow << [](Superlink* sl, var_double*) -> double {return sl->nt->evt()->wPileup_period;};
+        *cutflow << SaveVar();
+    }
+    
+    *cutflow << NewVar("Monte-Carlo generator event weight"); {
+        *cutflow << HFTname("w");
+        *cutflow << [](Superlink* sl, var_double*) -> double {return sl->nt->evt()->w;};
+        *cutflow << SaveVar();
+    }
+    
+    // Scale Factors
     *cutflow << NewVar("Pile-up weight"); {
         *cutflow << HFTname("pupw");
         *cutflow << [](Superlink* sl, var_double*) -> double {return sl->nt->evt()->wPileup;};
         *cutflow << SaveVar();
     }
     
-    *cutflow << NewVar("Period weight"); {
-        *cutflow << HFTname("period_weight");
-        *cutflow << [](Superlink* sl, var_double*) -> double {return sl->nt->evt()->wPileup_period;};
-        *cutflow << SaveVar();
-    }
-
     *cutflow << NewVar("Lepton scale factor"); {
         *cutflow << HFTname("lepSf");
         *cutflow << [](Superlink* sl, var_double*) -> double {return sl->weights->lepSf;};
@@ -398,6 +410,7 @@ void add_event_variables(Superflow* cutflow) {
         *cutflow << SaveVar();
     }
 
+    // Event identifiers
     *cutflow << NewVar("Event run number"); {
         *cutflow << HFTname("runNumber");
         *cutflow << [](Superlink* sl, var_int*) -> int { return sl->nt->evt()->run; };
@@ -407,6 +420,12 @@ void add_event_variables(Superflow* cutflow) {
     *cutflow << NewVar("Event number"); {
         *cutflow << HFTname("eventNumber");
         *cutflow << [](Superlink* sl, var_int*) -> int { return sl->nt->evt()->eventNumber; };
+        *cutflow << SaveVar();
+    }
+
+    *cutflow << NewVar("lumi block"); {
+        *cutflow << HFTname("lb");
+        *cutflow << [](Superlink* sl, var_int*) -> int { return sl->nt->evt()->lb; };
         *cutflow << SaveVar();
     }
 
@@ -425,9 +444,41 @@ void add_event_variables(Superflow* cutflow) {
     *cutflow << NewVar("treatAsYear"); {
         // 15/16 Year ID
         *cutflow << HFTname("treatAsYear");
-        *cutflow << [](Superlink* sl, var_double*) -> int { return sl->nt->evt()->treatAsYear; };
+        *cutflow << [](Superlink* sl, var_int*) -> int { return sl->nt->evt()->treatAsYear; };
         *cutflow << SaveVar();
-  }
+    }
+
+    // Event properties
+    *cutflow << NewVar("Average Mu"); {
+        *cutflow << HFTname("avgMu");
+        *cutflow << [](Superlink* sl, var_double*) -> double { return sl->nt->evt()->avgMu; };
+        *cutflow << SaveVar();
+    }
+
+    *cutflow << NewVar("Average Mu (Data DF)"); {
+        *cutflow << HFTname("avgMuDataSF");
+        *cutflow << [](Superlink* sl, var_double*) -> double { return sl->nt->evt()->avgMuDataSF; };
+        *cutflow << SaveVar();
+    }
+
+    *cutflow << NewVar("Actual Mu"); {
+        *cutflow << HFTname("actualMu");
+        *cutflow << [](Superlink* sl, var_double*) -> double { return sl->nt->evt()->actualMu; };
+        *cutflow << SaveVar();
+    }
+    
+    *cutflow << NewVar("Actual Mu (Data SF)"); {
+        *cutflow << HFTname("actualMuDataSF");
+        *cutflow << [](Superlink* sl, var_double*) -> double { return sl->nt->evt()->actualMuDataSF; };
+        *cutflow << SaveVar();
+    }
+    
+    *cutflow << NewVar("Number of vertices"); {
+        *cutflow << HFTname("nVtx");
+        *cutflow << [](Superlink* sl, var_double*) -> double { return sl->nt->evt()->nVtx; };
+        *cutflow << SaveVar();
+    }
+    
 }
 void add_trigger_variables(Superflow* cutflow) {
     ////////////////////////////////////////////////////////////////////////////
@@ -667,6 +718,12 @@ void add_jet_variables(Superflow* cutflow) {
     *cutflow << NewVar("number of forward jets"); {
         *cutflow << HFTname("nForwardJets");
         *cutflow << [](Superlink* sl, var_int*) -> int { return sl->tools->numberOfFJets(*sl->jets); };
+        *cutflow << SaveVar();
+    }
+
+    *cutflow << NewVar("number of non-b-tagged jets"); {
+        *cutflow << HFTname("nNonBJets");
+        *cutflow << [](Superlink* sl, var_int*) -> int { return sl->jets->size() - sl->tools->numberOfBJets(*sl->jets); };
         *cutflow << SaveVar();
     }
 
@@ -939,8 +996,8 @@ void add_miscellaneous_variables(Superflow* cutflow) {
         *cutflow << SaveVar();
     }
     
-    *cutflow << NewVar("cos(theta_b)"); {
-        *cutflow << HFTname("costheta_b");
+    *cutflow << NewVar("|cos(theta_b)|"); {
+        *cutflow << HFTname("abs_costheta_b");
         *cutflow << [](Superlink* /*sl*/, var_float*) -> double {
             TLorentzVector lp, lm, ll;
             lp = m_lept1->q > 0 ? *m_lept1 : *m_lept2;
@@ -954,7 +1011,7 @@ void add_miscellaneous_variables(Superflow* cutflow) {
             double deta = lp.Eta() - lm.Eta();
             double costheta_b = tanh(0.5 * deta);
             
-            return costheta_b;
+            return fabs(costheta_b);
         };
         *cutflow << SaveVar();
     }
