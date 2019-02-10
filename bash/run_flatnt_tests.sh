@@ -25,20 +25,6 @@ function strip_file_of_timestamps() {
     sed -i '/Analysis\ speed/d' $1
 }
 
-function run_flatnt_maker() {
-    susynt=$1
-    region=$2
-    ofile=$3
-    logfile=$4
-    echo "makeFlatNtuples -i $susynt $region"
-    makeFlatNtuples -i $susynt $region 2>&1 | tee $logfile
-    mv CENTRAL*root $ofile
-    
-    echo
-    strip_file_of_timestamps $logfile
-    echo
-}
-
 function run_SuperflowAnaStop2l() {
     susynt=$1
     ofile=$2
@@ -82,25 +68,17 @@ SAMPLES="$SAMPLES data18_13TeV.00359310.physics_Main.deriv.DAOD_SUSY2.f964_m2020
 #MC16a HIGG4D1
 #SAMPLES="$SAMPLES mc16_13TeV.303778.Pythia8EvtGen_A14NNPDF23LO_Ztaumu_LeptonFilter.deriv.DAOD_HIGG4D1.e4245_s3126_r9364_p3563"
 
-REGIONS=""
-REGIONS="$REGIONS --baseline_sel"
-
 for SAMPLE in $SAMPLES; do
     SUSYNT="${SUSYNT_DIR}/${SAMPLE}_susynt_old.root" # Assumed formatting for SusyNts 
     OFILE="${SAMPLE}_flatnt_new.root"
     LOGFILE="${SAMPLE}_flatnt_new.log"
     run_SuperflowAnaStop2l $SUSYNT $OFILE $LOGFILE
 
-    # Test grabSumw
-    #if [[ $SAMPLE == "mc16"* ]]; then
-    #    SUMW_LOGFILE="${SAMPLE}_sumw_new.log"
-    #    run_grabSumw $SUSYNT $SUMW_LOGFILE
-    #fi
-
-    # No longer using old ntuple maker
-    #for REGION in $REGIONS; do
-    #    run_flatnt_maker $SUSYNT $REGION $OFILE $LOGFILE
-    #done
+    #Test grabSumw
+    if [[ $SAMPLE == "mc16"* ]]; then
+        SUMW_LOGFILE="${SAMPLE}_sumw_new.log"
+        run_grabSumw $SUSYNT $SUMW_LOGFILE
+    fi
 done
 
 printf "\n\n ========== Performing Checks ========== \n\n"
