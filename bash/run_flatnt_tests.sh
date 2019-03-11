@@ -77,7 +77,7 @@ for SAMPLE in $SAMPLES; do
     #Test grabSumw
     if [[ $SAMPLE == "mc16"* ]]; then
         SUMW_LOGFILE="${SAMPLE}_sumw_new.log"
-        run_grabSumw $SUSYNT $SUMW_LOGFILE
+        #run_grabSumw $SUSYNT $SUMW_LOGFILE
     fi
 done
 
