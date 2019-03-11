@@ -14,6 +14,42 @@ DSID_GROUPS = {
     ############################################################################
     # SIGNAL
     ############################################################################
+    #stop2l_350_260'
+    #stop2l_350_230'
+    #stop2l_350_200'
+    'stop2l_350_185' : ['436203'], # MGPy8EG_A14N23LO_TT_bWN_350_185_MadSpin_2L15 (DeltaM = 165)
+    #stop2l_375_285
+    #stop2l_375_255
+    #stop2l_375_225
+    'stop2l_375_210' : ['436207'], # MGPy8EG_A14N23LO_TT_bWN_375_210_MadSpin_2L15 (DeltaM = 165)
+    #stop2l_400_310
+    #stop2l_400_280
+    #stop2l_400_250
+    #stop2l_400_235
+    'stop2l_425_335' : ['436212'], # MGPy8EG_A14N23LO_TT_bWN_425_335_MadSpin_2L15 (DeltaM =  90)
+    #stop2l_425_305
+    'stop2l_425_275' : ['436214'], # MGPy8EG_A14N23LO_TT_bWN_425_275_MadSpin_2L15 (DeltaM = 150)
+    'stop2l_425_260' : ['436215'], # MGPy8EG_A14N23LO_TT_bWN_425_260_MadSpin_2L15 (DeltaM = 165)
+    'stop2l_450_360' : ['436216'], # MGPy8EG_A14N23LO_TT_bWN_450_360_MadSpin_2L15 (DeltaM =  90)
+    'stop2l_450_330' : ['436217'], # MGPy8EG_A14N23LO_TT_bWN_450_330_MadSpin_2L15 (DeltaM = 120)
+    'stop2l_450_300' : ['436218'], # MGPy8EG_A14N23LO_TT_bWN_450_300_MadSpin_2L15 (DeltaM = 150)
+    'stop2l_450_285' : ['436219'], # MGPy8EG_A14N23LO_TT_bWN_450_285_MadSpin_2L15 (DeltaM = 165)
+    'stop2l_475_385' : ['436220'], # MGPy8EG_A14N23LO_TT_bWN_475_385_MadSpin_2L15 (DeltaM =  90) EXTRA STATS
+    'stop2l_475_355' : ['436221'], # MGPy8EG_A14N23LO_TT_bWN_475_355_MadSpin_2L15 (DeltaM = 120) EXTRA STATS
+    'stop2l_475_325' : ['436222'], # MGPy8EG_A14N23LO_TT_bWN_475_325_MadSpin_2L15 (DeltaM = 150) EXTRA STATS
+    'stop2l_475_310' : ['436223'], # MGPy8EG_A14N23LO_TT_bWN_475_310_MadSpin_2L15 (DeltaM = 165)
+    'stop2l_500_410' : ['436224'], # MGPy8EG_A14N23LO_TT_bWN_500_410_MadSpin_2L15 (DeltaM =  90)
+    'stop2l_500_380' : ['436225'], # MGPy8EG_A14N23LO_TT_bWN_500_380_MadSpin_2L15 (DeltaM = 120)
+    'stop2l_500_350' : ['436226'], # MGPy8EG_A14N23LO_TT_bWN_500_350_MadSpin_2L15 (DeltaM = 150)
+    'stop2l_500_335' : ['436227'], # MGPy8EG_A14N23LO_TT_bWN_500_335_MadSpin_2L15 (DeltaM = 165)
+    'stop2l_550_460' : ['436228'], # MGPy8EG_A14N23LO_TT_bWN_550_460_MadSpin_2L15 (DeltaM =  90)
+    'stop2l_550_430' : ['436229'], # MGPy8EG_A14N23LO_TT_bWN_550_430_MadSpin_2L15 (DeltaM = 120)
+    'stop2l_550_400' : ['436230'], # MGPy8EG_A14N23LO_TT_bWN_550_400_MadSpin_2L15 (DeltaM = 150)
+    'stop2l_550_385' : ['436231'], # MGPy8EG_A14N23LO_TT_bWN_550_385_MadSpin_2L15 (DeltaM = 165)
+    'stop2l_600_510' : ['436232'], # MGPy8EG_A14N23LO_TT_bWN_600_510_MadSpin_2L15 (DeltaM =  90)
+    'stop2l_600_480' : ['436233'], # MGPy8EG_A14N23LO_TT_bWN_600_480_MadSpin_2L15 (DeltaM = 120)
+    'stop2l_600_450' : ['436234'], # MGPy8EG_A14N23LO_TT_bWN_600_450_MadSpin_2L15 (DeltaM = 150)
+    'stop2l_600_435' : ['436235'], # MGPy8EG_A14N23LO_TT_bWN_600_435_MadSpin_2L15 (DeltaM = 165) 
 
     ############################################################################
     # TOP
@@ -27,15 +63,6 @@ DSID_GROUPS = {
     "WtPP8" : [
                 "410648", #PP8_A14_Wt_DR_dilepton_top
                 "410649", #PP8_A14_Wt_DR_dilepton_antito
-    ],
-    "WtPP6" : [
-                "410015", #PP_P2012_Wt_dilepton_top
-                "410016", #PP_P2012_Wt_dilepton_antito
-    ],
-
-    # Rare Top
-    "rare_top" : [
-                "304014", #MGP8_A14NNPDF23_3top_S
     ],
 
     ############################################################################
@@ -175,14 +202,21 @@ DSID_GROUPS = {
     # 1L Diboson
     "1l_diboson_sherpa" : [
                 "364255", #Sherpa_222_lvvv
+                ##"364304", #Sherpa_222_NNPDF30NNLO_ggWmlvWpqq
+                ##"364305", #Sherpa_222_NNPDF30NNLO_ggWplvWmqq
     ],
    
     # 2L Diboson
     "2l_diboson_sherpa" : [
+                "345715", #Sherpa_222_NNPDF30NNLO_ggllvvInt
+                "345718", #Sherpa_222_NNPDF30NNLO_ggllvvWW
+                "345723", #Sherpa_222_NNPDF30NNLO_ggllvvZZ
                 "364254", #Sherpa_222_llvv
                 "364285", #Sherpa_222_llvvjj
                 "364286", #Sherpa_222_llvvjj_ss
                 "364290", #Sherpa_222_llvv_lowMllPtComplement
+                "364302", #Sherpa_222_NNPDF30NNLO_ggZllZqq
+                ##"364303", #Sherpa_222_NNPDF30NNLO_ggZvvZqq
     ],
     
     # 3L Diboson
@@ -194,6 +228,8 @@ DSID_GROUPS = {
     
     # 4L Diboson
     "4l_diboson_sherpa" : [
+                ##"345705", #Sherpa_222_NNPDF30NNLO_ggllll_0M4l130
+                "345706", #Sherpa_222_NNPDF30NNLO_ggllll_130M4l
                 "364288", #Sherpa_222_llll_lowMllPtComplement
     ],
     
@@ -226,17 +262,17 @@ DSID_GROUPS = {
 
     # Higgs VBF
     "higgs_VBF" : [
-                "345073", #PowhegPy8EG_NNPDF30_AZNLOCTEQ6L1_VBFH125_tautaul13l7
-                "345074", #PowhegPy8EG_NNPDF30_AZNLOCTEQ6L1_VBFH125_tautaulm15hp20
-                "345075", #PowhegPy8EG_NNPDF30_AZNLOCTEQ6L1_VBFH125_tautaulp15hm20
-                "345076", #PowhegPy8EG_NNPDF30_AZNLOCTEQ6L1_VBFH125_tautauh30h20
+                #"345073", #PowhegPy8EG_NNPDF30_AZNLOCTEQ6L1_VBFH125_tautaul13l7
+                #"345074", #PowhegPy8EG_NNPDF30_AZNLOCTEQ6L1_VBFH125_tautaulm15hp20
+                #"345075", #PowhegPy8EG_NNPDF30_AZNLOCTEQ6L1_VBFH125_tautaulp15hm20
+                #"345076", #PowhegPy8EG_NNPDF30_AZNLOCTEQ6L1_VBFH125_tautauh30h20
                 "345323", #PowhegPy8EG_NNPDF30_AZNLOCTEQ6L1_VBFH125_WWlvlv
     ],
 
     # Higgs ttH   
     "higgs_ttH" : [
-                #"343365", #AMCP8_ttH125_semile
-                #"343366", #AMCP8_ttH125_semile
+                "343365", #aMcAtNloPythia8EvtGen_A14_NNPDF23_NNPDF30ME_ttH125_dilep
+                "343366", #aMcAtNloPythia8EvtGen_A14_NNPDF23_NNPDF30ME_ttH125_semilep
     ],
 
     # Higgs VH

@@ -18,12 +18,11 @@ dumb_run = False
 if superflow:
     print "INFO :: Setting up to check Superflow output"
     pass_phrase = "SuperflowAnaStop2L    Done." # For SuperflowAnaStop2L
-    log_file_dir = '%s/run/batch/SuperflowAnaStop2l_output' % (work_dir)
 elif sumw:
     print "INFO :: Setting up to check SumW output"
     pass_phrase = "Sumw job done" # For grabSumw
-    log_file_dir = '%s/run/batch/sumw_output' % (work_dir)
 
+log_file_dir = '%s/run/batch/condor_output' % (work_dir)
 finished_phrase = "Normal termination"
 abort_phrase = 'via condor_rm'
 
@@ -50,18 +49,57 @@ def extract_info(name):
     match = re.search('(?<=_)[0-9]*$', name.replace(dsid,"X"))
     suffix = match.group() if match else ""
     return dsid, campaign, suffix
+def print_jobsite_ranking(log_files, max_sites = 0):
+    if not log_files: 
+        print "INFO :: No log files to parse"
+        return
+    file_str = " ".join(log_files)
+    bash_cmd = 'fgrep -h JOB_Site %s | sort | uniq -c | sort -rn' % file_str
+    if max_sites > 0:
+       bash_cmd += " | head -n " + str(max_sites)
+    subprocess.call(bash_cmd, shell=True)
 
 root_files = set(x.replace('.root','') for x in glob.glob(root_glob_cmd))
 all_files = set(x.replace('.log','') for x in glob.glob(log_glob_cmd))
 all_files2 = set(x.replace('.out','') for x in glob.glob(out_glob_cmd))
 all_files3 = set(x.replace('.err','') for x in glob.glob(err_glob_cmd))
+if len(all_files) > len(all_files2):
+    print "WARNING :: There is/are %d missing .out file(s)" % (len(all_files) - len(all_files2))
+    print "INFO :: Treating these as if they were empty .out files"
+add_to_empty = all_files - all_files2
+all_files2 = all_files2 | all_files
+    #print '\n', "="*80
+    #print "INFO :: There is/are %d missing .out file(s)" % (len(all_files) - len(all_files2))
+    #if (len(all_files) - len(all_files2)) < 5:
+    #    for f in (all_files-all_files2):
+    #        print "\t%s.out" % f
+    #
+    #usr_msg = "Should empty .out files be created to restore balance to the force?\n"
+    #usr_msg += "Input your answer [Y/N]: "
+    #user_op = raw_input(usr_msg)
+
+    #while user_op not in ["Y","N"]:
+    #    usr_msg = "Unacceptable answer: %s\n" % user_op
+    #    usr_msg += "Input your answer [Y/N]: "
+    #    user_op = raw_input(usr_msg)
+
+    #if user_op == "Y":
+    #    for f in (all_files-all_files2):
+    #        bash_cmd = 'touch %s.out' % f
+    #        subprocess.call(bash_cmd, shell=True)
+    #    all_files2 = set(x.replace('.out','') for x in glob.glob(out_glob_cmd))
+    #if user_op == "N":
+    #    print "\nINFO :: Oh. Fine then. Have it your way :(\n"
+
+
 assert len(all_files) == len(all_files2) == len(all_files3), (
     "ERROR :: .log, .out, and .err files differ: %d, %d, and %d respectively." % (len(all_files), len(all_files2), len(all_files3)),
-    all_files - all_files2
+    all_files - all_files3
 )
 
 print "INFO :: Processing %d batch job output files" % len(all_files)
 
+print '\n', "="*80
 print "INFO :: Looking for completed files"
 bash_cmd = "grep -l \"%s\" %s" % (pass_phrase, out_glob_cmd)
 print "INFO :: >>", bash_cmd, '\n' 
@@ -82,12 +120,11 @@ else:
     # Extra checks
     print "INFO :: Getting number of active jobs"
     bash_cmd = "condor_q | tail -n1 | grep -Po \"[0-9]*(?= jobs)\""
-    print "INFO :: >>", bash_cmd
+    print "INFO :: >>", bash_cmd, '\n'
     n_total_jobs = int(get_cmd_output(bash_cmd)[0])
-    bash_cmd = "condor_q | tail -n1 | grep -Po \"[0-9]*(?= removed)\""
-    print "INFO :: >>", bash_cmd, '\n' 
-    n_removed_jobs = int(get_cmd_output(bash_cmd)[0])
-    n_active_files = n_total_jobs - n_removed_jobs
+    #bash_cmd = "condor_q | tail -n1 | grep -Po \"[0-9]*(?= removed)\""
+    #print "INFO :: >>", bash_cmd, '\n' 
+    #n_removed_jobs = int(get_cmd_output(bash_cmd)[0])
 
 
     print "INFO :: Looking for empty files"
@@ -95,6 +132,7 @@ else:
     print "INFO :: >>", bash_cmd, '\n' 
     empty_files = get_cmd_output(bash_cmd)
     empty_files = set(f.strip().replace(".out","") for f in empty_files)
+    empty_files = empty_files | add_to_empty
 
     print "INFO :: Looking for aborted files"
     bash_cmd = 'grep -l "%s" %s' % (abort_phrase, log_glob_cmd)
@@ -123,15 +161,10 @@ else:
     finished_files = failed_files | aborted_files | complete_files
 
     # Checks
-    if len(complete_files) != len(root_files):
-        rf = set(extract_info(x) for x in root_files)
-        cf = set(extract_info(x) for x in complete_files)
-        print "TESTING"
+    assert n_total_jobs == len(active_files), (
+        "ERROR :: condor_q gives %d active files but %d do not have \"%s\" or \"%s\" in them" % (n_total_jobs, len(active_files), finished_phrase, abort_phrase),
+        ", ".join(active_files)
 
-        for x in rf - cf:
-            print x
-    assert len(complete_files) == len(root_files), (
-        "ERROR :: %d complete files but %d root files exist" % (len(complete_files), len(root_files))
     )
     assert not (failed_files & aborted_files), (
         "Failed and aborted files:", failed_files & aborted_files
@@ -143,22 +176,87 @@ else:
         "ERROR :: %d active files + %d finished != %d total files" % (len(active_files), len(finished_files), len(all_files)),
         all_files - active_files - finished_files 
     )
-    assert n_active_files == len(active_files), (
-        "ERROR :: condor_q gives %d active files but %d do not have \"Normal Termination\" in them" % (n_active_files, len(active_files))
+    assert len(aborted_files) + len(active_files) >= len(empty_files),( # active files might dump partially into .out
+        "ERROR :: There are %d aborted and %d active file but %d empty files" % (len(aborted_files), len(active_files), len(empty_files)),
+        empty_files - active_files - aborted_files
     )
-    assert len(aborted_files) + len(active_files) >= len(empty_files) # active files might dump partially into .out
     assert len(failed_files) + len(aborted_files) == len(resubmit_files) 
     assert len(complete_files) + len(failed_files) + len(aborted_files) == len(finished_files)
+    if len(complete_files) != len(root_files):
+        print '\n', "="*80
+        print "ERROR :: %d complete files but only %d root files" % (len(complete_files), len(root_files))
+        rf = set(extract_info(x) for x in root_files)
+        cf = set(extract_info(x) for x in complete_files)
+        ntf = set(extract_info(x) for x in norm_term_files)
+        questionable_f = rf ^ cf
+        if questionable_f:
+            if len(rf - cf):
+                print "ERROR :: %d jobs have root files but the .out file doesn't say they are complete" % (len(rf - cf))
+                print "INFO :: These are the files\n\t",
+                
+                usr_msg = "Should the root files be deleted and log files modified?\n"
+                usr_msg += "Input your answer [Y/N]: "
+                user_op = raw_input(usr_msg)
+
+                while user_op not in ["Y","N"]:
+                    usr_msg = "Unacceptable answer: %s\n" % user_op
+                    usr_msg += "Input your answer [Y/N]: "
+                    user_op = raw_input(usr_msg)
+
+                if user_op == "Y":
+                    del_rfiles = ["%s.root"%f for f in root_files if extract_info(f) in questionable_f]
+                    fill_files = [f for f in all_files if extract_info(f) in questionable_f]
+                    del_cmd = ''
+                    for ii, f in enumerate(del_rfiles, 1):
+                        del_cmd += "rm %s; " % f
+                        if ii%100==0: #Don't let delete bash cmd get too long
+                            subprocess.call(del_cmd, shell=True)
+                            del_cmd = ''
+                    subprocess.call(del_cmd, shell=True)
+                    
+                    fill_cmd = ''
+                    for f in fill_files:
+                        fill_cmd += 'echo \"%s (manually added)\" >> %s.log; ' % (finished_phrase, f)
+                        fill_cmd += 'echo \" Job failed for unknown reasons\" >> %s.out; ' % (f)
+                    subprocess.call(fill_cmd, shell=True)
+                    print "\nINFO :: Done. Rerun script"
+                    sys.exit()
+                if user_op == "N":
+                    print "\nINFO :: Okay. Exiting program"
+                    sys.exit()
+            elif len(cf - rf):
+                print "ERROR :: %d jobs have no root files but the .out file does say they are complete" % (len(cf - rf))
+                print "INFO :: These are the files\n\t",
+            print '\n\t'.join(["%s.out" % f for f in all_files if extract_info(f) in questionable_f])
+            print "INFO :: Job site information"
+            print_jobsite_ranking(["%s.log" % f for f in all_files if extract_info(f) in questionable_f])
+        if (rf - cf) & ntf:
+            print "INFO :: Note that %d of those files have log files saying they finished normally" % (len((rf - cf) & ntf))
+        
+
+    assert len(complete_files) == len(root_files), (
+        "ERROR :: %d complete files but %d root files exist" % (len(complete_files), len(root_files))
+    )
 
     if len(active_files) or len(resubmit_files):
         # Error monitoring
         err_files = ["%s.err" % f for f in resubmit_files]
         if err_files:
             print '\n', "="*80
-            print "INFO :: Summarizing errors occurrances for failed jobs"
-            bash_cmd = 'grep -ih error %s | grep -v "tar:" | sort | uniq -c | sort -rn' % (" ".join(err_files))
+            print "INFO :: Summarizing top 10 errors occurrances for failed jobs"
+            bash_cmd = 'fgrep -ih error %s | grep -v "tar:" | sort | uniq -c | sort -rn | head -n 10' % (" ".join(err_files))
+            output = get_cmd_output(bash_cmd)
+            for ii, line in enumerate(output, 1):
+                err = line.strip().split(' ',1)[1]
+                bash_cmd = 'fgrep -l \"%s\" %s' % (err, " ".join(err_files))
+                files_with_err = get_cmd_output(bash_cmd)
+                log_files = [f.strip().replace('.err','.log') for f in files_with_err]
 
-            subprocess.call(bash_cmd, shell=True)
+                print "%2d) %s" % (ii, line.strip())
+                if len(log_files) > 1000: 
+                    print "\t%d/%d files have this error" % (len(log_files), len(all_files))
+                    continue 
+                print_jobsite_ranking(log_files, max_sites=2)
 
         # Summarize results 
         print '\n', "="*80
@@ -214,7 +312,7 @@ if resub_files - matched_resub:
     print resub_files - matched_resub
 
 print '\n', "="*80
-usr_msg = "Would you like to resubmit jobs?\n"
+usr_msg = "Would you like to resubmit %d jobs?\n" % (len(resubmit_files))
 usr_msg += "NOTE: This will clear the .log, .out, and .err files of jobs being resubmitted\n"
 usr_msg += "Input your answer [Y/N]: "
 user_op = raw_input(usr_msg)
@@ -226,12 +324,15 @@ while user_op not in ["Y","N"]:
 
 if user_op == "Y":
     print "INFO :: Clearing files for resubmission..."
-    for f in resubmit_files:
-        clear_cmd = ''
+    clear_cmd = ''
+    for ii, f in enumerate(resubmit_files, 1):
         clear_cmd += "> %s.log;" % f
         clear_cmd += "> %s.out;" % f
         clear_cmd += "> %s.err;" % f
-        subprocess.call(clear_cmd, shell=True)
+        if ii%10 == 0 or ii == len(resubmit_files):
+            # cmd can get too large to run all at once at the end
+            subprocess.call(clear_cmd, shell=True)
+            clear_cmd = ''
 
     print "INFO :: Resubmitting files"
     directory = os.path.dirname(condor_resubmit_file)

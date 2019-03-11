@@ -16,10 +16,14 @@ _pass_phrase = "SuperflowAnaStop2L    Done." # For SuperflowAnaStop2L
 _condor_event_pattern = '"^[0-9]{3}( )"'
 # Example time pattern: 01/15 16:13:06
 _time_pattern = " [0-9][0-9]\/[0-9][0-9] [0-9][0-9]:[0-9][0-9]:[0-9][0-9] "
-_log_file_dir = '%s/run/batch/SuperflowAnaStop2l_output' % (_work_dir)
+#_log_file_dir = '%s/run/batch/condor_output' % (_work_dir)
+_log_file_dir = '%s/run/batch/output/test' % (_work_dir)
 _ofile_name = "%s/condor_summary_ranking.txt" % _log_file_dir
 _csv_ofile_name = "%s/condor_summary.csv" % _log_file_dir 
 
+################################################################################
+# Globals 
+################################################################################
 EVENT_TYPES = {
     # See Condor Manual 2.6.7 Managing a Job: In the Job Event Log File
     # http://research.cs.wisc.edu/htcondor/manual/v8.6/2_6Managing_Job.html
@@ -61,9 +65,17 @@ EVENT_TYPES = {
 }
 
 # These events tend to be updates without really indicating a change of state
-# or indicating a return to some other state that we care about
+# or they indicate a return to some other state that we care about
 IGNORE_EVENTS = ['006','028']
 
+# These events are synonymous
+def REMAPPED_TYPES(evt_num):
+    return {
+            'Remote system call socket reestablished' : 'Job executing',
+    }.get(evt_num, evt_num)
+
+# Determined empirically. Unknown states encountered during run time are printed
+# at the end and should be added here.
 KNOWN_TRANSITIONS = [
     'Job submitted -> Job executing',
     'Job submitted -> Remote system call socket lost',
@@ -72,6 +84,7 @@ KNOWN_TRANSITIONS = [
     'Job executing -> Remote system call socket lost',
     'Job executing -> Job evicted from machine',
     'Job executing -> Job terminated',
+    'Job executing -> Shadow exception',
     'Remote system call socket lost -> Remote system call socket reestablished',
     'Remote system call socket lost -> Remote system call reconnect failure',
     'Shadow exception -> Job executing',
@@ -82,7 +95,10 @@ KNOWN_TRANSITIONS = [
     'Job evicted from machine -> Job executing',
     'Remote system call reconnect failure -> Remote system call socket lost',
     'Remote system call reconnect failure -> Job executing',
+    'Remote system call socket reestablished -> Job evicted from machine',
+    'Remote system call reconnect failure -> Shadow exception',
     #
+    'Shadow exception -> Shadow exception',
 ]
 KNOWN_STATES = set()
 for x in KNOWN_TRANSITIONS:
@@ -151,8 +167,8 @@ def main():
         if f[0] in KNOWN_TRANSITIONS: continue
         print f
     print_summary_info(durations, looper_info)
-    #write_out_rankings(durations, looper_info, memory_usage)
-    #write_out_csv(durations, looper_info, memory_usage)
+    write_out_rankings(durations, looper_info, memory_usage)
+    write_out_csv(durations, looper_info, memory_usage)
  
 ################################################################################
 # Format sensative functions
@@ -238,23 +254,22 @@ def summarize_transitions(times):
     
 def determine_durations(times):
     durations = {}
-    #durations['user'] = timedelta()
-    #durations['system_submit'] = timedelta() 
-    #durations['system_other'] = timedelta() 
     durations['total'] = times[-1][1] - times[0][1]
     
     for s in KNOWN_STATES:
         if s == 'Job terminated': continue
+        s = REMAPPED_TYPES(s)
         durations[s] = timedelta()
 
     for idx in range(1, len(times)):
         prev_n, prev_t = times[idx-1]
         now_n, now_t = times[idx]
         key = EVENT_TYPES[prev_n]
+        key = REMAPPED_TYPES(key)
 
-        if prev_n not in durations:
+        if key not in durations:
             durations[key] = timedelta()
-        durations[key] += now_t - prev_t
+        durations[key] += (now_t - prev_t)
     
     return durations
 
@@ -274,8 +289,11 @@ def determine_mem_usage(log_file):
     return memory
 
 def print_summary_info(durations, looper_info):
-    def print_info(header, times):
-        avg_dur = sum(times, timedelta())/len(times)
+    def print_info(header, times, time=True):
+        if time:
+            avg_dur = sum(times, timedelta())/len(times)
+        else:
+            avg_dur = sum(times)/len(times)
         max_dur = max(times)
         min_dur = min(times) 
         print header
@@ -285,6 +303,10 @@ def print_summary_info(durations, looper_info):
     # Exec time
     looper_times = [t['times'] for k, t in looper_info.iteritems()]
     print_info("Looper Time", looper_times)
+    looper_rates = [t['rates'] for k, t in looper_info.iteritems()]
+    print_info("Looper Rate", looper_rates, time=False)
+    looper_events = [t['events'] for k, t in looper_info.iteritems()]
+    print_info("Looper Events", looper_events, time=False)
 
     inv_dict = {}
     for f, d in durations.iteritems():
@@ -296,7 +318,7 @@ def print_summary_info(durations, looper_info):
         print_info(k,l)
 
 def write_out_rankings(durations, looper_info, memory_usage):
-    def make_rank_str(header, dic, reverse=True, nresults_to_plot=10):
+    def make_rank_str(header, dic, reverse=True, nresults_to_plot=30):
         dic_gen = sorted(dic.iteritems(), key=lambda (k,v) : (v,k), reverse=reverse)
         out_str = "Ranking for %s\n" % header
         for ii, (k, v) in enumerate(dic_gen):
@@ -312,23 +334,22 @@ def write_out_rankings(durations, looper_info, memory_usage):
     total = simplify_dict(durations,'total')
     out_str += make_rank_str("Total Time", total)
 
-    system_other = simplify_dict(durations,'system_other')
-    out_str += make_rank_str("System Other Time", system_other)
-    
-    system_submit = simplify_dict(durations,'system_submit')
-    out_str += make_rank_str("System Submit Time", system_submit)
-    
-    user = simplify_dict(durations, 'user')
-    out_str += make_rank_str("User Time", user)
-    
-    looper_events = simplify_dict(looper_info, 'events')
-    out_str += make_rank_str("Looper Events", looper_events)
+    skip_states = ['Job terminated']
+    for s in KNOWN_STATES:
+        s = REMAPPED_TYPES(s)
+        if s in skip_states: continue
+        else: skip_states.append(s)
+        d = simplify_dict(durations, s)
+        out_str += make_rank_str(s, d)
 
     looper_rates = simplify_dict(looper_info, 'rates')
-    out_str += make_rank_str("Looper Rate [Events/s]", looper_rates)
+    out_str += make_rank_str("Looper Rate [Events/s]", looper_rates, reverse=False)
     
     looper_times = simplify_dict(looper_info, 'times')
     out_str += make_rank_str("Looper Time", looper_times)
+    
+    looper_events = simplify_dict(looper_info, 'events')
+    out_str += make_rank_str("Looper Events", looper_events)
     
     disk_usage = simplify_dict(memory_usage, 'disk_usage')
     out_str += make_rank_str("Disk Usage [MB]", disk_usage)

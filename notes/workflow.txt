@@ -1,0 +1,5 @@
+# Making Plots
+1) Set symlink samples_to_plot to point to the correct directory of files
+2) Selected the variables, regions, and samples once wants to run on
+3) Edit the main looper to generate the right plots
+4) May need to change some global settings like doLogY or doNorm
