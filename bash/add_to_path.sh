@@ -3,7 +3,7 @@
 if [ $0 != "-bash" ]; then
     echo "ERROR :: Must source directory"
 else
-    full_path="$(cd "$(dirname "$BASH_SOURCE")" && pwd -P)/$(basename "$1")"
+    full_path="$(cd "$(dirname "$(dirname "$BASH_SOURCE")")" && pwd -P)/python"
     export PYTHONPATH="$PYTHONPATH:${full_path}"
     echo "$full_path added to PYTHONPATH"
     echo 

@@ -16,8 +16,8 @@ _pass_phrase = "SuperflowAnaStop2L    Done." # For SuperflowAnaStop2L
 _condor_event_pattern = '"^[0-9]{3}( )"'
 # Example time pattern: 01/15 16:13:06
 _time_pattern = " [0-9][0-9]\/[0-9][0-9] [0-9][0-9]:[0-9][0-9]:[0-9][0-9] "
-#_log_file_dir = '%s/run/batch/condor_output' % (_work_dir)
-_log_file_dir = '%s/run/batch/output/test' % (_work_dir)
+_log_file_dir = '%s/run/batch/condor_output' % (_work_dir)
+#_log_file_dir = '%s/run/batch/output/test' % (_work_dir)
 _ofile_name = "%s/condor_summary_ranking.txt" % _log_file_dir
 _csv_ofile_name = "%s/condor_summary.csv" % _log_file_dir 
 

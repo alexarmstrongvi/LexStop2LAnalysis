@@ -13,7 +13,17 @@ import subprocess
 work_dir = '/data/uclhc/uci/user/armstro1/SusyNt/Stop2l/SusyNt_master/susynt-read'
 input_files_dir = '%s/run/lists/file_lists_prefixed' % work_dir
 superflow = True; sumw = False
-dumb_run = False
+condor_user = 'alarmstr'
+
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument('-i','--ignore-id', nargs='*', help="Process IDs to ignore")
+parser.add_argument('-d','--directory', help="Directory with all condor output files", default='%s/run/batch/condor_output' % (work_dir))
+parser.add_argument('--dumb-run', action='store_true', help="Resubmit all files without pass phrase, no other checks")
+args = parser.parse_args()
+
+exclude_proc = map(int, args.ignore_id) if args.ignore_id else []
+log_file_dir = args.directory
 
 if superflow:
     print "INFO :: Setting up to check Superflow output"
@@ -22,7 +32,6 @@ elif sumw:
     print "INFO :: Setting up to check SumW output"
     pass_phrase = "Sumw job done" # For grabSumw
 
-log_file_dir = '%s/run/batch/condor_output' % (work_dir)
 finished_phrase = "Normal termination"
 abort_phrase = 'via condor_rm'
 
@@ -54,7 +63,7 @@ def print_jobsite_ranking(log_files, max_sites = 0):
         print "INFO :: No log files to parse"
         return
     file_str = " ".join(log_files)
-    bash_cmd = 'fgrep -h JOB_Site %s | sort | uniq -c | sort -rn' % file_str
+    bash_cmd = 'fgrep -h JOB_Site %s | fgrep -v GLIDEIN_Site:Unknown | sort | uniq -c | sort -rn' % file_str
     if max_sites > 0:
        bash_cmd += " | head -n " + str(max_sites)
     subprocess.call(bash_cmd, shell=True)
@@ -106,7 +115,7 @@ print "INFO :: >>", bash_cmd, '\n'
 complete_files = get_cmd_output(bash_cmd)
 complete_files = set(f.strip().replace(".out","") for f in complete_files)
 
-if dumb_run:
+if args.dumb_run:
     print "WARNING :: DUMB RUN: Resubmit all files without successful run"
     resubmit_files = set(f for f in all_files if f not in complete_files)
 
@@ -118,7 +127,18 @@ else:
     norm_term_files = set(f.split()[0].replace(".log","") for f in norm_term_files)
 
     # Extra checks
+    import htcondor
     print "INFO :: Getting number of active jobs"
+    coll = htcondor.Collector()
+    schedd_ad = coll.locate(htcondor.DaemonTypes.Schedd)
+    schedd = htcondor.Schedd(schedd_ad)
+    req = 'Owner == "%s"' % condor_user
+    for x in exclude_proc:
+        req += ' && ClusterId != %d' % x
+    job_iterlist = schedd.xquery(requirements = req, projection = ['Out'])
+    active_ofiles = [x['Out'] for x in job_iterlist]
+    active_files = set(os.path.basename(x).replace('.out','') for x in active_ofiles)
+    
     bash_cmd = "condor_q | tail -n1 | grep -Po \"[0-9]*(?= jobs)\""
     print "INFO :: >>", bash_cmd, '\n'
     n_total_jobs = int(get_cmd_output(bash_cmd)[0])
@@ -156,15 +176,12 @@ else:
     #    active_files = empty_files
     
     failed_files = norm_term_files - complete_files
-    active_files = all_files - norm_term_files - aborted_files
     resubmit_files = failed_files | aborted_files
     finished_files = failed_files | aborted_files | complete_files
 
     # Checks
-    assert n_total_jobs == len(active_files), (
-        "ERROR :: condor_q gives %d active files but %d do not have \"%s\" or \"%s\" in them" % (n_total_jobs, len(active_files), finished_phrase, abort_phrase),
-        ", ".join(active_files)
-
+    assert len(active_files) == len(all_files - norm_term_files - aborted_files), (
+        "Active Files: %d != %d" % (len(active_files), len(all_files - norm_term_files - aborted_files))
     )
     assert not (failed_files & aborted_files), (
         "Failed and aborted files:", failed_files & aborted_files
@@ -192,7 +209,7 @@ else:
         if questionable_f:
             if len(rf - cf):
                 print "ERROR :: %d jobs have root files but the .out file doesn't say they are complete" % (len(rf - cf))
-                print "INFO :: These are the files\n\t",
+                print "INFO :: These are the files\n\t", rf - cf
                 
                 usr_msg = "Should the root files be deleted and log files modified?\n"
                 usr_msg += "Input your answer [Y/N]: "
@@ -244,7 +261,7 @@ else:
         if err_files:
             print '\n', "="*80
             print "INFO :: Summarizing top 10 errors occurrances for failed jobs"
-            bash_cmd = 'fgrep -ih error %s | grep -v "tar:" | sort | uniq -c | sort -rn | head -n 10' % (" ".join(err_files))
+            bash_cmd = 'fgrep -ih error %s | grep -v "tar:" | fgrep -v cling::AutoloadingVisitor::InsertIntoAutoloadingState | sort | uniq -c | sort -rn | head -n 10' % (" ".join(err_files))
             output = get_cmd_output(bash_cmd)
             for ii, line in enumerate(output, 1):
                 err = line.strip().split(' ',1)[1]

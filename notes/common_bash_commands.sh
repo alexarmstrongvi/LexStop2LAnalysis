@@ -1,5 +1,5 @@
-python submit_to_condor.py ../lists/file_lists_prefixed/*/*txt `cat ../../source/LexStop2LAnalysis/notes/split_samples_over_1M_events.txt`
-
+python submit_to_condor.py ../lists/file_lists_prefixed/*/*txt `cat ../../source/LexStop2LAnalysis/notes/samples_to_split.txt`
+python submit_to_condor.py ../lists/file_lists_prefixed/*/*txt --selection zjets3l `cat ../../source/LexStop2LAnalysis/notes/samples_to_split.txt` -o output/SuperflowAnaStop2l_zjets3l --tar-file output/SuperflowAnaStop2l_zjets3l/area.tgz
 # Sumw submit
 python submit_to_condor.py ../lists/file_lists_prefixed/mc16*/*txt --exec grabSumw -o sumw_output/
 
@@ -12,3 +12,4 @@ for f in mc16a mc16d mc16e; do python ~/LexTools/ATLAS_sw/get_fax_link_samples.p
 
 SuperflowAnaStop2L -i ../../susynt-write/run/old_test_results/data17_13TeV.00326439.physics_Main.deriv.DAOD_SUSY2.r10250_p3399_p3637_susynt_old.root -c
 SuperflowAnaStop2L -i ../../susynt-write/run/old_test_results/mc16_13TeV.410472.PhPy8EG_A14_ttbar_hdamp258p75_dil.deriv.DAOD_SUSY2.e6348_s3126_r10201_p3627_susynt_old.root -c
+NtMaker --mctype mc16a --prw-auto -f ./test_daod_samples/mc16_13TeV.410472.PhPy8EG_A14_ttbar_hdamp258p75_dil.deriv.DAOD_SUSY2.e6348_s3126_r9364_p3652/ -i mc16_13TeV.410472.PhPy8EG_A14_ttbar_hdamp258p75_dil.deriv.DAOD_SUSY2.e6348_s3126_r9364_p3652 --outfilename mc16_13TeV.410472.PhPy8EG_A14_ttbar_hdamp258p75_dil.deriv.DAOD_SUSY2.e6348_s3126_r9364_p3652_susynt_new.root -n 1000
