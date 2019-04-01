@@ -418,6 +418,9 @@ void set_global_variables(Superflow* cutflow) {
                 Susy::Lepton *lep_ii = sl->leptons->at(ii);
                 for (uint jj = ii+1; jj < sl->leptons->size(); ++jj) {
                     Susy::Lepton *lep_jj = sl->leptons->at(jj);
+                    bool SF = lep_ii->isEle() == lep_jj->isEle();
+                    bool OS = lep_ii->q * lep_jj->q < 0;
+                    if (!SF || !OS) continue;
                     float Z_diff_cf = fabs((*lep_ii+*lep_jj).M() - ZMASS);
                     if (Z_diff_cf < Z_diff) {
                         Z_diff = Z_diff_cf;
@@ -427,6 +430,7 @@ void set_global_variables(Superflow* cutflow) {
                 }
             }
         }
+        bool ztagged = ztagged_idx1 >= 0 && ztagged_idx2 >=0;
         // Define the following for each region's ntuples
         //     m_lep1
         //     m_lep2
@@ -449,7 +453,7 @@ void set_global_variables(Superflow* cutflow) {
             if (m_invLeps.size() >= 2) { m_probeLep2 = m_invLeps.at(1); }
             m_triggerLeptons.push_back(m_lep1);
             // Note: Cannot use dilepton triggers without introducing trigger bias
-        } else if (m_zjets_3l && sl->leptons->size() == 3) {
+        } else if (m_zjets_3l && sl->leptons->size() == 3 && ztagged) {
             m_lep1 = sl->leptons->at(ztagged_idx1);
             m_lep2 = sl->leptons->at(ztagged_idx2);
             m_dileptonP4 = *m_lep1 + *m_lep2;
@@ -461,9 +465,9 @@ void set_global_variables(Superflow* cutflow) {
             m_probeLep2 = nullptr;
             m_triggerLeptons.push_back(m_lep1);
             m_triggerLeptons.push_back(m_lep2);
-        } else if (m_fake_zjets_3l && sl->leptons->size() == 2 && m_invLeps.size() >= 1) {
-            m_lep1 = sl->leptons->at(0);
-            m_lep2 = sl->leptons->at(1);
+        } else if (m_fake_zjets_3l && sl->leptons->size() == 2 && m_invLeps.size() >= 1 && ztagged) {
+            m_lep1 = sl->leptons->at(ztagged_idx1);
+            m_lep2 = sl->leptons->at(ztagged_idx2);
             m_dileptonP4 = *m_lep1 + *m_lep2;
             m_probeLep1 = m_invLeps.at(0);
             if (m_invLeps.size() >= 2) { m_probeLep2 = m_invLeps.at(1); }
@@ -566,14 +570,14 @@ void add_analysis_cuts(Superflow* cutflow) {
         };
     }
     if (m_zjets_3l || m_fake_zjets_3l) {
-        *cutflow << CutName("|mZ_ll - Zmass| < 10 GeV") << [](Superlink* /*sl*/) -> bool {
-            return fabs(m_dileptonP4.M() - ZMASS) < 10;
-        };
         *cutflow << CutName("opposite sign") << [](Superlink* /*sl*/) -> bool {
             return (m_lep1->q * m_lep2->q < 0);
         };
         *cutflow << CutName("Z dilepton flavor (ee/mumu)") << [](Superlink* /*sl*/) -> bool {
             return m_lep1->isEle() == m_lep2->isEle();
+        };
+        *cutflow << CutName("|mZ_ll - Zmass| < 10 GeV") << [](Superlink* /*sl*/) -> bool {
+            return fabs(m_dileptonP4.M() - ZMASS) < 10;
         };
     }
 
