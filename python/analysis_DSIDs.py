@@ -14,20 +14,20 @@ DSID_GROUPS = {
     ############################################################################
     # SIGNAL
     ############################################################################
-    #stop2l_350_260'
-    #stop2l_350_230'
-    #stop2l_350_200'
+    'stop2l_350_260' : ['436200'], # MGPy8EG_A14N23LO_TT_bWN_350_260_MadSpin_2L15 (DeltaM =  90); Not available in mc16e
+    'stop2l_350_230' : ['436201'], # MGPy8EG_A14N23LO_TT_bWN_350_230_MadSpin_2L15 (DeltaM = 120); Not available in mc16e
+    'stop2l_350_200' : ['436202'], # MGPy8EG_A14N23LO_TT_bWN_350_200_MadSpin_2L15 (DeltaM = 150); Not available in mc16e
     'stop2l_350_185' : ['436203'], # MGPy8EG_A14N23LO_TT_bWN_350_185_MadSpin_2L15 (DeltaM = 165)
-    #stop2l_375_285
-    #stop2l_375_255
-    #stop2l_375_225
+    'stop2l_375_285' : ['436204'], # MGPy8EG_A14N23LO_TT_bWN_375_285_MadSpin_2L15 (DeltaM =  90); Not available in mc16e
+    'stop2l_375_255' : ['436205'], # MGPy8EG_A14N23LO_TT_bWN_375_255_MadSpin_2L15 (DeltaM = 120); Not available in mc16e
+    'stop2l_375_225' : ['436206'], # MGPy8EG_A14N23LO_TT_bWN_375_225_MadSpin_2L15 (DeltaM = 150); Not available in mc16e
     'stop2l_375_210' : ['436207'], # MGPy8EG_A14N23LO_TT_bWN_375_210_MadSpin_2L15 (DeltaM = 165)
-    #stop2l_400_310
-    #stop2l_400_280
-    #stop2l_400_250
-    #stop2l_400_235
+    'stop2l_400_310' : ['436208'], # MGPy8EG_A14N23LO_TT_bWN_400_310_MadSpin_2L15 (DeltaM =  90); Not available in mc16e
+    'stop2l_400_280' : ['436209'], # MGPy8EG_A14N23LO_TT_bWN_400_280_MadSpin_2L15 (DeltaM = 120); Not available in mc16e
+    'stop2l_400_250' : ['436210'], # MGPy8EG_A14N23LO_TT_bWN_400_250_MadSpin_2L15 (DeltaM = 150)
+    'stop2l_400_235' : ['436211'], # MGPy8EG_A14N23LO_TT_bWN_400_235_MadSpin_2L15 (DeltaM = 165)
     'stop2l_425_335' : ['436212'], # MGPy8EG_A14N23LO_TT_bWN_425_335_MadSpin_2L15 (DeltaM =  90)
-    #stop2l_425_305
+    'stop2l_425_305' : ['436213'], # MGPy8EG_A14N23LO_TT_bWN_435_305_MadSpin_2L15 (DeltaM = 120)
     'stop2l_425_275' : ['436214'], # MGPy8EG_A14N23LO_TT_bWN_425_275_MadSpin_2L15 (DeltaM = 150)
     'stop2l_425_260' : ['436215'], # MGPy8EG_A14N23LO_TT_bWN_425_260_MadSpin_2L15 (DeltaM = 165)
     'stop2l_450_360' : ['436216'], # MGPy8EG_A14N23LO_TT_bWN_450_360_MadSpin_2L15 (DeltaM =  90)
@@ -55,8 +55,11 @@ DSID_GROUPS = {
     # TOP
     ############################################################################
     # TTbar
-    "ttbar" : [
-                "410472", #PhPy8EG_A14_ttbar_hdamp258p75_di
+    "ttbar_dilep" : [
+                "410472", #PhPy8EG_A14_ttbar_hdamp258p75_dilep
+    ],
+    "ttbar_nonallhad" : [
+                "410470", #PhPy8EG_A14_ttbar_hdamp258p75_nonallhad
     ],
 
     # Single Top
@@ -81,18 +84,12 @@ DSID_GROUPS = {
     ############################################################################
     # TTBAR+X
     ############################################################################
-    "ttV" : [
-                "410155", #AMCP8_MEN30NLO_A14N23LO_ttW
-                "410218", #AMCP8_MEN30NLO_A14N23LO_ttee
-                "410219", #AMCP8_MEN30NLO_A14N23LO_ttmumu
-                "410220", #AMCP8_MEN30NLO_A14N23LO_tttauta
-    ],
     "ttgamma" : [
                 "410389", #MadGraphPythia8EvtGen_A14NNPDF23_ttgamma_nonallhadronic
     ],
     "ttVV" : [
                 "410081", #MadGraphPythia8EvtGen_A14NNPDF23_ttbarWW
-                "410217", #aMcAtNloHerwigppEvtGen_UEEE5_CTEQ6L1_CT10ME_260000_tWZDR
+                ##"410217", #aMcAtNloHerwigppEvtGen_UEEE5_CTEQ6L1_CT10ME_260000_tWZDR
     ],
     "ttV" : [
                 "410155", #aMcAtNloPythia8EvtGen_MEN30NLO_A14N23LO_ttW
@@ -267,9 +264,6 @@ DSID_GROUPS = {
 
     # 2L Diboson
     "2l_diboson" : [
-                "345666", #Sherpa_222_NNPDF30NNLO_llvvZZ
-                "345667", #Sherpa_222_NNPDF30NNLO_llvvWW
-                "345668", #Sherpa_222_NNPDF30NNLO_llvvInt
                 "345715", #Sherpa_222_NNPDF30NNLO_ggllvvInt
                 "345718", #Sherpa_222_NNPDF30NNLO_ggllvvWW
                 "345723", #Sherpa_222_NNPDF30NNLO_ggllvvZZ
@@ -310,12 +304,10 @@ DSID_GROUPS = {
                 "364247", #Sherpa_222_NNPDF30NNLO_ZZZ_6l0v_EW6
                 "364248", #Sherpa_222_NNPDF30NNLO_ZZZ_4l2v_EW6
                 "364249", #Sherpa_222_NNPDF30NNLO_ZZZ_2l4v_EW6
-                "364267", #Sherpa_222_NNPDF30NNLO_WWW_3l3v_LO_EW6
-                "364271", #Sherpa_222_NNPDF30NNLO_WZZ_3l3v_LO_EW6
-                "364336", #Sherpa_222_NNPDF30NNLO_WpWpWn_sslvlvjj_EW6
-                "364337", #Sherpa_222_NNPDF30NNLO_WnWnWp_sslvlvjj_EW6
-                "364338", #Sherpa_222_NNPDF30NNLO_WpWpWn_oslvlvjj_EW6
-                "364339", #Sherpa_222_NNPDF30NNLO_WnWnWp_oslvlvjj_EW6
+                ##"364336", #Sherpa_222_NNPDF30NNLO_WpWpWn_sslvlvjj_EW6
+                ##"364337", #Sherpa_222_NNPDF30NNLO_WnWnWp_sslvlvjj_EW6
+                ##"364338", #Sherpa_222_NNPDF30NNLO_WpWpWn_oslvlvjj_EW6
+                ##"364339", #Sherpa_222_NNPDF30NNLO_WnWnWp_oslvlvjj_EW6
     ],
 
     ############################################################################
@@ -326,29 +318,25 @@ DSID_GROUPS = {
                 "345120", #PowhegPy8EG_NNLOPS_nnlo_30_ggH125_tautaul13l7
                 "345121", #PowhegPy8EG_NNLOPS_nnlo_30_ggH125_tautaulm15hp20
                 "345122", #PowhegPy8EG_NNLOPS_nnlo_30_ggH125_tautaulp15hm20
-                "345123", #PowhegPy8EG_NNLOPS_nnlo_30_ggH125_tautauh30h20
-                "345324", #PP8_NNLOPS_NN30_ggH125_WWlvlv_EF_15_5
+                "343393", #PowhegPy8EG_CT10_AZNLOCTEQ6L1_ggH125_WWlvlv_EF_15_5_highMjj
     ],
 
     # Higgs VBF
     "higgs_VBF" : [
-                "345073", #PowhegPy8EG_NNPDF30_AZNLOCTEQ6L1_VBFH125_tautaul13l7
-                "345074", #PowhegPy8EG_NNPDF30_AZNLOCTEQ6L1_VBFH125_tautaulm15hp20
-                "345075", #PowhegPy8EG_NNPDF30_AZNLOCTEQ6L1_VBFH125_tautaulp15hm20
-                "345076", #PowhegPy8EG_NNPDF30_AZNLOCTEQ6L1_VBFH125_tautauh30h20
-                "345323", #PowhegPy8EG_NNPDF30_AZNLOCTEQ6L1_VBFH125_WWlvlv
+                "346190", #PowhegPy8EG_NNPDF30_AZNLOCTEQ6L1_VBFH125_tautaul13l7
+                ##"345074", #PowhegPy8EG_NNPDF30_AZNLOCTEQ6L1_VBFH125_tautaulm15hp20
+                ##"345075", #PowhegPy8EG_NNPDF30_AZNLOCTEQ6L1_VBFH125_tautaulp15hm20
     ],
 
     # Higgs ttH   
     "higgs_ttH" : [
-                "343365", #aMcAtNloPythia8EvtGen_A14_NNPDF23_NNPDF30ME_ttH125_dilep
-                "343366", #aMcAtNloPythia8EvtGen_A14_NNPDF23_NNPDF30ME_ttH125_semilep
+                ## No samples available in all campaigns
     ],
 
     # Higgs VH
     "higgs_VH" : [
-                "342284", #P8_WH125_inc
-                "342285", #P8_ZH125_in
+                "342284", #Pythia8EvtGen_A14NNPDF23LO_WH125_inc
+                "342285", #Pythia8EvtGen_A14NNPDF23LO_ZH125_inc
     ],
 
     ############################################################################
