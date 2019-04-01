@@ -18,7 +18,7 @@ _plot_save_dir = '%s/run/plots/' % _work_dir
 
 _apply_sf = False
 _sf_samples = False # False -> DF samples
-_fake_factor_looper = True
+_fake_factor_looper = False
 
 _only1516 = False
 _only17 = False
@@ -61,8 +61,8 @@ if _sf_samples:
     _sample_path = '%s/run/batch/output/SuperflowAnaStop2l_SF' % _work_dir
 else:
     #_sample_path = '%s/run/batch/output/SuperflowAnaStop2l_DF' % _work_dir
-    #_sample_path = '%s/run/batch/output/SuperflowAnaStop2l_zjets3l' % _work_dir
-    _sample_path = '%s/run/batch/output/SuperflowAnaStop2l_zjets3l_den' % _work_dir
+    _sample_path = '%s/run/batch/output/SuperflowAnaStop2l_zjets3l' % _work_dir
+    #_sample_path = '%s/run/batch/output/SuperflowAnaStop2l_zjets3l_den' % _work_dir
 
 _samples_to_use = [
     'data',
@@ -70,9 +70,9 @@ _samples_to_use = [
     #'Wt',
     #'ttV',
     #'wjets',
-    #'zjets', # Combination: zjets_ee + zjets_mumu + zjets_tautau
-    'zjets_ee',
-    'zjets_mumu',
+    'zjets', # Combination: zjets_ee + zjets_mumu + zjets_tautau
+    #'zjets_ee',
+    #'zjets_mumu',
     #'zjets_tautau',
     #'drellyan',
     'diboson',
@@ -180,12 +180,12 @@ _regions_to_use = [
     #'mT_SR_muel',
 
     # For fake factor
-    #'zjets3l_CR_num', 
+    'zjets3l_CR_num', 
     #'zjets3l_CR_den',
     #'zjets3l_CR_num_ll_el', 
     #'zjets3l_CR_den_ll_el',
-    'zjets3l_CR_num_ll_mu', 
-    'zjets3l_CR_den_ll_mu',
+    #'zjets3l_CR_num_ll_mu', 
+    #'zjets3l_CR_den_ll_mu',
     #'zjets3l_CR_num_elel_el', 
     #'zjets3l_CR_den_elel_el',
     #'zjets3l_CR_num_elel_mu', 
@@ -214,7 +214,7 @@ _vars_to_plot = [
     #'avgMuDataSF',
     #'nVtx',
     #'actualMu',
-    #'actualMuDataSF',
+    'actualMuDataSF',
     #'avgMuDataSF/avgMu',
     #'actualMuDataSF/actualMu',
     #'actualMu/avgMu',
@@ -222,18 +222,18 @@ _vars_to_plot = [
     #'avgMuDataSF/nVtx',
 
     ## Basic Kinematics
-    #'lep1Pt',
-    #'lep2Pt',
-    #'jet1Pt',
-    #'jet2Pt',
-    #'mll',
+    'lep1Pt',
+    'lep2Pt',
+    'jet1Pt',
+    'jet2Pt',
+    'mll',
     #'fabs(mll-91.2)',
-    #'met',
-    #'metrel',
+    'met',
+    'metrel',
     #'dpTll',
-    #'lep1mT',
-    #'lep2mT',
-    #'pTll',
+    'lep1mT',
+    'lep2mT',
+    'pTll',
 
     ## Truth
     #'lep1TruthClass',
@@ -242,15 +242,19 @@ _vars_to_plot = [
 
     ## Fake Factor
     'probeLep1Pt',
-    #'probeLep1Eta',
-    #'Mlll',
+    'probeLep1Eta',
+    'probeLep1mT',
+    'Z2_mll',
+    'mlll',
+    'dR_ZLep1_probeLep1',
+    'dR_ZLep2_probeLep1',
 
     ## Angles
-    #'dR_ll',
+    'dR_ll',
     #'dphi_ll', 
     #'deta_ll',
-    #'deltaPhi_met_l1',
-    #'deltaPhi_met_l2',
+    'deltaPhi_met_lep1',
+    'deltaPhi_met_lep2',
     
     #'lep_d0sigBSCorr[0]',
     #'lep_d0sigBSCorr[1]',
@@ -259,9 +263,9 @@ _vars_to_plot = [
 
     ## Multiplicites
     #'nLightJets',
-    #'nBJets',
+    'nBJets',
     #'nForwardJets',
-    #'nNonBJets',
+    'nNonBJets',
 
     # Multi-object
     #'max_HT_pTV_reco',
@@ -285,12 +289,12 @@ _vars_to_plot = [
     #'dR_ll:lep1mT',
     #'dR_ll:lep2mT',
     #'dR_ll:pTll',
-    #'deltaPhi_met_l1:lep1mT',
-    #'deltaPhi_met_l1:lep2mT',
-    #'deltaPhi_met_l1:pTll',
-    #'deltaPhi_met_l2:lep1mT',
-    #'deltaPhi_met_l2:lep2mT',
-    #'deltaPhi_met_l2:pTll',
+    #'deltaPhi_met_lep1:lep1mT',
+    #'deltaPhi_met_lep1:lep2mT',
+    #'deltaPhi_met_lep1:pTll',
+    #'deltaPhi_met_lep2:lep1mT',
+    #'deltaPhi_met_lep2:lep2mT',
+    #'deltaPhi_met_lep2:pTll',
     
     #'dR_ll:lep1mT' 
 ]
@@ -398,13 +402,14 @@ else:
           + DSID_GROUPS['data18']
           )
 
+DSID_GROUPS['ttbar'] = DSID_GROUPS['ttbar_dilep']
+#DSID_GROUPS['ttbar'] = DSID_GROUPS['ttbar_nonallhad']
 DSID_GROUPS['diboson'] = (
         DSID_GROUPS['1l_diboson']
       + DSID_GROUPS['2l_diboson']
       + DSID_GROUPS['3l_diboson']
       + DSID_GROUPS['4l_diboson']
       )
-DSID_GROUPS['triboson'] = DSID_GROUPS['triboson']
 DSID_GROUPS['zjets'] = (
         DSID_GROUPS['zjets_tautau']
       + DSID_GROUPS['zjets_mumu']
@@ -924,8 +929,9 @@ zjets3l_sel += ' && (fabs(mll - 91.2) < 10)'
 zjets3l_sel += ' && probeLep1mT < 40'
 zjets3l_sel += ' && (fabs(Z2_mll - 91.2) > 10)'
 zjets3l_sel += ' && met < 60'
+zjets3l_sel += ' && dR_ZLep1_probeLep1 > 0.2 && dR_ZLep2_probeLep1 > 0.2' 
 zjets3l_sel_num = zjets3l_sel + " && nSigLeps == 3"
-zjets3l_sel_den = zjets3l_sel + " && nSigLeps == 2 && nInvLeps >= 1"
+zjets3l_sel_den = zjets3l_sel + " && nSigLeps == 2 && nInvLeps >= 1 && probeLep1Pt > 20"
 
 def add_zjets3L_channels(reg, REGs):
     # Define selections
@@ -946,10 +952,10 @@ def add_zjets3L_channels(reg, REGs):
     ch = reg.build_channel('elel_el', 'ee+e', '$ee+e$',cuts=elel_el_sel)
     reg.compare_regions.append(ch)
     REGs.append(ch)
-    ch = reg.build_channel('elel_mu', 'ee+#mu', '$ee+\mu$',cuts=elel_mu_sel)
+    ch = reg.build_channel('mumu_el', '#mu#mu+e', '$\mu\mu+e$',cuts=mumu_el_sel)
     reg.compare_regions.append(ch)
     REGs.append(ch)
-    ch = reg.build_channel('mumu_el', '#mu#mu+e', '$\mu\mu+e$',cuts=mumu_el_sel)
+    ch = reg.build_channel('elel_mu', 'ee+#mu', '$ee+\mu$',cuts=elel_mu_sel)
     reg.compare_regions.append(ch)
     REGs.append(ch)
     ch = reg.build_channel('mumu_mu', '#mu#mu+#mu', '$\mu\mu+\mu$',cuts=mumu_mu_sel)
@@ -962,7 +968,7 @@ region.tcut = zjets3l_sel_num
 REGIONS.append(region)
 add_zjets3L_channels(region, REGIONS)
 
-region = Region('zjets3l_CR_den', 'Z+jets CR (2 ID + 1 #bar{ID})','$Z$+jets CR (2 $\\ell_\\text{ID} + 1 $\\ell_\\bar{\\text{ID}}$)')
+region = Region('zjets3l_CR_den', 'Z+jets CR (2 ID + 1 #bar{ID})','$Z$+jets CR (2 $\\ell_\\text{ID}$ + 1 $\\ell_{\\bar{\\text{ID}}}$)')
 region.tcut = zjets3l_sel_den
 REGIONS.append(region)
 add_zjets3L_channels(region, REGIONS)
@@ -1034,6 +1040,9 @@ for reg in REGIONS:
         reg.yield_table.add_row_formula(name='purity', displayname='Purity', formula='signal/MC')
         reg.yield_table.add_row_formula(name='ttbar_contamination', displayname='t#bar{t}/MC', latexname='$t\\bar{t}$/MC', formula='ttbar/MC')
         reg.yield_table.add_row_formula(name='vv_contamination', displayname='VV/MC', formula='diboson/MC')
+    elif 'zjets3l' in reg.name:
+        reg.yield_table.add_row_formula(name='vv_contamination', displayname='VV/MC', formula='diboson/MC')
+        reg.yield_table.add_row_formula(name='vv_contamination2', displayname='VV/Data', formula='diboson/data')
 
 
 ################################################################################
@@ -1076,8 +1085,8 @@ plots_defaults = {
     'jet2Pt'  : Plot1D(bin_range=[0,150], bin_width = 5, xlabel='p_{T}^{subleading jet}', xunits='GeV'),
     'mll'     : Plot1D(bin_range=[0, 300], bin_width=10, xlabel='M_{ll}', xunits='GeV', xcut_is_max=False),
     'fabs(mll-91.2)'     : Plot1D(bin_range=[0, 50], bin_width=1, xlabel='|M_{ll} - 91.2|', xunits='GeV', xcut_is_max=False),
-    'met'     : Plot1D(bin_range=[0, 200], bin_width=10, xlabel='E_{T}^{miss}', xunits='GeV', xcut_is_max=False),
-    'metrel'  : Plot1D(bin_range=[0, 200], bin_width=5, xlabel='E_{T}^{miss}_{rel}', xunits='GeV', xcut_is_max=False),
+    'met'     : Plot1D(bin_range=[0, 200], bin_width=10, xlabel='E_{T}^{miss}', xunits='GeV', xcut_is_max=True),
+    'metrel'  : Plot1D(bin_range=[0, 200], bin_width=5, xlabel='E_{T}^{miss}_{rel}', xunits='GeV', xcut_is_max=True),
     'dpTll'   : Plot1D(bin_range=[0, 100], bin_width=5, xlabel='#Deltap_{T}(l_{1},l_{2})', xunits='GeV', xcut_is_max=False),
     'pTll'    : Plot1D(bin_range=[0, 300], bin_width=10, xlabel='p_{T}^{ll}', xunits='GeV', xcut_is_max=False),
     'max_HT_pTV_reco'    : Plot1D(bin_range=[0, 300], bin_width=10, xlabel='max(HT,pTV)', xunits='GeV'),
@@ -1090,17 +1099,22 @@ plots_defaults = {
     'probeLep1TruthClass' : Plot1D( bin_range=[-4.5, 11.5],  bin_width=1, doNorm=True, doLogY=False, xlabel='Leading probe lepton truth classification'),
 
     # Fake Factor
-    #'probeLep1Pt' : Plot1D(bin_edges=[3, 4.5, 10, 15, 20, 50], xlabel='p_{T}^{probe lep}', xunits='GeV', doLogY=False),
-    'probeLep1Pt'  : Plot1D(bin_edges=[20, 25, 30, 35, 40, 45, 50, 60, 70, 85, 100], xlabel='p_{T}^{probe lep}', xunits='GeV', add_overflow=True, doLogY=False),
+    #'probeLep1Pt' : Plot1D(bin_edges=[0, 3, 3.5, 4, 4.5, 5, 6, 7, 8, 9, 10, 12, 14, 16, 20, 30], xlabel='p_{T}^{probe lep}', xunits='GeV', doLogY=False),
+    #'probeLep1Pt'  : Plot1D(bin_edges=[20, 25, 30, 35, 40, 45, 50, 60, 70, 85, 100], xlabel='p_{T}^{probe lep}', xunits='GeV', add_overflow=True, doLogY=False),
+    'probeLep1Pt'  : Plot1D(bin_edges=[20, 25, 30, 40, 60, 100], xlabel='p_{T}^{probe lep}', xunits='GeV', add_overflow=True, doLogY=False),
     'probeLep1Eta' : Plot1D(bin_edges=[-3.0, -2.5, -1.45, 0, 1.45, 2.5, 3.0], xlabel='#eta^{probe lep}', xunits='', add_underflow=True, doLogY=False),
-    'Mlll'         : Plot1D(bin_range=[70, 150], bin_width=5, xlabel='M_{lll}', xunits='GeV', add_underflow=True),
+    'probeLep1mT'  : Plot1D(bin_range=[0, 150], bin_width=5, xlabel='m_{T}^{probe lep}', xunits='GeV', xcut_is_max=True),
+    'mlll'         : Plot1D(bin_range=[70, 150], bin_width=5, xlabel='M_{lll}', xunits='GeV', add_underflow=True),
+    'Z2_mll'       : Plot1D(bin_range=[50, 140], bin_width=5, xlabel='Z2 M_{ll}', xunits='GeV', add_underflow=True),
+    'dR_ZLep1_probeLep1' : Plot1D(bin_range=[0, 6], bin_width=0.2, xlabel='#DeltaR(l^{probe}_{1},l_{Z1})'),
+    'dR_ZLep2_probeLep1' : Plot1D(bin_range=[0, 6], bin_width=0.2, xlabel='#DeltaR(l^{probe}_{1},l_{Z2})'),
 
     # Angles
     'dR_ll' : Plot1D(bin_range=[0, 6], bin_width=0.2, xlabel='#DeltaR(l_{1},l_{2})', xcut_is_max=False),
     'dphi_ll' : Plot1D(bin_range=[0, 3.2], bin_width=0.1, xlabel='#Delta#phi(l_{1},l_{2})'),
     'deta_ll' : Plot1D(bin_range=[0, 6], bin_width=0.2, xlabel='#Delta#eta(l_{1},l_{2})'),
-    'deltaPhi_met_l1' : Plot1D(bin_range=[0, 3.2], bin_width=0.2, xlabel='#Delta#phi(E_{T}^{miss},l_{1})', xcut_is_max=True),
-    'deltaPhi_met_l2' : Plot1D(bin_range=[0, 3.2], bin_width=0.2, xlabel='#Delta#phi(E_{T}^{miss},l_{2})', xcut_is_max=False),
+    'deltaPhi_met_lep1' : Plot1D(bin_range=[0, 3.2], bin_width=0.2, xlabel='#Delta#phi(E_{T}^{miss},l_{1})', xcut_is_max=True),
+    'deltaPhi_met_lep2' : Plot1D(bin_range=[0, 3.2], bin_width=0.2, xlabel='#Delta#phi(E_{T}^{miss},l_{2})', xcut_is_max=False),
     'lep_d0sigBSCorr[0]'   : Plot1D( bin_range=[-5, 5],     bin_width=0.2, add_underflow=True, doNorm=False, doLogY=True, xlabel='Lep0 d_{0}/#sigma_{d_{0}} BSCorr'),
     'lep_d0sigBSCorr[1]'   : Plot1D( bin_range=[-5, 5],     bin_width=0.2, add_underflow=True, doNorm=False, doLogY=True, xlabel='Lep1 d_{0}/#sigma_{d_{0}} BSCorr'),
     'lep_z0SinTheta[0]'    : Plot1D( bin_range=[-0.5, 0.5],     bin_width=0.02, add_underflow=True, doNorm=False, doLogY=True, xunits='mm', xlabel='Lep0 z_{0}sin(#theta)'),
@@ -1132,12 +1146,12 @@ plots_defaults = {
     'dR_ll:lep1mT' : Plot2D(bin_range=[0, 150, 0, 6], xbin_width = 10, ybin_width = 0.2, xlabel='lep1mT', ylabel='dR_ll'), 
     'dR_ll:lep2mT' : Plot2D(bin_range=[0, 150, 0, 6], xbin_width = 10, ybin_width = 0.2, xlabel='lep2mT', ylabel='dR_ll'), 
     'dR_ll:pTll'    : Plot2D(bin_range=[0, 300, 0, 6], xbin_width = 20, ybin_width = 0.2, xlabel='pTll', ylabel='dR_ll'), 
-    'deltaPhi_met_l1:lep1mT' : Plot2D(bin_range=[0, 150, 0, 3.2], xbin_width = 10, ybin_width = 0.2, xlabel='lep1mT', ylabel='deltaPhi_met_l1'), 
-    'deltaPhi_met_l1:lep2mT' : Plot2D(bin_range=[0, 150, 0, 3.2], xbin_width = 10, ybin_width = 0.2, xlabel='lep2mT', ylabel='deltaPhi_met_l1'), 
-    'deltaPhi_met_l1:pTll'    : Plot2D(bin_range=[0, 300, 0, 3.2], xbin_width = 20, ybin_width = 0.2, xlabel='pTll', ylabel='deltaPhi_met_l1'), 
-    'deltaPhi_met_l2:lep1mT' : Plot2D(bin_range=[0, 150, 0, 3.2], xbin_width = 10, ybin_width = 0.2, xlabel='lep1mT', ylabel='deltaPhi_met_l2'), 
-    'deltaPhi_met_l2:lep2mT' : Plot2D(bin_range=[0, 150, 0, 3.2], xbin_width = 10, ybin_width = 0.2, xlabel='lep2mT', ylabel='deltaPhi_met_l2'), 
-    'deltaPhi_met_l2:pTll'    : Plot2D(bin_range=[0, 300, 0, 3.2], xbin_width = 20, ybin_width = 0.2, xlabel='pTll', ylabel='deltaPhi_met_l2'), 
+    'deltaPhi_met_lep1:lep1mT' : Plot2D(bin_range=[0, 150, 0, 3.2], xbin_width = 10, ybin_width = 0.2, xlabel='lep1mT', ylabel='deltaPhi_met_lep1'), 
+    'deltaPhi_met_lep1:lep2mT' : Plot2D(bin_range=[0, 150, 0, 3.2], xbin_width = 10, ybin_width = 0.2, xlabel='lep2mT', ylabel='deltaPhi_met_lep1'), 
+    'deltaPhi_met_lep1:pTll'    : Plot2D(bin_range=[0, 300, 0, 3.2], xbin_width = 20, ybin_width = 0.2, xlabel='pTll', ylabel='deltaPhi_met_lep1'), 
+    'deltaPhi_met_lep2:lep1mT' : Plot2D(bin_range=[0, 150, 0, 3.2], xbin_width = 10, ybin_width = 0.2, xlabel='lep1mT', ylabel='deltaPhi_met_lep2'), 
+    'deltaPhi_met_lep2:lep2mT' : Plot2D(bin_range=[0, 150, 0, 3.2], xbin_width = 10, ybin_width = 0.2, xlabel='lep2mT', ylabel='deltaPhi_met_lep2'), 
+    'deltaPhi_met_lep2:pTll'    : Plot2D(bin_range=[0, 300, 0, 3.2], xbin_width = 20, ybin_width = 0.2, xlabel='pTll', ylabel='deltaPhi_met_lep2'), 
 }
 l_truthClass_labels = ['','no origin info','no mother info','no truth info','uncategorized','prompt El','prompt Mu', 'prompt Pho','prompt El from FSR','hadron','Mu as e','HF tau','HF B','HF C', 'unknown pho conv',' ']
 plots_defaults['lep1TruthClass'].bin_labels = l_truthClass_labels

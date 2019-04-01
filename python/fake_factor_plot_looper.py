@@ -624,7 +624,7 @@ def get_fake_factor_hists(hists):
             num_hist = ch_dict[conf.NUM_STR][hist_key]
             ff_hist = num_hist.Clone(fake_factor_name)
             ff_hist.Divide(ch_dict[conf.DEN_STR][hist_key])
-            ff_hist.SetMaximum(0.5)
+            ff_hist.SetMaximum(5)
 
             # Append some information   
             ff_hist.displayname = hist_key.replace("_"," ")
@@ -906,7 +906,7 @@ def save_hist(title, plot, reg_name, hist_list):
                 hist.SetMarkerSize(1.5)
                 hist.SetMarkerColor(hist.color)
                 #hist.SetLineColor(hist.color)
-                leg_type = 'm'
+                leg_type = 'p'
             legend.AddEntry(hist, hist.displayname, leg_type)
 
     # Draw primitives to canvas
