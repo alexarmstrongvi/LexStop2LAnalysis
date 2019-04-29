@@ -15,6 +15,11 @@ work_dir = '/data/uclhc/uci/user/armstro1/SusyNt/Stop2l/SusyNt_master/susynt-rea
 input_files_dir = '%s/run/lists/file_lists_prefixed' % work_dir
 log_file_dir = '%s/run/batch/condor_output' % (work_dir)
 
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument('-d','--directory', help="Directory with all condor output files", default=log_file_dir)
+args = parser.parse_args()
+
 def is_match(campaign, group):
     if 'data' in group and campaign in group:
         return True
@@ -25,7 +30,7 @@ def is_match(campaign, group):
 ################################################################################
 # Where the magic happens
 ################################################################################
-root_glob_cmd = "%s/*root" % os.path.relpath(log_file_dir, os.getcwd())
+root_glob_cmd = "%s/*root" % os.path.relpath(args.directory, os.getcwd())
 file_list = glob.glob(root_glob_cmd)
 
 print "INFO :: Found %d root files" % len(file_list)

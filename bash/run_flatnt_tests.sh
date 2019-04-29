@@ -14,7 +14,7 @@ fi
 ################################################################################
 # Globals
 STORE_DIR='./old_test_results/SuperflowAnaStop2L_results' # dont add trailing backslash
-SUSYNT_DIR='../../susynt-write/run/old_test_results'
+SUSYNT_DIR='./local_samples'
 
 ################################################################################
 # Test commands for various files
@@ -27,10 +27,11 @@ function strip_file_of_timestamps() {
 
 function run_SuperflowAnaStop2l() {
     susynt=$1
-    ofile=$2
-    logfile=$3
-    echo "SuperflowAnaStop2L -i $susynt -c"
-    SuperflowAnaStop2L -i $susynt -c 2>&1 | tee $logfile
+    selection=$2
+    ofile=$3
+    logfile=$4
+    echo "SuperflowAnaStop2L -i $susynt -c -s $selection -n 10000"
+    SuperflowAnaStop2L -i $susynt -c -s $selection -n 10000 2>&1 | tee $logfile
     mv CENTRAL*root $ofile
     
     echo
@@ -50,36 +51,49 @@ function run_grabSumw() {
     echo
 }
 
+SELECTION="baseline_DF"
 SAMPLES=
-#MC16a (r9364)
-SAMPLES="$SAMPLES mc16_13TeV.410472.PhPy8EG_A14_ttbar_hdamp258p75_dil.deriv.DAOD_SUSY2.e6348_s3126_r9364_p3652"
-#MC16d (r10201)
-SAMPLES="$SAMPLES mc16_13TeV.410472.PhPy8EG_A14_ttbar_hdamp258p75_dil.deriv.DAOD_SUSY2.e6348_s3126_r10201_p3627"
-#MC16e (r10724)
-SAMPLES="$SAMPLES mc16_13TeV.410472.PhPy8EG_A14_ttbar_hdamp258p75_dil.deriv.DAOD_SUSY2.e6348_s3126_r10724_p3627"
-#Data15
-SAMPLES="$SAMPLES data15_13TeV.00279515.physics_Main.deriv.DAOD_SUSY2.r9264_p3083_p3637"
-#Data16
-SAMPLES="$SAMPLES data16_13TeV.00298595.physics_Main.deriv.DAOD_SUSY2.r9264_p3083_p3637"
-#Data17
-SAMPLES="$SAMPLES data17_13TeV.00326439.physics_Main.deriv.DAOD_SUSY2.r10250_p3399_p3637"
-#Data18
-SAMPLES="$SAMPLES data18_13TeV.00359310.physics_Main.deriv.DAOD_SUSY2.f964_m2020_p3653"
+#SAMPLES="$SAMPLES group.phys-susy.mc16_13TeV.410472.PhPy8EG_A14_ttbar_hdamp258p75_dil.SusyNt.mc16a.p3703_n0307_nt"
+#SAMPLES="$SAMPLES group.phys-susy.mc16_13TeV.410472.PhPy8EG_A14_ttbar_hdamp258p75_dil.SusyNt.mc16d.p3703_n0307_nt"
+#SAMPLES="$SAMPLES group.phys-susy.mc16_13TeV.410472.PhPy8EG_A14_ttbar_hdamp258p75_dil.SusyNt.mc16e.p3703_n0307_nt"
+#SAMPLES="$SAMPLES group.phys-susy.data15_13TeV.00284285.physics_Main.SusyNt.p3704_n0307_nt"
+#SAMPLES="$SAMPLES group.phys-susy.data16_13TeV.00299584.physics_Main.SusyNt.p3704_n0307_nt"
+SAMPLES="$SAMPLES group.phys-susy.data17_13TeV.00338377.physics_Main.SusyNt.p3704_n0307_nt"
+#SAMPLES="$SAMPLES group.phys-susy.data18_13TeV.00359872.physics_Main.SusyNt.p3704_n0307_nt"
 #MC16a HIGG4D1
 #SAMPLES="$SAMPLES mc16_13TeV.303778.Pythia8EvtGen_A14NNPDF23LO_Ztaumu_LeptonFilter.deriv.DAOD_HIGG4D1.e4245_s3126_r9364_p3563"
 
-for SAMPLE in $SAMPLES; do
-    SUSYNT="${SUSYNT_DIR}/${SAMPLE}_susynt_old.root" # Assumed formatting for SusyNts 
-    OFILE="${SAMPLE}_flatnt_new.root"
-    LOGFILE="${SAMPLE}_flatnt_new.log"
-    run_SuperflowAnaStop2l $SUSYNT $OFILE $LOGFILE
+SAMPLE="group.phys-susy.mc16_13TeV.410472.PhPy8EG_A14_ttbar_hdamp258p75_dil.SusyNt.mc16a.p3703_n0307_nt" 
+SELECTIONS=
+# baseline_DF run above
+#SELECTIONS="$SELECTIONS baseline_SF"
+#SELECTIONS="$SELECTIONS zjets2l_inc"
+#SELECTIONS="$SELECTIONS zjets3l"
+#SELECTIONS="$SELECTIONS fake_baseline_DF"
+#SELECTIONS="$SELECTIONS fake_baseline_SF"
+#SELECTIONS="$SELECTIONS fake_zjets3l"
+
+for sample in $SAMPLES; do
+    SUSYNT="${SUSYNT_DIR}/${sample}/" 
+    OFILE="${sample}_${SELECTION}_flatnt_new.root"
+    LOGFILE="${sample}_${SELECTION}_flatnt_new.log"
+    run_SuperflowAnaStop2l $SUSYNT $SELECTION $OFILE $LOGFILE
 
     #Test grabSumw
-    if [[ $SAMPLE == "mc16"* ]]; then
-        SUMW_LOGFILE="${SAMPLE}_sumw_new.log"
+    if [[ $sample == "mc16"* ]]; then
+        SUMW_LOGFILE="${sample}_sumw_new.log"
         #run_grabSumw $SUSYNT $SUMW_LOGFILE
     fi
 done
+
+for sel in $SELECTIONS; do
+    SUSYNT="${SUSYNT_DIR}/${SAMPLE}/" 
+    OFILE="${SAMPLE}_${sel}_flatnt_new.root"
+    LOGFILE="${SAMPLE}_${sel}_flatnt_new.log"
+    run_SuperflowAnaStop2l $SUSYNT $sel $OFILE $LOGFILE
+done
+
+
 
 printf "\n\n ========== Performing Checks ========== \n\n"
 echo ">> Comparing log files"

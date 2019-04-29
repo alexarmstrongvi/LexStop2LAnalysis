@@ -68,10 +68,11 @@ def print_jobsite_ranking(log_files, max_sites = 0):
        bash_cmd += " | head -n " + str(max_sites)
     subprocess.call(bash_cmd, shell=True)
 
-root_files = set(x.replace('.root','') for x in glob.glob(root_glob_cmd))
 all_files = set(x.replace('.log','') for x in glob.glob(log_glob_cmd))
 all_files2 = set(x.replace('.out','') for x in glob.glob(out_glob_cmd))
 all_files3 = set(x.replace('.err','') for x in glob.glob(err_glob_cmd))
+root_files = set(x.replace('.root','') for x in glob.glob(root_glob_cmd))
+#root_files = [x for x in all_files for y in root_files if extract_info(x)==extract_info(y)]
 if len(all_files) > len(all_files2):
     print "WARNING :: There is/are %d missing .out file(s)" % (len(all_files) - len(all_files2))
     print "INFO :: Treating these as if they were empty .out files"
@@ -114,6 +115,18 @@ bash_cmd = "grep -l \"%s\" %s" % (pass_phrase, out_glob_cmd)
 print "INFO :: >>", bash_cmd, '\n' 
 complete_files = get_cmd_output(bash_cmd)
 complete_files = set(f.strip().replace(".out","") for f in complete_files)
+#print "TESTING :: removing files without root"
+#tmp_lst = set()
+#for ii, c in enumerate(complete_files):
+#    if ii%100==0:
+#        print "TESTING :: processing file %d" % ii
+#    for r in root_files:
+#        if extract_info(c) == extract_info(r):
+#            tmp_lst.add(c)
+#            break
+#    else:
+#        print "TESTING :: No root match for ", c
+#complete_files = tmp_lst
 
 if args.dumb_run:
     print "WARNING :: DUMB RUN: Resubmit all files without successful run"
@@ -133,6 +146,15 @@ else:
     schedd_ad = coll.locate(htcondor.DaemonTypes.Schedd)
     schedd = htcondor.Schedd(schedd_ad)
     req = 'Owner == "%s"' % condor_user
+    # Job Status Enum
+    # 1 = Idle (I)
+    # 2 = Running (R)
+    # 3 = Removed (X)
+    # 4 = Completed (C)
+    # 5 = Held (H)
+    # 6 = Transferring Output
+    # 7 = Suspended
+    req += ' && JobStatus != 3'
     for x in exclude_proc:
         req += ' && ClusterId != %d' % x
     job_iterlist = schedd.xquery(requirements = req, projection = ['Out'])
@@ -181,13 +203,17 @@ else:
 
     # Checks
     assert len(active_files) == len(all_files - norm_term_files - aborted_files), (
-        "Active Files: %d != %d" % (len(active_files), len(all_files - norm_term_files - aborted_files))
+        "Active Files: %d != %d" % (len(active_files), len(all_files - norm_term_files - aborted_files)),
+        "; ", (all_files - norm_term_files - aborted_files) ^ active_files
     )
     assert not (failed_files & aborted_files), (
         "Failed and aborted files:", failed_files & aborted_files
     )
     assert not (failed_files & complete_files), (
         "Failed and complete files:", failed_files & complete_files
+    )
+    assert not (aborted_files & complete_files), (
+        "Aborted and complete files:", aborted_files & complete_files
     )
     assert len(active_files) + len(finished_files) == len(all_files), (
         "ERROR :: %d active files + %d finished != %d total files" % (len(active_files), len(finished_files), len(all_files)),

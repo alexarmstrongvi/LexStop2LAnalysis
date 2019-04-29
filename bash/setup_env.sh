@@ -8,7 +8,7 @@
 if [ "$(basename $PWD)" == "susynt-read" ]; then
     source bash/setup_release.sh  
     source source/jigsawcalculator/bash/setup.sh
-    source ../PlotTools/add_to_path.sh
+    source ../PlotTools/bash/add_to_path.sh
     source source/LexStop2LAnalysis/bash/add_to_path.sh
     source bash/setup_env_vars.sh
     lsetup git

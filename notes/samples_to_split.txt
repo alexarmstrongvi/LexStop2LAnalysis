@@ -1,3 +1,2 @@
---split-dsids 410472 mc16a
---split-dsids 410472 mc16e
+--split-dsids 410472
 --split-dsids 364253 mc16e
