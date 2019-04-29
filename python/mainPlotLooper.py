@@ -31,42 +31,43 @@ def main():
         n_plots = len(plots_with_reg)
         for ii, plot in enumerate(plots_with_reg, 1):
             print "[%d/%d] Plotting %s"%(ii, n_plots, plot.name), 40*'-'
-            if not plot.is2D:
-                if len(SAMPLES) == 1:
-                    with Hist.SampleCompare1D(plot, reg, SAMPLES) as hists:
-                        plot.make_overlay_plot(reg.displayname, hists)
-                elif len(SAMPLES) >= 2:
-                    #with Hist.SampleCompare1D(plot, reg, SAMPLES) as hists:
-                    #    plot.make_overlay_plot(reg.displayname, hists)
-                    
-                    backgrounds = [s for s in SAMPLES if s.isMC and not s.isSignal]
-                    signals = [s for s in SAMPLES if s.isMC and s.isSignal]
-                    
-                    #with Hist.CutScan1D(plot, reg, signals, backgrounds, plot.xcut_is_max) as main_hist:
-                    #    plot.make_cutscan1d_plot(main_hist, reg.displayname)
-                    
-                    try:
-                        data = next(s for s in SAMPLES if not s.isMC)
-                    except StopIteration:
-                        data = None
-                    with Hist.DataMCStackHist1D(plot, reg, data=data, bkgds=backgrounds, sigs=signals) as main_hist:
-                        with Hist.DataMCRatioHist1D(plot, reg, main_hist) as ratio_hist:
-                            plot.make_data_mc_stack_with_ratio_plot(reg.displayname, main_hist, ratio_hist)
-                    
-                    #with Hist.SampleCompare1D(plot, reg, SAMPLES) as hists:
-                    #    num = hists.hists[0]
-                    #    den = hists.hists[1]
-                    #    with Hist.RatioHist1D(plot, num, den, ymax = 2, ymin = 0) as ratio_hist:
-                    #        ratio_label = "%s / %s" % (SAMPLES[0].displayname, SAMPLES[1].displayname)
-                    #        plot.make_overlay_with_ratio_plot(reg.displayname, ratio_label, hists, ratio_hist)
-            else:
+            backgrounds = [s for s in SAMPLES if s.isMC and not s.isSignal]
+            backgrounds += [s for s in SAMPLES if not s.isMC and s.isDataBkg]
+            signals = [s for s in SAMPLES if s.isMC and s.isSignal]
+            try:
+                data = next(s for s in SAMPLES if not s.isMC and not s.isDataBkg)
+            except StopIteration:
+                data = None
+                
+            if args.plot_op == 'overlay_1d':
+                with Hist.SampleCompare1D(plot, reg, SAMPLES) as hists:
+                    plot.make_overlay_plot(reg.displayname, hists)
+            elif args.plot_op == 'cutscan_1d':        
+                with Hist.CutScan1D(plot, reg, signals, backgrounds, plot.xcut_is_max) as main_hist:
+                    plot.make_cutscan1d_plot(main_hist, reg.displayname)
+            elif args.plot_op == 'datamcstack_1d':
+                with Hist.DataMCStackHist1D(plot, reg, data=data, bkgds=backgrounds, sigs=signals) as main_hist:
+                    plot.make_data_mc_stack_plot(reg.displayname, main_hist)
+            elif args.plot_op == 'datamcratio_1d':
+                with Hist.DataMCStackHist1D(plot, reg, data=data, bkgds=backgrounds, sigs=signals) as main_hist:
+                    with Hist.DataMCRatioHist1D(plot, reg, main_hist) as ratio_hist:
+                        plot.make_data_mc_stack_with_ratio_plot(reg.displayname, main_hist, ratio_hist)
+            elif args.plot_op == 'mcstack_1d':
+                print "TODO :: Not yet implemented"
+            elif args.plot_op == 'overlayratio_1d': 
+                with Hist.SampleCompare1D(plot, reg, SAMPLES) as hists:
+                    num = hists.hists[0]
+                    den = hists.hists[1]
+                    with Hist.RatioHist1D(plot, num, den, ymax = 2, ymin = 0) as ratio_hist:
+                        ratio_label = "%s / %s" % (SAMPLES[0].displayname, SAMPLES[1].displayname)
+                        plot.make_overlay_with_ratio_plot(reg.displayname, ratio_label, hists, ratio_hist)
+            elif args.plot_op == 'simple_2d':
                 for s in SAMPLES:
                     with Hist.Hist2D(plot, reg, [s]) as main_hists:
                         plot.make_2d_hist(main_hists, s.name)
-                #backgrounds = [s for s in SAMPLES if s.isMC and not s.isSignal]
-                #signals = [s for s in SAMPLES if s.isMC and s.isSignal]
-                #with Hist.CutScan2D(plot, reg, signals, backgrounds,p.xcut_is_max, p.ycut_is_max, p.and_cuts, p.bkgd_rej) as hists:
-                    #plot.make_cutscan2d_plot(hists, reg.name)
+            elif args.plot_op == 'cutscan_2d': 
+                with Hist.CutScan2D(plot, reg, signals, backgrounds, xcut_is_max=True, ycut_is_max=True, and_cuts=True, bkgd_rej=False) as hists:
+                    plot.make_cutscan2d_plot(hists, reg.name)
 
 
 ################################################################################
@@ -154,6 +155,9 @@ if __name__ == "__main__":
         parser.add_argument("-o", "--outdir",
                                 default="./",
                                 help='name of the output directory to save plots.')
+        parser.add_argument("--plot-op",
+                                default="overlay_1d",
+                                help="overlay_1d, cutscan_1d, datamcstack_1d, mcstack_1d, overlay_1d, simple_2d, cutscan_2d")
         parser.add_argument("-v", "--verbose",
                                 action="store_true",
                                 help='set verbosity mode')

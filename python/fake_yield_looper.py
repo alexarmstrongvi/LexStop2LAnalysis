@@ -6,6 +6,7 @@ from PlotTools.YieldTable import YieldTbl, UncFloat
 UncFloat.precision = 2
 from math import sqrt
 from copy import deepcopy
+from collections import defaultdict
 
 import pdb #TESTING
 
@@ -29,18 +30,40 @@ def main():
     lep2fake = '(lep2TruthClass < 1 || 2 < lep2TruthClass)'
     lep1prompt = '(lep1TruthClass == 1 || lep1TruthClass == 2)'
     lep2prompt = '(lep2TruthClass == 1 || lep2TruthClass == 2)'
-    fake_event = '(%s || %s)' % (lep1fake, lep2fake)
-    sglfake_event = '(%s != %s)' % (lep1fake, lep2fake)
-    leadfake_event = '(%s && %s)' % (lep1fake, lep2prompt)
-    sleadfake_event = '(%s && %s)' % (lep1prompt, lep2fake)
-    dblfake_event = '(%s && %s)' % (lep1fake, lep2fake)
-    fake_sels = [
-        ('TotalYld' , ''),
-        ('FakeEvents' , fake_event),
-        ('LeadingFakeLep' , leadfake_event),
-        ('SubleadingFakeLep' , sleadfake_event),
-        ('DoubleFakeLep' , dblfake_event),
-    ]
+    if args.type == '2lep':
+        fake_event = '(%s || %s)' % (lep1fake, lep2fake)
+        sglfake_event = '(%s != %s)' % (lep1fake, lep2fake)
+        leadfake_event = '(%s && %s)' % (lep1fake, lep2prompt)
+        sleadfake_event = '(%s && %s)' % (lep1prompt, lep2fake)
+        multifake_event = '(%s && %s)' % (lep1fake, lep2fake)
+        fake_sels = [
+            ('TotalYld' , ''),
+            ('FakeEvents' , fake_event),
+            ('LeadingFakeLep' , leadfake_event),
+            ('SubleadingFakeLep' , sleadfake_event),
+            ('MultipleFakeLep' , multifake_event),
+        ]
+    elif args.type == '3lep':
+        probeLep1fake = '(probeLep1TruthClass < 1 || 2 < probeLep1TruthClass)'
+        probeLep1prompt = '(probeLep1TruthClass == 1 || probeLep1TruthClass == 2)'
+        fake_event = '(%s || %s || %s)' % (lep1fake, lep2fake, probeLep1fake)
+        sglfake_event = '(((%s) + (%s) + (%s)) == 1)' % (lep1fake, lep2fake, probeLep1fake)
+        leadfake_event = '(%s && %s && %s)' % (lep1fake, lep2prompt, probeLep1prompt)
+        sleadfake_event = '(%s && %s && %s)' % (lep1prompt, lep2fake, probeLep1prompt)
+        probefake_event = '(%s && %s && %s)' % (lep1prompt, lep2prompt, probeLep1fake)
+        multifake_event = '(((%s) + (%s) + (%s)) >= 2)' % (lep1fake, lep2fake, probeLep1fake)
+        fake_sels = [
+            ('TotalYld' , ''),
+            ('FakeEvents' , fake_event),
+            ('LeadingFakeLep' , leadfake_event),
+            ('SubleadingFakeLep' , sleadfake_event),
+            ('ProbeFakeLep' , probefake_event),
+            ('MultipleFakeLep' , multifake_event),
+        ]
+    else:
+        print "ERROR :: Unkown event type:", args.type
+        sys.exit()
+
     for reg in REGIONS:
         print '\n', 20*'-', "Yields for %s region"%reg.displayname, 20*'-', '\n'
         final_print_str = ''
@@ -50,8 +73,7 @@ def main():
             print "Setting EventLists for %s + %s"% (reg.name, name)
             total_yld = UncFloat()
             sample_yld = {}
-            faketype1_yld = {}
-            faketype2_yld = {}
+            faketype_yld = defaultdict(dict)
             for sample in SAMPLES :
                 if not sample.isMC: continue
                 weight_var = sample.weight_str
@@ -66,38 +88,32 @@ def main():
                 total_yld += result
                 sample_yld[sample.name] = result
 
-                h_truth1 = None
-                h_truth2 = None
-                if name == 'DoubleFakeLep':
-                    h_truth1 = get_truth_hist(sample.tree, weight_var, scale_factor, 'lep1TruthClass')
-                    h_truth2 = get_truth_hist(sample.tree, weight_var, scale_factor, 'lep2TruthClass')
+                h_truth = {}
+                if name == 'MultipleFakeLep':
+                    h_truth["Leading"] = get_truth_hist(sample.tree, weight_var, scale_factor, 'lep1TruthClass')
+                    h_truth["Subleading"] = get_truth_hist(sample.tree, weight_var, scale_factor, 'lep2TruthClass')
+                    if args.type == "3lep":
+                        h_truth["Probe"] = get_truth_hist(sample.tree, weight_var, scale_factor, 'probeLep1TruthClass')
                 elif name == 'LeadingFakeLep':
-                    h_truth1 = get_truth_hist(sample.tree, weight_var, scale_factor, 'lep1TruthClass')
+                    h_truth["Leading"] = get_truth_hist(sample.tree, weight_var, scale_factor, 'lep1TruthClass')
                 elif name == 'SubleadingFakeLep':
-                    h_truth2 = get_truth_hist(sample.tree, weight_var, scale_factor, 'lep2TruthClass')
+                    h_truth["Subleading"] = get_truth_hist(sample.tree, weight_var, scale_factor, 'lep2TruthClass')
+                elif name == 'ProbeFakeLep':
+                    h_truth["Probe"] = get_truth_hist(sample.tree, weight_var, scale_factor, 'probeLep1TruthClass')
 
-                if h_truth1:
-                    for ftype, yld in get_faketype_ylds(h_truth1).items():
-                        if ftype not in faketype1_yld:
-                            faketype1_yld[ftype] = UncFloat()
-                        faketype1_yld[ftype] += yld
-                if h_truth2:
-                    for ftype, yld in get_faketype_ylds(h_truth2).items():
-                        if ftype not in faketype2_yld:
-                            faketype2_yld[ftype] = UncFloat()
-                        faketype2_yld[ftype] += yld
-
-                if h_truth1: h_truth1.Delete()
-                if h_truth2: h_truth2.Delete()
+                for k, h in h_truth.items():
+                    for ftype, yld in get_faketype_ylds(h).items():
+                        if ftype not in faketype_yld[k]:
+                            faketype_yld[k][ftype] = UncFloat()
+                        faketype_yld[k][ftype] += yld
+                    h.Delete()
                 
                 # Done looping over samples
             print_str = "Breakdown for %s\n" % name
             print_str += "Total Yield : %s\n" % str(total_yld)
             print_str += "\tFake processes: \n%s" % rank_ylds_str(sample_yld, tabs='\t')
-            if faketype1_yld:
-                print_str += "\tLeading lepton fake types: \n%s" % rank_ylds_str(faketype1_yld, tabs='\t')
-            if faketype2_yld:
-                print_str += "\tSubleading lepton fake types: \n%s" % rank_ylds_str(faketype2_yld, tabs='\t')
+            for key, dic in faketype_yld.items():
+                print_str += "\t%s lepton fake types: \n%s" % (key, rank_ylds_str(dic, tabs='\t'))
 
             final_print_str += print_str
         print final_print_str
@@ -229,6 +245,9 @@ if __name__ == '__main__':
         parser.add_argument("-v", "--verbose",
                                 action="store_true",
                                 help='set verbosity mode')
+        parser.add_argument("--type",
+                                default='2lep',
+                                help='event type (2lep, 3lep)')
         args = parser.parse_args()
 
         if args.verbose:

@@ -155,7 +155,6 @@ class KeyManager(object) :
         return key
 
     def generate_mc_hist_key(self, hist_key):
-        print "TESTING :: fake mc keys =", self.get_truth_fake_keys()
         if self.is_fake_comp_sys_mc(hist_key):
             key = "%s_hist"%self.fake_mc_sys_scale_str
             self.mc_truth_fake_sys_hist = key
@@ -174,7 +173,6 @@ class KeyManager(object) :
         else:
             key = "mc_hist"
             self.mc_hist = key
-        print "TESTING :: Key generated:", key
         return key
 
     def generate_data_corr_key(self):
@@ -208,6 +206,39 @@ class KeyManager(object) :
         self.fake_factor_keys[hist_key] = key
         return key
 
+    def generate_FakeBkgTools_key(self, channel_str, sample_str, var_str, syst_str=""):
+        print "TESTING :: channel_str = %s, sample_str = %s, var_str = %s" % (channel_str, sample_str, var_str)
+        if "_el" in channel_str:
+            flav = "_el"
+        elif "_mu" in channel_str:
+            flav = "_mu"
+        else:
+            print "ERROR :: Unable to identify lepton flavor in channel string:", channel_str
+        
+        if "data_bkgd_subtracted" in sample_str:
+            prefix = ""
+        elif "data" in sample_str:
+            prefix = "DataNoCorr_"
+        else:
+            prefix = "MC_"
+
+        if "probeLep1Pt" in var_str and "probeLep1Eta" in var_str:
+            var = "_pt_eta"
+        elif "probeLep1Pt" in var_str:
+            var = "_pt"
+        elif "probeLep1Eta" in var_str:
+            flav = "_eta"
+        else:
+            print "ERROR :: Unable to identify lepton variable(s) in variable string:", var_str
+
+        if not syst_str:
+            syst = ""
+        else:
+            print "ERROR :: Unable to identify systematic in syst string:", syst_str
+
+
+        print "TESTING :: Fake factor hist name: %sFakeFactor%s%s%s" % (prefix, flav, var, syst)
+        return "%sFakeFactor%s%s%s" % (prefix, flav, var, syst)
     ############################################################################
     def get_data_keys(self):
         keys = [self.data_hist, self.data_corr_hist, self.data_comp_sys_hist, self.data_prompt_sys_up_hist, self.data_prompt_sys_dn_hist]
@@ -620,11 +651,12 @@ def get_fake_factor_hists(hists):
     for channel_name, ch_dict in hists.iteritems():
         for hist_key in KEYS.get_fake_factor_input_keys():
             fake_factor_key = KEYS.generate_fake_factor_key(hist_key)
-            fake_factor_name = channel_name + "_" + fake_factor_key
             num_hist = ch_dict[conf.NUM_STR][hist_key]
-            ff_hist = num_hist.Clone(fake_factor_name)
+            #fake_factor_name = channel_name + "_" + fake_factor_key
+            ff_name = KEYS.generate_FakeBkgTools_key(channel_name, hist_key, num_hist.plot.variable)
+            ff_hist = num_hist.Clone(ff_name)
             ff_hist.Divide(ch_dict[conf.DEN_STR][hist_key])
-            ff_hist.SetMaximum(5)
+            ff_hist.SetMaximum(0.5)
 
             # Append some information   
             ff_hist.displayname = hist_key.replace("_"," ")
@@ -641,6 +673,8 @@ def get_fake_factor_hists(hists):
 
 def save_and_write_hists(ff_hists_dict, hists):
     # Writing fake factor hists to root file
+    if args.ofile_name:
+         ofile = r.TFile(args.ofile_name,"RECREATE")
     for channel_name, ff_hists in ff_hists_dict.iteritems():
         ff_hist = ff_hists[KEYS.data_corr_fake_factor]
         if args.systematics:
@@ -695,16 +729,18 @@ def save_and_write_hists(ff_hists_dict, hists):
                 ff_hist.SetBinError(ibin, ff_syst_err)
 
             if args.ofile_name:
-                with open_root(args.ofile_name,"RECREATE") as ofile:
-                    ff_hist.Write()
-                    ff_sys_unc.Write()
+                ff_hist.Write()
+                ff_sys_unc.Write()
                     
             ff_nonclosure_unc.Delete()
             ff_sys_unc.Delete()
+        elif args.ofile_name:
+            ff_hist.Write()
+
 
         # Only try to paint 1D histograms
         if ff_hist.plot.is2D or ff_hist.plot.is3D:
-            return
+            continue
 
         # Saving plots of fake factor hists
         data_corr_ff_hist = ff_hists[KEYS.data_corr_fake_factor]
@@ -746,6 +782,9 @@ def save_and_write_hists(ff_hists_dict, hists):
             #hists_to_plot = [mc_ff_hist, mc_comp_sys_ff_hist, data_corr_ff_hist, ff_bkgd_subtraction_unc_up, ff_bkgd_subtraction_unc_dn]
             hists_to_plot = [mc_ff_hist, mc_comp_sys_ff_hist, ff_composition_data_unc, data_corr_ff_hist]
             save_hist(plot_title, plot, reg_name, hists_to_plot)
+
+    if args.ofile_name:
+        ofile.Close()
 
 
     # Save all other desired plots
@@ -869,7 +908,6 @@ def save_hist(title, plot, reg_name, hist_list):
     # Make Axis
     axis = make_plot1D_axis(plot)
     if plot.auto_set_ylimits:
-        print "TESTING :: Autoformatting axis"
         reformat_axis(plot, axis, hist_list)
 
     # Format Primitives
@@ -969,7 +1007,6 @@ def reformat_axis(plot, axis, hist_list):
     # reformat the axis
     axis.SetMaximum(max_mult*maxy)
     axis.SetMinimum(ymin)
-    print "TESTING :: plot %s has maxy = 1.8 * %.2f = %.2f" % (plot.variable, maxy, max_mult*maxy)
 
 
 ################################################################################

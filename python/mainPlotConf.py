@@ -20,7 +20,7 @@ _apply_sf = False
 _sf_samples = False # False -> DF samples
 _fake_factor_looper = False
 
-_only1516 = False
+_only1516 = True
 _only17 = False
 _only18 = False
 _only_dilep_trig = False
@@ -61,25 +61,30 @@ if _sf_samples:
     _sample_path = '%s/run/batch/output/SuperflowAnaStop2l_SF' % _work_dir
 else:
     #_sample_path = '%s/run/batch/output/SuperflowAnaStop2l_DF' % _work_dir
+    #_sample_path = '%s/run/batch/output/SuperflowAnaStop2l_zjets2l_inc' % _work_dir
     _sample_path = '%s/run/batch/output/SuperflowAnaStop2l_zjets3l' % _work_dir
     #_sample_path = '%s/run/batch/output/SuperflowAnaStop2l_zjets3l_den' % _work_dir
 
 _samples_to_use = [
     'data',
     #'ttbar',
-    #'Wt',
-    #'ttV',
+    #'singletop',
+    #'ttX',
     #'wjets',
-    'zjets', # Combination: zjets_ee + zjets_mumu + zjets_tautau
+    #'zjets', # Combination: zjets_ee + zjets_mumu + zjets_tautau
     #'zjets_ee',
     #'zjets_mumu',
     #'zjets_tautau',
+    #'zgamma',
+    #'wgamma',
     #'drellyan',
     'diboson',
     #'triboson',
     #'higgs',
+    #'higgs_ggH', 'higgs_VBF', 'higgs_VH', 'higgs_ttH',
     #'fnp', # Fake non-prompt 
     #'other', # Combination: defined below
+    'fnp_fakefactor',
     ############################## 
     # Signal Samples
     #'stop2l_350_185',
@@ -180,9 +185,10 @@ _regions_to_use = [
     #'mT_SR_muel',
 
     # For fake factor
-    'zjets3l_CR_num', 
+    #'zjets2l_inc', 
+    #'zjets3l_CR_num', 
     #'zjets3l_CR_den',
-    #'zjets3l_CR_num_ll_el', 
+    'zjets3l_CR_num_ll_el', 
     #'zjets3l_CR_den_ll_el',
     #'zjets3l_CR_num_ll_mu', 
     #'zjets3l_CR_den_ll_mu',
@@ -202,6 +208,7 @@ _region_cfs_to_use = [
 ]
 _vars_to_plot = [
     # Event weights and SFs
+    #'runNumber',
     #'eventweight',
     #'eventweight_multi',
     #'pupw',
@@ -214,7 +221,7 @@ _vars_to_plot = [
     #'avgMuDataSF',
     #'nVtx',
     #'actualMu',
-    'actualMuDataSF',
+    #'actualMuDataSF',
     #'avgMuDataSF/avgMu',
     #'actualMuDataSF/actualMu',
     #'actualMu/avgMu',
@@ -222,18 +229,18 @@ _vars_to_plot = [
     #'avgMuDataSF/nVtx',
 
     ## Basic Kinematics
-    'lep1Pt',
-    'lep2Pt',
-    'jet1Pt',
-    'jet2Pt',
-    'mll',
+    #'lep1Pt',
+    #'lep2Pt',
+    #'jet1Pt',
+    #'jet2Pt',
+    #'mll',
     #'fabs(mll-91.2)',
-    'met',
-    'metrel',
+    #'met',
+    #'metrel',
     #'dpTll',
-    'lep1mT',
-    'lep2mT',
-    'pTll',
+    #'lep1mT',
+    #'lep2mT',
+    #'pTll',
 
     ## Truth
     #'lep1TruthClass',
@@ -242,30 +249,34 @@ _vars_to_plot = [
 
     ## Fake Factor
     'probeLep1Pt',
-    'probeLep1Eta',
-    'probeLep1mT',
-    'Z2_mll',
-    'mlll',
-    'dR_ZLep1_probeLep1',
-    'dR_ZLep2_probeLep1',
+    #'probeLep1Eta',
+    #'probeLep1mT',
+    #'Z2_mll',
+    #'mlll',
+    #'dR_ZLep1_probeLep1',
+    #'dR_ZLep2_probeLep1',
+    #'dR_Z_probeLep1',
+    #'probeLep1_d0sigBSCorr',
+    'nInvLeps',
 
     ## Angles
-    'dR_ll',
+    #'dR_ll',
     #'dphi_ll', 
     #'deta_ll',
-    'deltaPhi_met_lep1',
-    'deltaPhi_met_lep2',
+    #'deltaPhi_met_lep1',
+    #'deltaPhi_met_lep2',
     
-    #'lep_d0sigBSCorr[0]',
-    #'lep_d0sigBSCorr[1]',
-    #'lep_z0SinTheta[0]',
-    #'lep_z0SinTheta[1]',
+    #'lep1_d0sigBSCorr',
+    #'lep2_d0sigBSCorr',
+    #'lep1_z0SinTheta',
+    #'lep2_z0SinTheta',
 
     ## Multiplicites
     #'nLightJets',
-    'nBJets',
+    #'nBJets',
     #'nForwardJets',
-    'nNonBJets',
+    #'nNonBJets',
+    'nSigLeps',
 
     # Multi-object
     #'max_HT_pTV_reco',
@@ -295,14 +306,16 @@ _vars_to_plot = [
     #'deltaPhi_met_lep2:lep1mT',
     #'deltaPhi_met_lep2:lep2mT',
     #'deltaPhi_met_lep2:pTll',
-    
+
     #'dR_ll:lep1mT' 
+    #'probeLep1Pt:probeLep1mT',
+    #'probeLep1Pt:met',
 ]
 ################################################################################
 # Make samples
 
 # Initialize
-from PlotTools.sample import Sample, Data, MCsample, Signal, color_palette
+from PlotTools.sample import Sample, Data, MCsample, MCBackground, DataBackground, Signal, color_palette
 Sample.input_file_treename = 'superNt'
 #HACK correct PRW values 
 #     DSID   : MC16A : MC16D : MC16E
@@ -402,13 +415,31 @@ else:
           + DSID_GROUPS['data18']
           )
 
-DSID_GROUPS['ttbar'] = DSID_GROUPS['ttbar_dilep']
-#DSID_GROUPS['ttbar'] = DSID_GROUPS['ttbar_nonallhad']
+DSID_GROUPS['fnp_fakefactor'] = DSID_GROUPS['data']
+DSID_GROUPS['ttbar'] = (
+        #DSID_GROUPS['ttbar_dilep']
+        DSID_GROUPS['ttbar_nonallhad']
+      )
+DSID_GROUPS['Wt'] = (
+        #DSID_GROUPS['Wt_dilep']
+        DSID_GROUPS['Wt_incl']
+      )
+DSID_GROUPS['singletop'] = (
+        DSID_GROUPS['st-channel']
+      + DSID_GROUPS['tZ']
+      + DSID_GROUPS['Wt']
+      )
+DSID_GROUPS['ttX'] = (
+        DSID_GROUPS['ttgamma']
+      + DSID_GROUPS['ttVV']
+      + DSID_GROUPS['ttV']
+      + DSID_GROUPS['4topSM']
+      )
 DSID_GROUPS['diboson'] = (
-        DSID_GROUPS['1l_diboson']
-      + DSID_GROUPS['2l_diboson']
-      + DSID_GROUPS['3l_diboson']
-      + DSID_GROUPS['4l_diboson']
+        DSID_GROUPS['diboson_1l']
+      + DSID_GROUPS['diboson_2l']
+      + DSID_GROUPS['diboson_3l']
+      + DSID_GROUPS['diboson_4l']
       )
 DSID_GROUPS['zjets'] = (
         DSID_GROUPS['zjets_tautau']
@@ -435,91 +466,135 @@ data.color = r.kBlack
 SAMPLES.append(data)
 
 # Top Samples
-ttbar = MCsample('ttbar',"t#bar{t}","$t\\bar{t}$")
-ttbar.color = r.TColor.GetColor("#FFFF04")
+ttbar = MCBackground('ttbar',"t#bar{t}","$t\\bar{t}$")
+#ttbar.color = r.TColor.GetColor("#FFFF04")
+ttbar.color = color_palette['red'][0] 
 sf = 0.91 if _only1516 else 0.94 if _only17 else 0.94 if _only18 else 0.94
 if _apply_sf:
     ttbar.scale_factor *= sf
 SAMPLES.append(ttbar)
 
-Wt = MCsample('Wt')
-Wt.color = r.TColor.GetColor("#FF0201")
-SAMPLES.append(Wt)
+#Wt = MCBackground('Wt')
+#Wt.color = r.TColor.GetColor("#FF0201")
+#SAMPLES.append(Wt)
 
-ttV = MCsample('ttV','t#bar{t}+V','$t\\bar{t}+V$')
-ttV.color = r.TColor.GetColor("#0400CC")
-SAMPLES.append(ttV)
+singletop = MCBackground('singletop', "Single top")
+singletop.color = color_palette['red'][1] 
+SAMPLES.append(singletop)
+
+#ttV = MCBackground('ttV','t#bar{t}+V','$t\\bar{t}+V$')
+#ttV.color = r.TColor.GetColor("#0400CC")
+#SAMPLES.append(ttV)
+
+ttX = MCBackground('ttX','t#bar{t}+X','$t\\bar{t}+X$')
+ttX.color = color_palette['red'][2] 
+SAMPLES.append(ttX)
 
 # V+jets
-wjets = MCsample('wjets','W+jets')
-wjets.color = color_palette['yellow'][0]
+wjets = MCBackground('wjets','W+jets')
+wjets.color = color_palette['yellow'][4]
 SAMPLES.append(wjets)
 
-zjets = MCsample('zjets','Z/#gamma*+jets','$Z/\gamma^{*}$+jets')
-zjets.color = r.TColor.GetColor("#33FF03")
+zjets = MCBackground('zjets','Z/#gamma*+jets','$Z/\gamma^{*}$+jets')
+#zjets.color = r.TColor.GetColor("#33FF03")
+zjets.color = color_palette['blue'][0]
+#zjets.isSignal = True
 SAMPLES.append(zjets)
 
-zjets_ee = MCsample('zjets_ee','Z/#gamma*(#rightarrowee)+jets','$Z/\gamma^{*}(\\rightarrow ee)$+jets')
+zjets_ee = MCBackground('zjets_ee','Z/#gamma*(#rightarrowee)+jets','$Z/\gamma^{*}(\\rightarrow ee)$+jets')
 zjets_ee.color = color_palette['blue'][0]
 SAMPLES.append(zjets_ee)
 
-zjets_mumu = MCsample('zjets_mumu','Z/#gamma*(#rightarrow#mu#mu)+jets','$Z/\gamma^{*}(\\rightarrow \mu\mu)$+jets')
+zjets_mumu = MCBackground('zjets_mumu','Z/#gamma*(#rightarrow#mu#mu)+jets','$Z/\gamma^{*}(\\rightarrow \mu\mu)$+jets')
 zjets_mumu.color = color_palette['blue'][1]
 SAMPLES.append(zjets_mumu)
 
-zjets_tautau = MCsample('zjets_tautau','Z/#gamma*(#rightarrow#tau#tau)+jets','$Z/\gamma^{*}(\\rightarrow \\tau\\tau)$+jets')
+zjets_tautau = MCBackground('zjets_tautau','Z/#gamma*(#rightarrow#tau#tau)+jets','$Z/\gamma^{*}(\\rightarrow \\tau\\tau)$+jets')
 zjets_tautau.color = color_palette['blue'][2]
 SAMPLES.append(zjets_tautau)
 
-DY = MCsample('drellyan','Drell-Yan')
+zgamma = MCBackground('zgamma','Z+#gamma','$Z+\gamma$')
+zgamma.color = color_palette['cyan'][0]
+SAMPLES.append(zgamma)
+
+wgamma = MCBackground('wgamma','W+#gamma','$W+\gamma$')
+wgamma.color = color_palette['cyan'][1]
+SAMPLES.append(wgamma)
+
+DY = MCBackground('drellyan','Drell-Yan')
 DY.color = color_palette['blue'][3]
 SAMPLES.append(DY)
 
 # Multi-boson
-diboson = MCsample('diboson','VV')
-diboson.color = r.TColor.GetColor("#33CCFF")
+diboson = MCBackground('diboson','VV')
+#diboson.color = r.TColor.GetColor("#33CCFF")
+diboson.color = color_palette['green'][0]
+
+diboson_1l = MCBackground('diboson_1l','VV (1l)', '$VV (1\ell)$')
+diboson_1l.color = color_palette['green'][0]
+diboson_2l = MCBackground('diboson_2l','VV (2l)', '$VV (2\ell)$')
+diboson_2l.color = color_palette['green'][1]
+diboson_3l = MCBackground('diboson_3l','VV (3l)', '$VV (3\ell)$')
+diboson_3l.color = color_palette['green'][2]
+diboson_4l = MCBackground('diboson_4l','VV (4l)', '$VV (4\ell)$')
+diboson_4l.color = color_palette['green'][3]
+
 if _sf_samples:
     sf = 1 if _only1516 else 1.13 if _only17 else 0.84 if _only18 else 1.06
 else:
     sf = 1 if _only1516 else 1 if _only17 else 1 if _only18 else 1
 if _apply_sf:
     diboson.scale_factor *= sf
+    diboson_1l.scale_factor *= sf
+    diboson_2l.scale_factor *= sf
+    diboson_3l.scale_factor *= sf
+    diboson_4l.scale_factor *= sf
 SAMPLES.append(diboson)
+SAMPLES.append(diboson_1l)
+SAMPLES.append(diboson_2l)
+SAMPLES.append(diboson_3l)
+SAMPLES.append(diboson_4l)
 
-triboson = MCsample('triboson','VVV')
-triboson.color = color_palette['green'][1]
+triboson = MCBackground('triboson','VVV')
+triboson.color = color_palette['green'][4]
 SAMPLES.append(triboson)
 
 # Higgs
-higgs = MCsample('higgs', 'Higgs')
-higgs.color = r.TColor.GetColor("#009933")
+higgs = MCBackground('higgs', 'Higgs')
+#higgs.color = r.TColor.GetColor("#009933")
+higgs.color = color_palette['yellow'][0]
 SAMPLES.append(higgs)
 
-higgs_ggH = MCsample('higgs_ggH', 'ggH')
-higgs_ggH.color = r.TColor.GetColor("#009933")
+higgs_ggH = MCBackground('higgs_ggH', 'ggH')
+higgs_ggH.color = color_palette['yellow'][0]
 SAMPLES.append(higgs_ggH)
 
-higgs_VBF = MCsample('higgs_VBF', 'Higgs VBF')
-higgs_VBF.color = r.TColor.GetColor("#009933")
+higgs_VBF = MCBackground('higgs_VBF', 'Higgs VBF')
+higgs_VBF.color = color_palette['yellow'][1]
 SAMPLES.append(higgs_VBF)
 
-higgs_ttH = MCsample('higgs_ttH', 'Higgs ttH')
-higgs_ttH.color = r.TColor.GetColor("#009933")
+higgs_ttH = MCBackground('higgs_ttH', 'Higgs ttH')
+higgs_ttH.color = color_palette['yellow'][2]
 SAMPLES.append(higgs_ttH)
 
-higgs_VH = MCsample('higgs_VH', 'Higgs VH')
-higgs_VH.color = r.TColor.GetColor("#009933")
+higgs_VH = MCBackground('higgs_VH', 'Higgs VH')
+higgs_VH.color = color_palette['yellow'][3]
 SAMPLES.append(higgs_VH)
 
 # Other
-fnp = MCsample('fnp','FNP (Wjets MC)')
+fnp = MCBackground('fnp','FNP (Wjets MC)')
 fnp.color = r.TColor.GetColor("#FF8F02")
-
 SAMPLES.append(fnp)
 
-other = MCsample('other','Other (VVV+DY+Higgs)')
+other = MCBackground('other','Other (VVV+DY+Higgs)')
 other.color = r.TColor.GetColor("#009933")
 SAMPLES.append(other)
+
+fnp_fakefactor = DataBackground('fnp_fakefactor','FNP (Data)')
+fnp_fakefactor.color = color_palette['gray'][0]
+fnp_fakefactor.weight_str = "fakeweight"
+SAMPLES.append(fnp_fakefactor)
+
 
 # Signal
 sig_samples = [(k, v[0]) for k, v in DSID_GROUPS.items() if 'stop2l' in k and k in _samples_to_use]
@@ -582,7 +657,12 @@ for s in SAMPLES:
             s_tmp.set_chain_from_dsid_list(DSID_GROUPS[s.name], sample_path, checklist, search_str)
             tmp_list.append(s_tmp)
     else:
-        s.set_chain_from_dsid_list(DSID_GROUPS[s.name], _sample_path, checklist, search_str)
+        if s.name == 'fnp_fakefactor':
+            print "TMP :: Hack for FNP samples"
+            sample_path = '%s/run/batch/output/tmp' % _work_dir
+            s.set_chain_from_dsid_list(DSID_GROUPS[s.name], sample_path, checklist, search_str)
+        else:
+            s.set_chain_from_dsid_list(DSID_GROUPS[s.name], _sample_path, checklist, search_str)
         tmp_list.append(s)
 SAMPLES = tmp_list
 
@@ -602,7 +682,6 @@ for s in SAMPLES:
     dur = end - start
     print " (%.2fsec)" % dur
 SAMPLES = tmp_list
-
 
 # Check for at least 1 sample
 assert SAMPLES, "ERROR :: No samples are setup"
@@ -634,21 +713,21 @@ triggers['15']['mue']  = '(HLT_e7_lhmedium_mu24)'
 triggers['16']['e']    = '(HLT_e26_lhtight_nod0_ivarloose || HLT_e60_lhmedium_nod0 || HLT_e140_lhloose_nod0)'
 triggers['16']['ee']   = '(HLT_2e17_lhvloose_nod0)'
 triggers['16']['mu']   = '(HLT_mu26_ivarmedium || HLT_mu50)'
-triggers['16']['mumu'] = '(HLT_mu22_mu8noL1)'
+triggers['16']['mumu'] = '(HLT_mu22_mu8noL1)'# || HLT_2mu14)'
 triggers['16']['emu']  = '(HLT_e17_lhloose_nod0_mu14)'# || HLT_e26_lhmedium_nod0_L1EM22VHI_mu8noL1)'
 triggers['16']['mue']  = '(HLT_e7_lhmedium_nod0_mu24)'
 
 triggers['17']['e']    = '(HLT_e26_lhtight_nod0_ivarloose || HLT_e60_lhmedium_nod0 || HLT_e140_lhloose_nod0)'
 triggers['17']['ee']   = '(HLT_2e24_lhvloose_nod0)'
 triggers['17']['mu']   = '(HLT_mu26_ivarmedium || HLT_mu50)'
-triggers['17']['mumu'] = '(HLT_mu22_mu8noL1)'
+triggers['17']['mumu'] = '(HLT_mu22_mu8noL1)'# || HLT_2mu14)'
 triggers['17']['emu']  = '(HLT_e17_lhloose_nod0_mu14 || HLT_e26_lhmedium_nod0_mu8noL1)'
 triggers['17']['mue']  = '(HLT_e7_lhmedium_nod0_mu24)'
 
 triggers['18']['e']    = '(HLT_e26_lhtight_nod0_ivarloose || HLT_e60_lhmedium_nod0 || HLT_e140_lhloose_nod0)'
 triggers['18']['ee']   = '(HLT_2e24_lhvloose_nod0 || HLT_2e17_lhvloose_nod0_L12EM15VHI)'
 triggers['18']['mu']   = '(HLT_mu26_ivarmedium || HLT_mu50)'
-triggers['18']['mumu'] = '(HLT_mu22_mu8noL1)'
+triggers['18']['mumu'] = '(HLT_mu22_mu8noL1)'# || HLT_2mu14)'
 triggers['18']['emu']  = '(HLT_e17_lhloose_nod0_mu14 || HLT_e26_lhmedium_nod0_mu8noL1)'
 triggers['18']['mue']  = '(HLT_e7_lhmedium_nod0_mu24)'
 
@@ -922,16 +1001,28 @@ else:
     add_DF_channels(region, REGIONS)
 
 ########################################
+region = Region('zjets2l_inc', 'Z+jets (#ge2 lep)','$Z$+jets (\ge2 $\\ell_\\text{ID}$)')
+region.tcut = trigger_sel
+region.tcut += ' && ' + SF + ' && ' + OS
+region.tcut += ' && lep1Pt > 25'
+region.tcut += ' && lep2Pt > 20'
+region.tcut += ' && (fabs(mll - 91.2) < 10)'
+#region.tcut += ' && met < 40'
+REGIONS.append(region)
+
 # Fake factor regions
 zjets3l_sel = trigger_sel
 zjets3l_sel += ' && ' + SF + ' && ' + OS
+zjets3l_sel += ' && lep1Pt > 25'
+zjets3l_sel += ' && lep2Pt > 20'
 zjets3l_sel += ' && (fabs(mll - 91.2) < 10)'
 zjets3l_sel += ' && probeLep1mT < 40'
-zjets3l_sel += ' && (fabs(Z2_mll - 91.2) > 10)'
-zjets3l_sel += ' && met < 60'
-zjets3l_sel += ' && dR_ZLep1_probeLep1 > 0.2 && dR_ZLep2_probeLep1 > 0.2' 
-zjets3l_sel_num = zjets3l_sel + " && nSigLeps == 3"
-zjets3l_sel_den = zjets3l_sel + " && nSigLeps == 2 && nInvLeps >= 1 && probeLep1Pt > 20"
+zjets3l_sel += ' && (probeLep1Pt < 15 || met < 40)'
+#zjets3l_sel += ' && probeLep1Pt > 10'
+#zjets3l_sel += ' && (fabs(Z2_mll - 91.2) > 10)'
+#zjets3l_sel += ' && dR_ZLep1_probeLep1 > 0.2 && dR_ZLep2_probeLep1 > 0.2' 
+zjets3l_sel_num = zjets3l_sel# + " && nSigLeps == 3 && nInvLeps == 0"
+zjets3l_sel_den = zjets3l_sel + " && nSigLeps == 2 && nInvLeps == 1"
 
 def add_zjets3L_channels(reg, REGs):
     # Define selections
@@ -1042,7 +1133,9 @@ for reg in REGIONS:
         reg.yield_table.add_row_formula(name='vv_contamination', displayname='VV/MC', formula='diboson/MC')
     elif 'zjets3l' in reg.name:
         reg.yield_table.add_row_formula(name='vv_contamination', displayname='VV/MC', formula='diboson/MC')
-        reg.yield_table.add_row_formula(name='vv_contamination2', displayname='VV/Data', formula='diboson/data')
+        #reg.yield_table.add_row_formula(name='vv_contamination2', displayname='VV/Data', formula='diboson/data')
+        if 'CR' in reg.name:
+            reg.yield_table.add_row_formula(name='normf', displayname='Norm Factor', formula='(data - (MC - zjets_ee - zjets_mumu))/(zjets_ee + zjets_mumu)')
 
 
 ################################################################################
@@ -1054,11 +1147,11 @@ PlotBase.save_dir = _plot_save_dir
 Plot1D.doLogY = False
 Plot1D.doNorm = False
 Plot1D.auto_set_ylimits = True
-#Plot1D.type_default = Types.stack 
 PlotBase.atlas_status = 'Internal'
 PlotBase.atlas_lumi = '#sqrt{s} = 13 TeV, %d fb^{-1}' % _lumi
 
 plots_defaults = {
+    'runNumber' : Plot1D(bin_range=[284000, 311000], bin_width=1000, xlabel='Run Number', add_underflow=True, doLogY=True),
     'eventweight' : Plot1D(bin_range=[-0.001, 0.01], nbins=100, xlabel='Event Weight', add_underflow=True, doLogY=True, doNorm=True),
     'eventweight_multi' : Plot1D(bin_range=[-0.002, 0.003], nbins=100, xlabel='Multi-period Event Weight', add_underflow=True, doLogY=True, doNorm=True),
     'pupw' : Plot1D(bin_range=[0, 4], nbins=100, xlabel='Pilup Weight', add_underflow=True, doLogY=True, doNorm=True),
@@ -1090,24 +1183,30 @@ plots_defaults = {
     'dpTll'   : Plot1D(bin_range=[0, 100], bin_width=5, xlabel='#Deltap_{T}(l_{1},l_{2})', xunits='GeV', xcut_is_max=False),
     'pTll'    : Plot1D(bin_range=[0, 300], bin_width=10, xlabel='p_{T}^{ll}', xunits='GeV', xcut_is_max=False),
     'max_HT_pTV_reco'    : Plot1D(bin_range=[0, 300], bin_width=10, xlabel='max(HT,pTV)', xunits='GeV'),
-    'lep1mT' : Plot1D(bin_range=[0, 150], bin_width=5, xlabel='m_{T}^{l_{1}}', xunits='GeV', xcut_is_max=False),
+    'lep1mT' : Plot1D(bin_range=[0, 150], bin_width=5, xlabel='m_{T}^{l_{1}}', xunits='GeV', xcut_is_max=True),
     'lep2mT' : Plot1D(bin_range=[0, 150], bin_width=5, xlabel='m_{T}^{l_{2}}', xunits='GeV', xcut_is_max=False),
 
     #Truth
     'lep1TruthClass'      : Plot1D( bin_range=[-4.5, 11.5],  bin_width=1, doNorm=True, doLogY=False, xlabel='Leading lepton truth classification'),
     'lep2TruthClass'      : Plot1D( bin_range=[-4.5, 11.5],  bin_width=1, doNorm=True, doLogY=False, xlabel='Subleading lepton truth classification'),
-    'probeLep1TruthClass' : Plot1D( bin_range=[-4.5, 11.5],  bin_width=1, doNorm=True, doLogY=False, xlabel='Leading probe lepton truth classification'),
+    'probeLep1TruthClass' : Plot1D( bin_range=[-4.5, 11.5],  bin_width=1, doNorm=True, doLogY=False, xlabel='Probe lepton truth classification'),
 
     # Fake Factor
-    #'probeLep1Pt' : Plot1D(bin_edges=[0, 3, 3.5, 4, 4.5, 5, 6, 7, 8, 9, 10, 12, 14, 16, 20, 30], xlabel='p_{T}^{probe lep}', xunits='GeV', doLogY=False),
+    'probeLep1Pt' : Plot1D(bin_edges=[0, 3, 3.5, 4, 4.5, 5, 6, 7, 8, 9, 10, 11, 13, 16, 20, 30, 50], xlabel='p_{T}^{probe lep}', xunits='GeV', doLogY=False),
     #'probeLep1Pt'  : Plot1D(bin_edges=[20, 25, 30, 35, 40, 45, 50, 60, 70, 85, 100], xlabel='p_{T}^{probe lep}', xunits='GeV', add_overflow=True, doLogY=False),
-    'probeLep1Pt'  : Plot1D(bin_edges=[20, 25, 30, 40, 60, 100], xlabel='p_{T}^{probe lep}', xunits='GeV', add_overflow=True, doLogY=False),
-    'probeLep1Eta' : Plot1D(bin_edges=[-3.0, -2.5, -1.45, 0, 1.45, 2.5, 3.0], xlabel='#eta^{probe lep}', xunits='', add_underflow=True, doLogY=False),
+    #'probeLep1Pt'  : Plot1D(bin_edges=[20, 25, 30, 40, 60, 100], xlabel='p_{T}^{probe lep}', xunits='GeV', add_overflow=True, doLogY=False),
+    #'probeLep1Pt' : Plot1D(bin_range=[0,150], bin_width = 5, xlabel='p_{T}^{probe lep}', xunits='GeV'),
+    #'probeLep1Eta' : Plot1D(bin_edges=[-3.0, -2.5, -1.45, 0, 1.45, 2.5, 3.0], xlabel='#eta^{probe lep}', xunits='', add_underflow=True),
+    'probeLep1Eta' : Plot1D(bin_edges=[-3.0, -2.5, -2.0, -1.45, -1.0, -0.5, 0, 0.5, 1.0, 1.45, 2.0, 2.5, 3.0], xlabel='#eta^{probe lep}', xunits='', add_underflow=True),
     'probeLep1mT'  : Plot1D(bin_range=[0, 150], bin_width=5, xlabel='m_{T}^{probe lep}', xunits='GeV', xcut_is_max=True),
     'mlll'         : Plot1D(bin_range=[70, 150], bin_width=5, xlabel='M_{lll}', xunits='GeV', add_underflow=True),
     'Z2_mll'       : Plot1D(bin_range=[50, 140], bin_width=5, xlabel='Z2 M_{ll}', xunits='GeV', add_underflow=True),
     'dR_ZLep1_probeLep1' : Plot1D(bin_range=[0, 6], bin_width=0.2, xlabel='#DeltaR(l^{probe}_{1},l_{Z1})'),
     'dR_ZLep2_probeLep1' : Plot1D(bin_range=[0, 6], bin_width=0.2, xlabel='#DeltaR(l^{probe}_{1},l_{Z2})'),
+    'dR_Z_probeLep1' : Plot1D(bin_range=[0, 6], bin_width=0.2, xlabel='#DeltaR(l^{probe}_{1},l_{Z})'),
+    'probeLep1_d0sigBSCorr'   : Plot1D( bin_range=[-5, 5],     bin_width=0.2, add_underflow=True, doNorm=False, doLogY=True, xlabel='l^{probe}_{1} d_{0}/#sigma_{d_{0}} BSCorr'),
+    'probeLep1_z0SinTheta'    : Plot1D( bin_range=[-0.5, 0.5],     bin_width=0.02, add_underflow=True, doNorm=False, doLogY=True, xunits='mm', xlabel='l^{probe}_{1} z_{0}sin(#theta)'),
+    'nInvLeps' : Plot1D(bin_range=[-1.5, 10.5], bin_width=1, xlabel='N_{Anti-ID leps}'),
 
     # Angles
     'dR_ll' : Plot1D(bin_range=[0, 6], bin_width=0.2, xlabel='#DeltaR(l_{1},l_{2})', xcut_is_max=False),
@@ -1115,16 +1214,17 @@ plots_defaults = {
     'deta_ll' : Plot1D(bin_range=[0, 6], bin_width=0.2, xlabel='#Delta#eta(l_{1},l_{2})'),
     'deltaPhi_met_lep1' : Plot1D(bin_range=[0, 3.2], bin_width=0.2, xlabel='#Delta#phi(E_{T}^{miss},l_{1})', xcut_is_max=True),
     'deltaPhi_met_lep2' : Plot1D(bin_range=[0, 3.2], bin_width=0.2, xlabel='#Delta#phi(E_{T}^{miss},l_{2})', xcut_is_max=False),
-    'lep_d0sigBSCorr[0]'   : Plot1D( bin_range=[-5, 5],     bin_width=0.2, add_underflow=True, doNorm=False, doLogY=True, xlabel='Lep0 d_{0}/#sigma_{d_{0}} BSCorr'),
-    'lep_d0sigBSCorr[1]'   : Plot1D( bin_range=[-5, 5],     bin_width=0.2, add_underflow=True, doNorm=False, doLogY=True, xlabel='Lep1 d_{0}/#sigma_{d_{0}} BSCorr'),
-    'lep_z0SinTheta[0]'    : Plot1D( bin_range=[-0.5, 0.5],     bin_width=0.02, add_underflow=True, doNorm=False, doLogY=True, xunits='mm', xlabel='Lep0 z_{0}sin(#theta)'),
-    'lep_z0SinTheta[1]'    : Plot1D( bin_range=[-0.5, 0.5],     bin_width=0.02, add_underflow=True, doNorm=False, doLogY=True, xunits='mm', xlabel='Lep1 z_{0}sin(#theta)'),
+    'lep1_d0sigBSCorr'   : Plot1D( bin_range=[-5, 5],     bin_width=0.2, add_underflow=True, doNorm=False, doLogY=True, xlabel='Lep1 d_{0}/#sigma_{d_{0}} BSCorr'),
+    'lep2_d0sigBSCorr'   : Plot1D( bin_range=[-5, 5],     bin_width=0.2, add_underflow=True, doNorm=False, doLogY=True, xlabel='Lep2 d_{0}/#sigma_{d_{0}} BSCorr'),
+    'lep1_z0SinTheta'    : Plot1D( bin_range=[-0.5, 0.5],     bin_width=0.02, add_underflow=True, doNorm=False, doLogY=True, xunits='mm', xlabel='Lep1 z_{0}sin(#theta)'),
+    'lep2_z0SinTheta'    : Plot1D( bin_range=[-0.5, 0.5],     bin_width=0.02, add_underflow=True, doNorm=False, doLogY=True, xunits='mm', xlabel='Lep2 z_{0}sin(#theta)'),
 
     # Multiplicites
     'nLightJets' : Plot1D(bin_range=[-1.5, 10.5], bin_width=1, xlabel='N_{light jets}'),
     'nBJets'     : Plot1D(bin_range=[-1.5, 10.5], bin_width=1, xlabel='N_{B jets}'),
     'nForwardJets' : Plot1D(bin_range=[-1.5, 10.5], bin_width=1, xlabel='N_{forward jets}'),
     'nNonBJets' : Plot1D(bin_range=[-1.5, 10.5], bin_width=1, xlabel='N_{Signal jets}', xcut_is_max=True),
+    'nSigLeps' : Plot1D(bin_range=[-1.5, 10.5], bin_width=1, xlabel='N_{Signal leps}'),
 
     # Super-razor
     'shat' : Plot1D(bin_range=[0, 1000], bin_width=40, xlabel='m_{PP} or #sqrt{#hat{s}_{R}}', xunits='GeV'),
@@ -1152,8 +1252,10 @@ plots_defaults = {
     'deltaPhi_met_lep2:lep1mT' : Plot2D(bin_range=[0, 150, 0, 3.2], xbin_width = 10, ybin_width = 0.2, xlabel='lep1mT', ylabel='deltaPhi_met_lep2'), 
     'deltaPhi_met_lep2:lep2mT' : Plot2D(bin_range=[0, 150, 0, 3.2], xbin_width = 10, ybin_width = 0.2, xlabel='lep2mT', ylabel='deltaPhi_met_lep2'), 
     'deltaPhi_met_lep2:pTll'    : Plot2D(bin_range=[0, 300, 0, 3.2], xbin_width = 20, ybin_width = 0.2, xlabel='pTll', ylabel='deltaPhi_met_lep2'), 
+    'probeLep1Pt:probeLep1mT'    : Plot2D(bin_range=[0, 150, 0, 150], xbin_width = 10, ybin_width = 10, xlabel='m_{T}^{probe lep}', ylabel='p_{T}^{probe lep}'), 
+    'probeLep1Pt:met'    : Plot2D(bin_range=[0, 150, 0, 150], xbin_width = 10, ybin_width = 10, xlabel='E_{T}^{miss}', ylabel='p_{T}^{probe lep}', ), 
 }
-l_truthClass_labels = ['','no origin info','no mother info','no truth info','uncategorized','prompt El','prompt Mu', 'prompt Pho','prompt El from FSR','hadron','Mu as e','HF tau','HF B','HF C', 'unknown pho conv',' ']
+l_truthClass_labels = ['','no Origin','no Mother','no Truth','Uncategorized','El','Mu','Pho','El from FSR','LF','Mu as El','Tau','HF B','HF C', 'pho conv (noM)','']
 plots_defaults['lep1TruthClass'].bin_labels = l_truthClass_labels
 plots_defaults['lep2TruthClass'].bin_labels = l_truthClass_labels
 plots_defaults['probeLep1TruthClass'].bin_labels = l_truthClass_labels
@@ -1300,6 +1402,7 @@ region_plots['zjets3l_CR_num_ll_mu'] = region_plots['zjets3l_CR_num']
 region_plots['zjets3l_CR_den'] = region_plots['zjets3l_CR_num']
 region_plots['zjets3l_CR_den_ll_el'] = region_plots['zjets3l_CR_num']
 region_plots['zjets3l_CR_den_ll_mu'] = region_plots['zjets3l_CR_num']
+region_plots['zjets2l_inc'] = region_plots['zjets3l_CR_num']
 
 # Make a plot for reach region and variable
 for reg in REGIONS:

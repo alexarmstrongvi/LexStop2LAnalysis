@@ -89,7 +89,6 @@ DSID_GROUPS = {
     ],
     "ttVV" : [
                 "410081", #MadGraphPythia8EvtGen_A14NNPDF23_ttbarWW
-                ##"410217", #aMcAtNloHerwigppEvtGen_UEEE5_CTEQ6L1_CT10ME_260000_tWZDR
     ],
     "ttV" : [
                 "410155", #aMcAtNloPythia8EvtGen_MEN30NLO_A14N23LO_ttW
@@ -256,14 +255,14 @@ DSID_GROUPS = {
     # MULTIBOSON
     ############################################################################
     # 1L Diboson
-    "1l_diboson" : [
+    "diboson_1l" : [
                 "364255", #Sherpa_222_lvvv
                 "364304", #Sherpa_222_NNPDF30NNLO_ggWmlvWpqq
                 "364305", #Sherpa_222_NNPDF30NNLO_ggWplvWmqq
     ],
 
     # 2L Diboson
-    "2l_diboson" : [
+    "diboson_2l" : [
                 "345715", #Sherpa_222_NNPDF30NNLO_ggllvvInt
                 "345718", #Sherpa_222_NNPDF30NNLO_ggllvvWW
                 "345723", #Sherpa_222_NNPDF30NNLO_ggllvvZZ
@@ -276,14 +275,14 @@ DSID_GROUPS = {
     ],
 
     # 3L Diboson
-    "3l_diboson" : [
+    "diboson_3l" : [
                 "364253", #Sherpa_222_lllv
                 "364284", #Sherpa_222_lllvjj
                 "364289", #Sherpa_222_lllv_lowMllPtComplement
     ],
 
     # 4L Diboson
-    "4l_diboson" : [
+    "diboson_4l" : [
                 "345705", #Sherpa_222_NNPDF30NNLO_ggllll_0M4l130
                 "345706", #Sherpa_222_NNPDF30NNLO_ggllll_130M4l
                 "364250", #Sherpa_222_NNPDF30NNLO_llll
