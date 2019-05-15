@@ -4,6 +4,7 @@ import sys, os, traceback, argparse
 import time
 import importlib
 import ROOT as r
+r.PyConfig.IgnoreCommandLineOptions = True # don't let root steal cmd-line options
 import atlasrootstyle.AtlasStyle
 r.SetAtlasStyle()
 from copy import deepcopy
@@ -63,7 +64,9 @@ def main():
                         plot.make_overlay_with_ratio_plot(reg.displayname, ratio_label, hists, ratio_hist)
             elif args.plot_op == 'simple_2d':
                 for s in SAMPLES:
+                    #TODO : Fix memory leaks from all hists being created with plot.name
                     with Hist.Hist2D(plot, reg, [s]) as main_hists:
+                        #print "TESTING :: ", pu.print_hist(main_hists.hist)
                         plot.make_2d_hist(main_hists, s.name)
             elif args.plot_op == 'cutscan_2d': 
                 with Hist.CutScan2D(plot, reg, signals, backgrounds, xcut_is_max=True, ycut_is_max=True, and_cuts=True, bkgd_rej=False) as hists:
@@ -143,7 +146,7 @@ def check_for_consistency() :
 if __name__ == "__main__":
     try:
         start_time = time.time()
-        parser = argparse.ArgumentParser(
+        parser = argparse.ArgumentParser()
                 description=__doc__,
                 formatter_class=argparse.RawDescriptionHelpFormatter)
         parser.add_argument("-c", "--plotConfig",

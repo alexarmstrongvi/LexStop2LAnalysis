@@ -3,8 +3,6 @@
 import os, sys
 import time
 import ROOT as r
-import atlasrootstyle.AtlasStyle
-r.SetAtlasStyle()
 r.TTree.__init__._creates = False
 r.TFile.__init__._creates = False
 from copy import deepcopy
@@ -20,7 +18,7 @@ _apply_sf = False
 _sf_samples = False # False -> DF samples
 _fake_factor_looper = False
 
-_only1516 = True
+_only1516 = False
 _only17 = False
 _only18 = False
 _only_dilep_trig = False
@@ -67,7 +65,7 @@ else:
 
 _samples_to_use = [
     'data',
-    #'ttbar',
+    'ttbar',
     #'singletop',
     #'ttX',
     #'wjets',
@@ -190,7 +188,7 @@ _regions_to_use = [
     #'zjets3l_CR_den',
     'zjets3l_CR_num_ll_el', 
     #'zjets3l_CR_den_ll_el',
-    #'zjets3l_CR_num_ll_mu', 
+    'zjets3l_CR_num_ll_mu', 
     #'zjets3l_CR_den_ll_mu',
     #'zjets3l_CR_num_elel_el', 
     #'zjets3l_CR_den_elel_el',
@@ -248,7 +246,8 @@ _vars_to_plot = [
     #'probeLep1TruthClass',
 
     ## Fake Factor
-    'probeLep1Pt',
+    #'probeLep1Pt',
+    'fabs(probeLep1Eta)',
     #'probeLep1Eta',
     #'probeLep1mT',
     #'Z2_mll',
@@ -257,7 +256,8 @@ _vars_to_plot = [
     #'dR_ZLep2_probeLep1',
     #'dR_Z_probeLep1',
     #'probeLep1_d0sigBSCorr',
-    'nInvLeps',
+    #'nInvLeps',
+    #'fabs(probeLep1Eta):probeLep1Pt',
 
     ## Angles
     #'dR_ll',
@@ -276,7 +276,7 @@ _vars_to_plot = [
     #'nBJets',
     #'nForwardJets',
     #'nNonBJets',
-    'nSigLeps',
+    #'nSigLeps',
 
     # Multi-object
     #'max_HT_pTV_reco',
@@ -1017,12 +1017,17 @@ zjets3l_sel += ' && lep1Pt > 25'
 zjets3l_sel += ' && lep2Pt > 20'
 zjets3l_sel += ' && (fabs(mll - 91.2) < 10)'
 zjets3l_sel += ' && probeLep1mT < 40'
-zjets3l_sel += ' && (probeLep1Pt < 15 || met < 40)'
-#zjets3l_sel += ' && probeLep1Pt > 10'
+zjets3l_sel += ' && (probeLep1Pt < 16 || met < 50)'
+#zjets3l_sel += ' && probeLep1Pt < 8'
 #zjets3l_sel += ' && (fabs(Z2_mll - 91.2) > 10)'
-#zjets3l_sel += ' && dR_ZLep1_probeLep1 > 0.2 && dR_ZLep2_probeLep1 > 0.2' 
-zjets3l_sel_num = zjets3l_sel# + " && nSigLeps == 3 && nInvLeps == 0"
-zjets3l_sel_den = zjets3l_sel + " && nSigLeps == 2 && nInvLeps == 1"
+zjets3l_sel += ' && dR_ZLep1_probeLep1 > 0.2 && dR_ZLep2_probeLep1 > 0.2' 
+if "fnp_fakefactor" in _samples_to_use:
+    zjets3l_sel += ' && (!isMC || %s)' % zjets_truth_num
+    zjets3l_sel_num = zjets3l_sel
+    zjets3l_sel_den = zjets3l_sel
+else:
+    zjets3l_sel_num = zjets3l_sel + " && nSigLeps == 3 && nInvLeps == 0"
+    zjets3l_sel_den = zjets3l_sel + " && nSigLeps == 2 && nInvLeps == 1"
 
 def add_zjets3L_channels(reg, REGs):
     # Define selections
@@ -1193,11 +1198,12 @@ plots_defaults = {
 
     # Fake Factor
     'probeLep1Pt' : Plot1D(bin_edges=[0, 3, 3.5, 4, 4.5, 5, 6, 7, 8, 9, 10, 11, 13, 16, 20, 30, 50], xlabel='p_{T}^{probe lep}', xunits='GeV', doLogY=False),
-    #'probeLep1Pt'  : Plot1D(bin_edges=[20, 25, 30, 35, 40, 45, 50, 60, 70, 85, 100], xlabel='p_{T}^{probe lep}', xunits='GeV', add_overflow=True, doLogY=False),
-    #'probeLep1Pt'  : Plot1D(bin_edges=[20, 25, 30, 40, 60, 100], xlabel='p_{T}^{probe lep}', xunits='GeV', add_overflow=True, doLogY=False),
     #'probeLep1Pt' : Plot1D(bin_range=[0,150], bin_width = 5, xlabel='p_{T}^{probe lep}', xunits='GeV'),
-    #'probeLep1Eta' : Plot1D(bin_edges=[-3.0, -2.5, -1.45, 0, 1.45, 2.5, 3.0], xlabel='#eta^{probe lep}', xunits='', add_underflow=True),
-    'probeLep1Eta' : Plot1D(bin_edges=[-3.0, -2.5, -2.0, -1.45, -1.0, -0.5, 0, 0.5, 1.0, 1.45, 2.0, 2.5, 3.0], xlabel='#eta^{probe lep}', xunits='', add_underflow=True),
+    'fabs(probeLep1Eta)' : Plot1D(bin_edges=[0.0, 0.6, 0.8, 1.15, 1.37, 1.52, 1.81, 2.01, 2.37, 2.5, 3.0], xlabel='#eta^{probe lep}', xunits='', add_underflow=True),
+    #'fabs(probeLep1Eta)' : Plot1D(bin_edges=[0.0, 0.1, 1.05, 1.5, 2.0, 2.5, 2.7, 3.0], xlabel='#eta^{probe lep}', xunits='', add_underflow=True),
+    #'probeLep1Eta' : Plot1D(bin_edges=[-3.0, -2.7, -1.05, 0, 1.05, 2.7, 3.0], xlabel='#eta^{probe lep}', xunits='', add_underflow=True),
+    #'probeLep1Eta' : Plot1D(bin_edges=[-3.0, -2.5, -2.0, -1.45, -1.0, -0.5, 0, 0.5, 1.0, 1.45, 2.0, 2.5, 3.0], xlabel='#eta^{probe lep}', xunits='', add_underflow=True),
+    'probeLep1Eta' : Plot1D(bin_range=[-3.0, 3.0], bin_width=0.25, xlabel='#eta^{probe lep}', xunits='', add_underflow=True),
     'probeLep1mT'  : Plot1D(bin_range=[0, 150], bin_width=5, xlabel='m_{T}^{probe lep}', xunits='GeV', xcut_is_max=True),
     'mlll'         : Plot1D(bin_range=[70, 150], bin_width=5, xlabel='M_{lll}', xunits='GeV', add_underflow=True),
     'Z2_mll'       : Plot1D(bin_range=[50, 140], bin_width=5, xlabel='Z2 M_{ll}', xunits='GeV', add_underflow=True),
@@ -1252,6 +1258,8 @@ plots_defaults = {
     'deltaPhi_met_lep2:lep1mT' : Plot2D(bin_range=[0, 150, 0, 3.2], xbin_width = 10, ybin_width = 0.2, xlabel='lep1mT', ylabel='deltaPhi_met_lep2'), 
     'deltaPhi_met_lep2:lep2mT' : Plot2D(bin_range=[0, 150, 0, 3.2], xbin_width = 10, ybin_width = 0.2, xlabel='lep2mT', ylabel='deltaPhi_met_lep2'), 
     'deltaPhi_met_lep2:pTll'    : Plot2D(bin_range=[0, 300, 0, 3.2], xbin_width = 20, ybin_width = 0.2, xlabel='pTll', ylabel='deltaPhi_met_lep2'), 
+    'fabs(probeLep1Eta):probeLep1Pt'  : Plot2D(xbin_edges=[0, 3, 3.5, 4, 4.5, 5, 6, 7, 8, 9, 10, 11, 13, 16, 20, 30, 1000], xlabel='p_{T}^{probe lep}',
+                                               ybin_edges=[0.0, 0.6, 0.8, 1.15, 1.37, 1.52, 1.81, 2.01, 2.37, 2.5, 3.0], ylabel='|#eta^{probe lep}|'), 
     'probeLep1Pt:probeLep1mT'    : Plot2D(bin_range=[0, 150, 0, 150], xbin_width = 10, ybin_width = 10, xlabel='m_{T}^{probe lep}', ylabel='p_{T}^{probe lep}'), 
     'probeLep1Pt:met'    : Plot2D(bin_range=[0, 150, 0, 150], xbin_width = 10, ybin_width = 10, xlabel='E_{T}^{miss}', ylabel='p_{T}^{probe lep}', ), 
 }
@@ -1273,6 +1281,8 @@ region_plots['default'] = {
   'DPB_vSS'                 : deepcopy(plots_defaults['DPB_vSS']),
   'abs_costheta_b'          : deepcopy(plots_defaults['abs_costheta_b']),
   'DPB_vSS - 0.9*abs_costheta_b'        : deepcopy(plots_defaults['DPB_vSS - 0.9*abs_costheta_b']),
+  'fabs(probeLep1Eta):probeLep1Pt'        : deepcopy(plots_defaults['fabs(probeLep1Eta):probeLep1Pt']),
+  'fabs(probeLep1Eta)'            : deepcopy(plots_defaults['fabs(probeLep1Eta)']),
 }
 region_plots['presel_DF'] = deepcopy(region_plots['default'])
 region_plots['ttbar_CR'] = deepcopy(region_plots['default'])
@@ -1398,10 +1408,22 @@ region_plots['VV_VR_SF']['abs_costheta_b'].update(bin_range = [0, 1], bin_width=
 
 region_plots['zjets3l_CR_num']['mll'].update(bin_range = [80.2, 102.2], bin_width=1)
 region_plots['zjets3l_CR_num_ll_el'] = region_plots['zjets3l_CR_num']
-region_plots['zjets3l_CR_num_ll_mu'] = region_plots['zjets3l_CR_num']
+region_plots['zjets3l_CR_num_elel_el'] = region_plots['zjets3l_CR_num']
+region_plots['zjets3l_CR_num_mumu_el'] = region_plots['zjets3l_CR_num']
+
+region_plots['zjets3l_CR_num_ll_mu'] = deepcopy(region_plots['zjets3l_CR_num'])
+region_plots['zjets3l_CR_num_ll_mu']['fabs(probeLep1Eta):probeLep1Pt'].update(ybin_edges=[0.0, 0.1, 1.05, 1.5, 2.0, 2.5, 2.7, 3.0])
+region_plots['zjets3l_CR_num_ll_mu']['fabs(probeLep1Eta)'].update(bin_edges=[0.0, 0.1, 1.05, 1.5, 2.0, 2.5, 2.7, 3.0])
+region_plots['zjets3l_CR_num_elel_mu'] = region_plots['zjets3l_CR_num_ll_mu']
+region_plots['zjets3l_CR_num_mumu_mu'] = region_plots['zjets3l_CR_num_ll_mu']
+
 region_plots['zjets3l_CR_den'] = region_plots['zjets3l_CR_num']
-region_plots['zjets3l_CR_den_ll_el'] = region_plots['zjets3l_CR_num']
-region_plots['zjets3l_CR_den_ll_mu'] = region_plots['zjets3l_CR_num']
+region_plots['zjets3l_CR_den_ll_el'] = region_plots['zjets3l_CR_num_ll_el']
+region_plots['zjets3l_CR_den_elel_el'] = region_plots['zjets3l_CR_num_ll_el']
+region_plots['zjets3l_CR_den_mumu_el'] = region_plots['zjets3l_CR_num_ll_el']
+region_plots['zjets3l_CR_den_ll_mu'] = region_plots['zjets3l_CR_num_ll_mu']
+region_plots['zjets3l_CR_den_elel_mu'] = region_plots['zjets3l_CR_num_ll_mu']
+region_plots['zjets3l_CR_den_mumu_mu'] = region_plots['zjets3l_CR_num_ll_mu']
 region_plots['zjets2l_inc'] = region_plots['zjets3l_CR_num']
 
 # Make a plot for reach region and variable

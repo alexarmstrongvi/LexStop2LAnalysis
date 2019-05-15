@@ -207,7 +207,6 @@ class KeyManager(object) :
         return key
 
     def generate_FakeBkgTools_key(self, channel_str, sample_str, var_str, syst_str=""):
-        print "TESTING :: channel_str = %s, sample_str = %s, var_str = %s" % (channel_str, sample_str, var_str)
         if "_el" in channel_str:
             flav = "_el"
         elif "_mu" in channel_str:
@@ -224,10 +223,13 @@ class KeyManager(object) :
 
         if "probeLep1Pt" in var_str and "probeLep1Eta" in var_str:
             var = "_pt_eta"
+            dim = "2D"
         elif "probeLep1Pt" in var_str:
             var = "_pt"
+            dim = ""
         elif "probeLep1Eta" in var_str:
             flav = "_eta"
+            dim = ""
         else:
             print "ERROR :: Unable to identify lepton variable(s) in variable string:", var_str
 
@@ -237,8 +239,8 @@ class KeyManager(object) :
             print "ERROR :: Unable to identify systematic in syst string:", syst_str
 
 
-        print "TESTING :: Fake factor hist name: %sFakeFactor%s%s%s" % (prefix, flav, var, syst)
-        return "%sFakeFactor%s%s%s" % (prefix, flav, var, syst)
+        print "TESTING :: Fake factor hist name: %sFakeFactor%s%s%s%s" % (prefix, dim, flav, var, syst)
+        return "%sFakeFactor%s%s%s%s" % (prefix, dim, flav, var, syst)
     ############################################################################
     def get_data_keys(self):
         keys = [self.data_hist, self.data_corr_hist, self.data_comp_sys_hist, self.data_prompt_sys_up_hist, self.data_prompt_sys_dn_hist]
@@ -653,14 +655,18 @@ def get_fake_factor_hists(hists):
             fake_factor_key = KEYS.generate_fake_factor_key(hist_key)
             num_hist = ch_dict[conf.NUM_STR][hist_key]
             #fake_factor_name = channel_name + "_" + fake_factor_key
-            ff_name = KEYS.generate_FakeBkgTools_key(channel_name, hist_key, num_hist.plot.variable)
+            if isinstance(num_hist, r.TH2):
+                var_str = num_hist.plot.xvariable + "_" + num_hist.plot.yvariable
+            elif isinstance(num_hist, r.TH1):
+                var_str = num_hist.plot.variable
+            ff_name = KEYS.generate_FakeBkgTools_key(channel_name, hist_key, var_str)
             ff_hist = num_hist.Clone(ff_name)
             ff_hist.Divide(ch_dict[conf.DEN_STR][hist_key])
             ff_hist.SetMaximum(0.5)
 
             # Append some information   
             ff_hist.displayname = hist_key.replace("_"," ")
-            ff_hist.plot = num_hist.plot
+            #ff_hist.plot = num_hist.plot
             ff_hist.plot = copy(num_hist.plot)
 
             # Format the hists
@@ -786,11 +792,12 @@ def save_and_write_hists(ff_hists_dict, hists):
     if args.ofile_name:
         ofile.Close()
 
-
     # Save all other desired plots
     for channel_name, ch_dict in hists.iteritems():
         for num_or_den, sample_dict in ch_dict.iteritems():
             # Save MC Stacks
+            if any(hasattr(h,"plot") and h.plot.is2D for h in sample_dict.values()):
+                continue
             data_hist = sample_dict[KEYS.data_hist]
             mc_stack = sample_dict[KEYS.mc_stack]
             mc_hist = sample_dict[KEYS.mc_hist]
