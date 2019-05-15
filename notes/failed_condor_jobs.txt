@@ -1,0 +1,24 @@
+################################################################################
+# Record of failed condor jobs
+################################################################################
+
+################################################################################
+# Site specific failures
+#
+# Template
+# <date>
+#   - Jobs : <relevant job options>
+#   - <JOB_Site> : <Description of error at the site>
+#       - <list of example JOB_GLIDEIN_SiteWMS_Slot values>
+#   - <Status: Lazy, Email, In Progress, Resolved> : <Cause of problem>
+
+2019-05-09
+ - Jobs: fake_zjets3l with fake factor only for data samples (600 jobs)
+ - UCSD: All jobs sent here and over half are failing with "error while loading shared libraries: libxAODEgamma.so: cannot open shared object file: No such file or directory"
+    * slot1_4@sdsc-44.t2.ucsd.edu
+ - Resolved : Problem with specific node fixed by Edgar and Terrance
+
+################################################################################
+# General errors
+1) Error in <TNetXNGFile::Open>: [FATAL] Auth failed
+    - Usually fixed by reauthenticating grid certificate and resubmitting jobs

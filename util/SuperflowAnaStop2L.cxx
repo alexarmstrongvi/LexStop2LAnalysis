@@ -1663,31 +1663,33 @@ void add_zjets2l_inc_variables(Superflow* sf) {
 }
 
 void add_weight_systematics(Superflow* sf) {
-    *sf << NewVar("shift in fake factor from statistical uncertainty"); {
-        *sf << HFTname("syst_FAKEFACTOR_Stat");
-        *sf << [](Superlink* /*sl*/, var_double*) -> double { 
-            double statUnc = 1;
-            for(auto& kv : m_wgt.uncertainties) {
-                if (m_fake_tool.isStatisticalUncertainty(kv.first)) {
-                    statUnc *= 0.5 * (fabs(kv.second.up) + fabs(kv.second.down));
+    if (m_add_fakes) {
+        *sf << NewVar("shift in fake factor from statistical uncertainty"); {
+            *sf << HFTname("syst_FAKEFACTOR_Stat");
+            *sf << [](Superlink* /*sl*/, var_double*) -> double { 
+                double statUnc = 1;
+                for(auto& kv : m_wgt.uncertainties) {
+                    if (m_fake_tool.isStatisticalUncertainty(kv.first)) {
+                        statUnc *= 0.5 * (fabs(kv.second.up) + fabs(kv.second.down));
+                    }
                 }
-            }
-            return statUnc; 
-        };
-        *sf << SaveVar();
-    }
-    *sf << NewVar("shift in fake factor from statistical uncertainty"); {
-        *sf << HFTname("syst_FAKEFACTOR_Syst");
-        *sf << [](Superlink* /*sl*/, var_double*) -> double { 
-            float systUnc = 1;
-            for(auto& kv : m_wgt.uncertainties) {
-                if (m_fake_tool.isSystematicUncertainty(kv.first)) {
-                    systUnc *= 0.5 * (fabs(kv.second.up) + fabs(kv.second.down));
+                return statUnc; 
+            };
+            *sf << SaveVar();
+        }
+        *sf << NewVar("shift in fake factor from statistical uncertainty"); {
+            *sf << HFTname("syst_FAKEFACTOR_Syst");
+            *sf << [](Superlink* /*sl*/, var_double*) -> double { 
+                float systUnc = 1;
+                for(auto& kv : m_wgt.uncertainties) {
+                    if (m_fake_tool.isSystematicUncertainty(kv.first)) {
+                        systUnc *= 0.5 * (fabs(kv.second.up) + fabs(kv.second.down));
+                    }
                 }
-            }
-            return systUnc; 
-        };
-        *sf << SaveVar();
+                return systUnc; 
+            };
+            *sf << SaveVar();
+        }
     }
     *sf << NewSystematic("FTAG EFF B"); {
         *sf << WeightSystematic(SupersysWeight::FT_EFF_B_UP, SupersysWeight::FT_EFF_B_DN);

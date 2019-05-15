@@ -2,3 +2,4 @@ python/yield_table_looper.py
 python/signal_significance_looper.py
 python/region_compare_looper.py
 util/SuperflowAnaStop2L_tmp.cxx
+*.root*
