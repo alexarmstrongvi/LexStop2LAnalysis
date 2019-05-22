@@ -147,23 +147,25 @@ bool is_1lep_trig_matched(Superlink* sl, string trig_name, LeptonVector leptons,
 #define ADD_1LEP_TRIGGER_VAR(trig_name, leptons) { \
     *sf << NewVar(#trig_name" trigger bit"); { \
         *sf << HFTname(#trig_name); \
-        *sf << [=](Superlink* sl, var_bool*) -> bool { \
-            return is_1lep_trig_matched(sl, #trig_name, leptons); \
+        *sf << [=](Superlink* /*sl*/, var_bool*) -> bool { \
+            return m_triggerPass.at(#trig_name); \
         }; \
         *sf << SaveVar(); \
     } \
 }
+//return is_1lep_trig_matched(sl, #trig_name, leptons);
 
 bool is_2lep_trig_matched(Superlink* sl, string trig_name, Susy::Lepton* lep1, Susy::Lepton* lep2, float pt_min1 = 0, float pt_min2 = 0);
 #define ADD_2LEP_TRIGGER_VAR(trig_name, lep1, lep2) { \
   *sf << NewVar(#trig_name" trigger bit"); { \
       *sf << HFTname(#trig_name); \
-      *sf << [=](Superlink* sl, var_bool*) -> bool { \
-          return is_2lep_trig_matched(sl, #trig_name, lep1, lep2); \
+      *sf << [=](Superlink* /*sl*/, var_bool*) -> bool { \
+          return m_triggerPass.at(#trig_name); \
       }; \
       *sf << SaveVar(); \
   } \
 }
+// return is_2lep_trig_matched(sl, #trig_name, lep1, lep2);
 
 // Addings a jigsaw variable
 #define ADD_JIGSAW_VAR(var_name) { \
@@ -583,54 +585,105 @@ void set_global_variables(Superflow* sf) {
         // Triggers
         ////////////////////////////////////////////////////////////////////////////
         // 2015
-        m_triggerPass.emplace("HLT_e24_lhmedium_L1EM20VH", is_1lep_trig_matched(sl, "HLT_e24_lhmedium_L1EM20VH", m_triggerLeptons));
-        m_triggerPass.emplace("HLT_e60_lhmedium", is_1lep_trig_matched(sl, "HLT_e60_lhmedium", m_triggerLeptons));
-        m_triggerPass.emplace("HLT_e120_lhloose", is_1lep_trig_matched(sl, "HLT_e120_lhloose", m_triggerLeptons));
+        m_triggerPass.emplace("HLT_e24_lhmedium_L1EM20VH", is_1lep_trig_matched(sl, "HLT_e24_lhmedium_L1EM20VH", m_triggerLeptons, 25));
+        m_triggerPass.emplace("HLT_e60_lhmedium", is_1lep_trig_matched(sl, "HLT_e60_lhmedium", m_triggerLeptons, 61));
+        m_triggerPass.emplace("HLT_e120_lhloose", is_1lep_trig_matched(sl, "HLT_e120_lhloose", m_triggerLeptons, 121));
 
-        m_triggerPass.emplace("HLT_2e12_lhloose_L12EM10VH", is_2lep_trig_matched(sl, "HLT_2e12_lhloose_L12EM10VH", m_el0, m_el1));
+        m_triggerPass.emplace("HLT_2e12_lhloose_L12EM10VH", is_2lep_trig_matched(sl, "HLT_2e12_lhloose_L12EM10VH", m_el0, m_el1, 13, 13));
 
-        m_triggerPass.emplace("HLT_mu20_iloose_L1MU15", is_1lep_trig_matched(sl, "HLT_mu20_iloose_L1MU15", m_triggerLeptons));
-        m_triggerPass.emplace("HLT_mu40", is_1lep_trig_matched(sl, "HLT_mu40", m_triggerLeptons));
+        m_triggerPass.emplace("HLT_mu20_iloose_L1MU15", is_1lep_trig_matched(sl, "HLT_mu20_iloose_L1MU15", m_triggerLeptons, 21));
+        m_triggerPass.emplace("HLT_mu40", is_1lep_trig_matched(sl, "HLT_mu40", m_triggerLeptons, 41));
 
         // TODO: Add to SusyNt, ADD_2LEP_TRIGGER_VAR(HLT_2mu10, m_mu0, m_mu1)
-        m_triggerPass.emplace("HLT_mu18_mu8noL1", is_2lep_trig_matched(sl, "HLT_mu18_mu8noL1", m_mu0, m_mu1));
+        m_triggerPass.emplace("HLT_mu18_mu8noL1", is_2lep_trig_matched(sl, "HLT_mu18_mu8noL1", m_mu0, m_mu1, 19, 9));
 
-        m_triggerPass.emplace("HLT_e17_lhloose_mu14", is_2lep_trig_matched(sl, "HLT_e17_lhloose_mu14", m_el0, m_mu0));
-        m_triggerPass.emplace("HLT_e7_lhmedium_mu24", is_2lep_trig_matched(sl, "HLT_e7_lhmedium_mu24", m_el0, m_mu0));
+        m_triggerPass.emplace("HLT_e17_lhloose_mu14", is_2lep_trig_matched(sl, "HLT_e17_lhloose_mu14", m_el0, m_mu0, 18, 15));
+        m_triggerPass.emplace("HLT_e7_lhmedium_mu24", is_2lep_trig_matched(sl, "HLT_e7_lhmedium_mu24", m_el0, m_mu0, 8, 25));
 
         ////////////////////////////////////////////////////////////////////////////
         // 2016
-        m_triggerPass.emplace("HLT_2e17_lhvloose_nod0", is_2lep_trig_matched(sl, "HLT_2e17_lhvloose_nod0", m_el0, m_el1));
-        m_triggerPass.emplace("HLT_e26_lhmedium_nod0_L1EM22VHI_mu8noL1", is_2lep_trig_matched(sl, "HLT_e26_lhmedium_nod0_L1EM22VHI_mu8noL1", m_el0, m_mu0));
+        m_triggerPass.emplace("HLT_2e17_lhvloose_nod0", is_2lep_trig_matched(sl, "HLT_2e17_lhvloose_nod0", m_el0, m_el1, 18, 18));
+        m_triggerPass.emplace("HLT_e26_lhmedium_nod0_L1EM22VHI_mu8noL1", is_2lep_trig_matched(sl, "HLT_e26_lhmedium_nod0_L1EM22VHI_mu8noL1", m_el0, m_mu0, 27, 9));
 
         ////////////////////////////////////////////////////////////////////////////
         // 2016-2018
 
-        m_triggerPass.emplace("HLT_e26_lhtight_nod0_ivarloose", is_1lep_trig_matched(sl, "HLT_e26_lhtight_nod0_ivarloose", m_triggerLeptons));
-        m_triggerPass.emplace("HLT_e60_lhmedium_nod0", is_1lep_trig_matched(sl, "HLT_e60_lhmedium_nod0", m_triggerLeptons));
-        m_triggerPass.emplace("HLT_e140_lhloose_nod0", is_1lep_trig_matched(sl, "HLT_e140_lhloose_nod0", m_triggerLeptons));
+        m_triggerPass.emplace("HLT_e26_lhtight_nod0_ivarloose", is_1lep_trig_matched(sl, "HLT_e26_lhtight_nod0_ivarloose", m_triggerLeptons, 27));
+        m_triggerPass.emplace("HLT_e60_lhmedium_nod0", is_1lep_trig_matched(sl, "HLT_e60_lhmedium_nod0", m_triggerLeptons, 61));
+        m_triggerPass.emplace("HLT_e140_lhloose_nod0", is_1lep_trig_matched(sl, "HLT_e140_lhloose_nod0", m_triggerLeptons, 141));
 
-        m_triggerPass.emplace("HLT_mu26_ivarmedium", is_1lep_trig_matched(sl, "HLT_mu26_ivarmedium", m_triggerLeptons));
-        m_triggerPass.emplace("HLT_mu50", is_1lep_trig_matched(sl, "HLT_mu50", m_triggerLeptons));
+        m_triggerPass.emplace("HLT_mu26_ivarmedium", is_1lep_trig_matched(sl, "HLT_mu26_ivarmedium", m_triggerLeptons, 27));
+        m_triggerPass.emplace("HLT_mu50", is_1lep_trig_matched(sl, "HLT_mu50", m_triggerLeptons, 51));
 
         // TODO: Add to SusyNt, ADD_2LEP_TRIGGER_VAR(HLT_2mu14, m_mu0, m_mu1)
-        m_triggerPass.emplace("HLT_mu22_mu8noL1", is_2lep_trig_matched(sl, "HLT_mu22_mu8noL1", m_mu0, m_mu1));
+        m_triggerPass.emplace("HLT_mu22_mu8noL1", is_2lep_trig_matched(sl, "HLT_mu22_mu8noL1", m_mu0, m_mu1, 23, 9));
 
-        m_triggerPass.emplace("HLT_e17_lhloose_nod0_mu14", is_2lep_trig_matched(sl, "HLT_e17_lhloose_nod0_mu14", m_el0, m_mu0));
-        m_triggerPass.emplace("HLT_e7_lhmedium_nod0_mu24", is_2lep_trig_matched(sl, "HLT_e7_lhmedium_nod0_mu24", m_el0, m_mu0));
+        m_triggerPass.emplace("HLT_e17_lhloose_nod0_mu14", is_2lep_trig_matched(sl, "HLT_e17_lhloose_nod0_mu14", m_el0, m_mu0, 18, 15));
+        m_triggerPass.emplace("HLT_e7_lhmedium_nod0_mu24", is_2lep_trig_matched(sl, "HLT_e7_lhmedium_nod0_mu24", m_el0, m_mu0, 8, 25));
 
         ////////////////////////////////////////////////////////////////////////////
         // 2017-2018
-        m_triggerPass.emplace("HLT_2e24_lhvloose_nod0", is_2lep_trig_matched(sl, "HLT_2e24_lhvloose_nod0", m_el0, m_el1));
+        m_triggerPass.emplace("HLT_2e24_lhvloose_nod0", is_2lep_trig_matched(sl, "HLT_2e24_lhvloose_nod0", m_el0, m_el1, 25, 25));
 
-        m_triggerPass.emplace("HLT_e26_lhmedium_nod0_mu8noL1", is_2lep_trig_matched(sl, "HLT_e26_lhmedium_nod0_mu8noL1", m_el0, m_mu0));
+        m_triggerPass.emplace("HLT_e26_lhmedium_nod0_mu8noL1", is_2lep_trig_matched(sl, "HLT_e26_lhmedium_nod0_mu8noL1", m_el0, m_mu0, 27, 9));
 
         ////////////////////////////////////////////////////////////////////////////
         // 2018
         // L1_2EM15VHI was accidentally prescaled in periods B5-B8 of 2017
         // (runs 326834-328393) with an effective reduction of 0.6 fb-1
-        m_triggerPass.emplace("HLT_2e17_lhvloose_nod0_L12EM15VHI", is_2lep_trig_matched(sl, "HLT_2e17_lhvloose_nod0_L12EM15VHI", m_el0, m_el1));
+        m_triggerPass.emplace("HLT_2e17_lhvloose_nod0_L12EM15VHI", is_2lep_trig_matched(sl, "HLT_2e17_lhvloose_nod0_L12EM15VHI", m_el0, m_el1, 18, 18));
         
+        ////////////////////////////////////////////////////////////////////////////
+        // Combined triggers
+        int year = sl->nt->evt()->treatAsYear;
+        
+        bool passSingleLepTrig = false;
+        if (year == 2015) {
+            passSingleLepTrig |= m_triggerPass.at("HLT_e24_lhmedium_L1EM20VH")
+                              || m_triggerPass.at("HLT_e60_lhmedium")
+                              || m_triggerPass.at("HLT_e120_lhloose")
+                              || m_triggerPass.at("HLT_mu20_iloose_L1MU15")
+                              || m_triggerPass.at("HLT_mu40");
+        } else if (year == 2016 || year == 2017 || year == 2018) {
+            passSingleLepTrig |= m_triggerPass.at("HLT_e26_lhtight_nod0_ivarloose")
+                              || m_triggerPass.at("HLT_e60_lhmedium_nod0")
+                              || m_triggerPass.at("HLT_e140_lhloose_nod0")
+                              || m_triggerPass.at("HLT_mu26_ivarmedium")
+                              || m_triggerPass.at("HLT_mu50");
+        }
+        m_triggerPass.emplace("singleLepTrigs", passSingleLepTrig);
+
+        bool passDilepTrig = false;
+        if (year == 2015) {
+            passDilepTrig |= m_triggerPass.at("HLT_2e12_lhloose_L12EM10VH")
+                          || m_triggerPass.at("HLT_mu18_mu8noL1")
+                          || m_triggerPass.at("HLT_e17_lhloose_mu14")
+                          || m_triggerPass.at("HLT_e7_lhmedium_mu24");
+        } else if (year == 2016) {
+            passDilepTrig |= m_triggerPass.at("HLT_2e17_lhvloose_nod0")
+                          || m_triggerPass.at("HLT_mu22_mu8noL1")
+                          //|| m_triggerPass.at("HLT_2mu14")
+                          //|| m_triggerPass.at("HLT_e26_lhmedium_nod0_L1EM22VHI_mu8noL1")
+                          || m_triggerPass.at("HLT_e17_lhloose_nod0_mu14");
+        } else if (year == 2017) {
+            passDilepTrig |= m_triggerPass.at("HLT_2e24_lhvloose_nod0")
+                          || m_triggerPass.at("HLT_mu22_mu8noL1")
+                          //|| m_triggerPass.at("HLT_2mu14")
+                          || m_triggerPass.at("HLT_e26_lhmedium_nod0_mu8noL1")
+                          || m_triggerPass.at("HLT_e17_lhloose_nod0_mu14");
+        } else if (year == 2018) {
+            passDilepTrig |= m_triggerPass.at("HLT_2e24_lhvloose_nod0")
+                          || m_triggerPass.at("HLT_2e17_lhvloose_nod0_L12EM15VHI")
+                          || m_triggerPass.at("HLT_mu22_mu8noL1")
+                          //|| m_triggerPass.at("HLT_2mu14")
+                          || m_triggerPass.at("HLT_e17_lhloose_nod0_mu14")
+                          || m_triggerPass.at("HLT_e26_lhmedium_nod0_mu8noL1")
+                          || m_triggerPass.at("HLT_e7_lhmedium_nod0_mu24");
+        }
+        m_triggerPass.emplace("dilepTrigs", passDilepTrig);
+
+        bool passTrig = passSingleLepTrig || passDilepTrig; 
+        m_triggerPass.emplace("lepTrigs", passTrig);
 
         // Jigsaw variables
         if (sl->leptons->size() >= 2) {
@@ -1040,6 +1093,32 @@ void add_trigger_variables(Superflow* sf) {
     // L1_2EM15VHI was accidentally prescaled in periods B5-B8 of 2017
     // (runs 326834-328393) with an effective reduction of 0.6 fb-1
     ADD_2LEP_TRIGGER_VAR(HLT_2e17_lhvloose_nod0_L12EM15VHI, m_el0, m_el1)
+    
+    ////////////////////////////////////////////////////////////////////////////
+    // Combined trigger
+
+    *sf << NewVar("Pass single lepton triggers"); {
+        *sf << HFTname("passSingleLepTrigs");
+        *sf << [](Superlink* /*sl*/, var_bool*) -> bool { 
+            return m_triggerPass.at("singleLepTrigs");
+        };
+        *sf << SaveVar();
+    }
+    *sf << NewVar("Pass dilepton triggers"); {
+        *sf << HFTname("passDilepTrigs");
+        *sf << [](Superlink* /*sl*/, var_bool*) -> bool { 
+            return m_triggerPass.at("dilepTrigs");
+        };
+        *sf << SaveVar();
+    }
+    *sf << NewVar("Pass single or dilepton triggers"); {
+        *sf << HFTname("passLepTrigs");
+        *sf << [](Superlink* /*sl*/, var_bool*) -> bool { 
+            return m_triggerPass.at("lepTrigs");
+        };
+        *sf << SaveVar();
+    }
+    
 }
 void add_lepton_variables(Superflow* sf) {
 
@@ -1753,7 +1832,7 @@ bool is_2lep_trig_matched(Superlink* sl, string trig_name, Susy::Lepton* lep1, S
 }
 
 bool is_antiID_lepton(Susy::Lepton* lepton) {
-    bool pt_pass = 0, eta_pass = 0, iso_pass = 0, id_pass = 0;
+    bool pt_pass = 0, eta_pass = 0, iso_pass = 0, id_pass = 0, ip_pass = 0;
     bool passID_cuts = 0, passAntiID_cuts = 0;
     if (lepton->isEle()) {
         const Susy::Electron* ele = dynamic_cast<const Susy::Electron*>(lepton);
@@ -1763,18 +1842,20 @@ bool is_antiID_lepton(Susy::Lepton* lepton) {
         eta_pass = fabs(ele->eta) < 2.47;
         iso_pass = ele->isoGradient;
         id_pass  = ele->mediumLLH;
+        ip_pass = ele->d0sigBSCorr < 5;
         passID_cuts = iso_pass && id_pass;
         passAntiID_cuts = ele->looseLLHBLayer;
     } else if (lepton->isMu()) {
         const Susy::Muon* mu = dynamic_cast<const Susy::Muon*>(lepton);
         pt_pass  = mu->pt > 0; //10;
-        eta_pass = fabs(mu->eta) < 2.47;
+        eta_pass = fabs(mu->eta) < 2.7;
         iso_pass = mu->isoFCLoose;
         id_pass  = mu->medium;
+        ip_pass = mu->d0sigBSCorr < 3;
         passID_cuts = iso_pass && id_pass;
         passAntiID_cuts = mu->medium;
     }
-    return pt_pass && eta_pass && passAntiID_cuts && !passID_cuts;
+    return pt_pass && eta_pass && ip_pass && passAntiID_cuts && !passID_cuts;
 }
 bool is_ID_lepton(Superlink* sl, Susy::Lepton* lepton) {
     auto it = find(sl->leptons->begin(), sl->leptons->end(), lepton);
