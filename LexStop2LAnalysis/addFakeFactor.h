@@ -1,5 +1,6 @@
 #pragma once
 
+// std
 #include <string>
 using std::string;
 #include <vector>
@@ -9,8 +10,6 @@ using std::stringstream;
 #include <iostream>
 using std::cout;
 using std::cerr;
-#include <memory>
-using std::shared_ptr;
 
 // FakeBkdTools
 #include "FakeBkgTools/ApplyFakeFactor.h"
@@ -138,7 +137,6 @@ string m_fakeweight_syst_err_branch_name = "syst_FAKEFACTOR_Syst";
 class TreeHelper : public TreeHelperBase
 {
   public:
-    TreeHelper();
     TreeHelper(TTree* tt) : TreeHelperBase(tt) {}
     ~TreeHelper() {}
 
