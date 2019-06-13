@@ -20,11 +20,11 @@
 
 // FakeBkdTools
 #include "FakeBkgTools/FakeBkgHelpers.h"
+
 ////////////////////////////////////////////////////////////////////////////////
-// Declarations
+// Globals
 ////////////////////////////////////////////////////////////////////////////////
 const float GeVtoMeV = 1000.0;
-
 
 ////////////////////////////////////////////////////////////////////////////////
 /// @brief Command line argument parser
@@ -141,11 +141,6 @@ struct Args {
 } args;
 
 ////////////////////////////////////////////////////////////////////////////////
-/// Input sensative code
-////////////////////////////////////////////////////////////////////////////////
-// TODO
-
-////////////////////////////////////////////////////////////////////////////////
 /// @brief Main function
 ///
 /// Run with help option (-h, --help) to see available parameters
@@ -204,7 +199,11 @@ int main(int argc, char* argv[]) {
     // Loop over input tree
     for (Int_t i=0; i < tree_helper.tr().GetEntries(); i++) {
         tree_helper.clear();
-        itree->GetEntry(i);
+        tree_helper.tr().GetEntry(i);
+        if (args.debug) {
+            cout << "\n=============================================================\n";
+            cout << "DEBUG :: Processing event " << tree_helper.event_number() << '\n';
+        }
 
         // Build vector of xAOD leptons
         const vector<leptonProperties>& leptons = tree_helper.leptons();
@@ -240,8 +239,6 @@ int main(int argc, char* argv[]) {
         }
 
         if (args.debug) {
-            cout << "\n=============================================================\n";
-            cout << "DEBUG :: Information for event " << tree_helper.event_number() << '\n';
             cout << "DEBUG :: nLeptons = " << leptons.size() << "; isMC = " << tree_helper.isMC() << '\n';
             cout << "DEBUG :: Fake weight = " << fakeweight << " "
                  << "+/- " << syst_FAKEFACTOR_Stat << " (stat) "
@@ -258,8 +255,8 @@ int main(int argc, char* argv[]) {
     if (!args.test) { 
         ifile.cd();
         fake_tree.Write("", TObject::kOverwrite);
-        itree->AddFriend(args.fake_tree_name.c_str());
-        itree->Write("",TObject::kOverwrite);
+        tree_helper.tr().AddFriend(args.fake_tree_name.c_str());
+        tree_helper.tr().Write("",TObject::kOverwrite);
     }
     ifile.Close();
 

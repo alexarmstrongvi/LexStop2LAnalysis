@@ -117,7 +117,7 @@ string m_fakeweight_stat_err_branch_name = "syst_FAKEFACTOR_Stat";
 string m_fakeweight_syst_err_branch_name = "syst_FAKEFACTOR_Syst";
 
 ////////////////////////////////////////////////////////////////////////////////
-// User implentation of TreeHelper
+// User implementation of TreeHelper
 // Eveything below here is specific to the input ttree the user intends to use
 ////////////////////////////////////////////////////////////////////////////////
 

@@ -53,8 +53,8 @@ main () {
     run_fail_test "addFakeFactor -h" 3
 
     echo -e "\nChecking for failure when given non-existent files"
-    run_fail_test "addFakeFactor -f ${empty_file} -i fileThatDoesntExist.root -t superNt -s 2T" 3
-    run_fail_test "addFakeFactor -f fileThatDoesntExist.root -i ${empty_file} -t superNt -s 2T" 3
+    run_fail_test "addFakeFactor -f ${empty_file} -i fileThatDoesntExist.root -t superNt -s "'2T,0!T' 3
+    run_fail_test "addFakeFactor -f fileThatDoesntExist.root -i ${empty_file} -t superNt -s "'2T,0!T' 3
     
     echo -e "\nMaking dummy fake factor and input files"
     root -l -q ''"${MACRO_PATH}"'/makeDummyFakeFactor.cxx("'"${fake_file}"'", 0.25, 0.50)' > /dev/null
@@ -62,13 +62,13 @@ main () {
     cp ${ntuple_file} ${ntuple_file}.bu
     
     echo -e "\nChecking for success when given correctly formatted inputs in test mode"
-    run_success_test "addFakeFactor -f ${fake_file} -i ${ntuple_file} -t superNt --test -s 2T"
+    run_success_test "addFakeFactor -f ${fake_file} -i ${ntuple_file} -t superNt --test -s "'2T,0!T'
     
     echo -e "\nChecking that flat ntuple was not modifed when running in test mode"
     run_success_test "${MACRO_PATH}/rootFilesAreIdentical.py ${ntuple_file} ${ntuple_file}.bu"
     
     echo -e "\nChecking for success when adding fake factor for the first time"
-    run_success_test "addFakeFactor -f ${fake_file} -i ${ntuple_file} -t superNt -s 2T"
+    run_success_test "addFakeFactor -f ${fake_file} -i ${ntuple_file} -t superNt -s "'2T,0!T'
     
     echo -e "\nChecking that flat ntuple was modifed"
     run_fail_test "${MACRO_PATH}/rootFilesAreIdentical.py ${ntuple_file} ${ntuple_file}.bu" 3 
@@ -77,7 +77,7 @@ main () {
     cp ${ntuple_file} ${ntuple_file}.bu
     
     echo -e "\nChecking for success when overwriting fake factor"
-    run_success_test "addFakeFactor -f ${fake_file} -i ${ntuple_file} -t superNt -s 2T"
+    run_success_test "addFakeFactor -f ${fake_file} -i ${ntuple_file} -t superNt -s "'2T,0!T'
     
     echo -e "\nChecking that flat ntuple was modifed"
     run_fail_test "${MACRO_PATH}/rootFilesAreIdentical.py ${ntuple_file} ${ntuple_file}.bu" 3 
