@@ -228,7 +228,7 @@ class KeyManager(object) :
             var = "_pt"
             dim = ""
         elif "probeLep1Eta" in var_str:
-            flav = "_eta"
+            var = "_eta"
             dim = ""
         else:
             print "ERROR :: Unable to identify lepton variable(s) in variable string:", var_str

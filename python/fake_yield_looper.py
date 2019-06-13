@@ -63,7 +63,7 @@ def main():
     else:
         print "ERROR :: Unkown event type:", args.type
         sys.exit()
-
+    total_total_yld = 0
     for reg in REGIONS:
         print '\n', 20*'-', "Yields for %s region"%reg.displayname, 20*'-', '\n'
         final_print_str = ''
@@ -110,7 +110,11 @@ def main():
                 
                 # Done looping over samples
             print_str = "Breakdown for %s\n" % name
-            print_str += "Total Yield : %s\n" % str(total_yld)
+            if name == "TotalYld":
+                print_str += "Total Yield : %s\n" % str(total_yld)
+                total_total_yld = total_yld
+            else:
+                print_str += "Total Yield : %s [%s %%]\n" % (str(total_yld), str((total_yld/total_total_yld) * 100))
             print_str += "\tFake processes: \n%s" % rank_ylds_str(sample_yld, tabs='\t')
             for key, dic in faketype_yld.items():
                 print_str += "\t%s lepton fake types: \n%s" % (key, rank_ylds_str(dic, tabs='\t'))
