@@ -28,9 +28,28 @@ atlas_add_library ( LexStop2LAnalysisLib
 )
 
 # Build the executable(s) of the package
-atlas_add_executable ( SuperflowAnaStop2L util/SuperflowAnaStop2L.cxx
-    INCLUDE_DIRS ${ROOT_INCLUDE_DIRS}
-    LINK_LIBRARIES ${ROOT_LIBRARIES} LexStop2LAnalysisLib
-)
+# define a function to call the add_executable macro on our executables
+function(addExec filename)
+    set(execname)
+    get_filename_component(execname ${filename} NAME_WE)
+    atlas_add_executable( ${execname} "util/${execname}.cxx"
+        INCLUDE_DIRS ${ROOT_INCLUDE_DIRS}
+        LINK_LIBRARIES ${ROOT_LIBRARIES} LexStop2LAnalysisLib
+    )
+endfunction(addExec)
+
+file(GLOB files "util/*.cxx")
+foreach(file ${files})
+    addExec(${file})
+endforeach()
 
 atlas_install_data( data/* )
+
+atlas_add_test( test_addFakeFactor
+    SOURCES test/test_addFakeFactor.cxx
+    INCLUDE_DIRS ${ROOT_INCLUDE_DIRS}
+    LINK_LIBRARIES ${ROOT_LIBRARIES} AsgTools
+)
+atlas_add_test( test_addFakeFactorSH
+    SCRIPT test/test_addFakeFactor.sh
+)
