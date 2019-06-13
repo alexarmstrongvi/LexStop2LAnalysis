@@ -33,9 +33,4 @@ atlas_add_executable ( SuperflowAnaStop2L util/SuperflowAnaStop2L.cxx
     LINK_LIBRARIES ${ROOT_LIBRARIES} LexStop2LAnalysisLib
 )
 
-atlas_add_executable ( SuperflowAnaStop2L_tmp util/SuperflowAnaStop2L_tmp.cxx
-    INCLUDE_DIRS ${ROOT_INCLUDE_DIRS}
-    LINK_LIBRARIES ${ROOT_LIBRARIES} LexStop2LAnalysisLib
-)
-
 atlas_install_data( data/* )

@@ -69,7 +69,6 @@ string m_input_ttree_name = "susyNt";
 bool m_verbose = true;
 bool m_print_weighted_cutflow = true;
 int m_lumi = 1000; // inverse picobarns (ipb)
-//int m_lumi = 59937.2; // inverse picobarns (ipb)
 Susy::AnalysisType m_ana_type = Susy::AnalysisType::Ana_Stop2L4B;
 const float ZMASS = 91.2;
 const float GeVtoMeV = 1000.0;
@@ -171,7 +170,8 @@ bool is_2lep_trig_matched(Superlink* sl, string trig_name, Susy::Lepton* lep1, S
 #define ADD_JIGSAW_VAR(var_name) { \
     *sf << NewVar(#var_name); { \
         *sf << HFTname(#var_name); \
-        *sf << [](Superlink* /*sl*/, var_float*) -> double { return m_jigsaw_vars.at(#var_name); }; \
+        *sf << [](Superlink* /*sl*/, var_float*) -> double { \
+            return m_jigsaw_vars.count(#var_name) ? m_jigsaw_vars.at(#var_name) : -DBL_MAX; }; \
         *sf << SaveVar(); \
     } \
 }
@@ -664,13 +664,15 @@ void set_global_variables(Superflow* sf) {
                           || m_triggerPass.at("HLT_mu22_mu8noL1")
                           //|| m_triggerPass.at("HLT_2mu14")
                           //|| m_triggerPass.at("HLT_e26_lhmedium_nod0_L1EM22VHI_mu8noL1")
-                          || m_triggerPass.at("HLT_e17_lhloose_nod0_mu14");
+                          || m_triggerPass.at("HLT_e17_lhloose_nod0_mu14")
+                          || m_triggerPass.at("HLT_e7_lhmedium_nod0_mu24");
         } else if (year == 2017) {
             passDilepTrig |= m_triggerPass.at("HLT_2e24_lhvloose_nod0")
                           || m_triggerPass.at("HLT_mu22_mu8noL1")
                           //|| m_triggerPass.at("HLT_2mu14")
                           || m_triggerPass.at("HLT_e26_lhmedium_nod0_mu8noL1")
-                          || m_triggerPass.at("HLT_e17_lhloose_nod0_mu14");
+                          || m_triggerPass.at("HLT_e17_lhloose_nod0_mu14")
+                          || m_triggerPass.at("HLT_e7_lhmedium_nod0_mu24");
         } else if (year == 2018) {
             passDilepTrig |= m_triggerPass.at("HLT_2e24_lhvloose_nod0")
                           || m_triggerPass.at("HLT_2e17_lhvloose_nod0_L12EM15VHI")
