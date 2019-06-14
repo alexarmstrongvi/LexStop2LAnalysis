@@ -8,6 +8,7 @@
 ///
 ////////////////////////////////////////////////////////////////////////////////
 #include "LexStop2LAnalysis/addFakeFactor.h"
+#include "LexStop2LAnalysis/TreeHelper.h"
 
 // ROOT
 #include "TSystem.h"
@@ -133,7 +134,7 @@ struct Args {
         } else if (gSystem->AccessPathName(fake_name.c_str())) {
             cerr << "ERROR :: Fake file not found: " << fake_name << "\n";
             return false;
-        } else if (selection == "") {
+        } else if (selection.size() == 0) {
             cerr << "ERROR :: No lepton selection provided [-s] \n";
         }
         return true;
