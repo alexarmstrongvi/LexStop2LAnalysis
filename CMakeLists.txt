@@ -11,7 +11,9 @@ atlas_depends_on_subdirs (
     SusyNtuple 
     Superflow 
     jigsawcalculator
-    FakeBkgTools
+    Control/AthToolSupport/AsgTools
+    PhysicsAnalysis/Interfaces/AsgAnalysisInterfaces
+    PhysicsAnalysis/AnalysisCommon/PATInterfaces
 )
 
 # Find the non-ATLAS externals that the build needs.
@@ -24,7 +26,9 @@ atlas_add_library ( LexStop2LAnalysisLib
     LexStop2LAnalysis/*.h Root/*.cxx
     PUBLIC_HEADERS LexStop2LAnalysis
     INCLUDE_DIRS ${ROOT_INCLUDE_DIRS}
-    LINK_LIBRARIES SuperflowLib JigsawCalculator FakeBkgToolsLib ${ROOT_LIBRARIES}
+    LINK_LIBRARIES SuperflowLib JigsawCalculator 
+    AsgAnalysisInterfaces AsgTools xAODEventInfo PATInterfaces
+    ${ROOT_LIBRARIES}
 )
 
 # Build the executable(s) of the package

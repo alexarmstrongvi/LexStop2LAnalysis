@@ -9,10 +9,17 @@ using std::vector;
 using std::stringstream;
 
 // FakeBkdTools
-#include "FakeBkgTools/ApplyFakeFactor.h"
 
 // xAOD
 #include "xAODBase/IParticle.h"
+
+// ASG
+#include "AsgAnalysisInterfaces/ILinearFakeBkgTool.h"
+#include "AsgAnalysisInterfaces/IFakeBkgSystDescriptor.h"
+#include "AsgTools/AnaToolHandle.h"
+#include "AsgTools/AsgMessaging.h"
+#include "AsgTools/StatusCode.h"
+#include "PATInterfaces/SystematicSet.h"
 
 // ROOT
 #include "TTree.h"
@@ -77,12 +84,12 @@ struct leptonProperties {
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-bool initialize_fakefactor_tool(ApplyFakeFactor& tool, string input_file);
-const xAOD::IParticle* to_iparticle(const leptonProperties& lp); 
+StatusCode initialize_fakefactor_tool(string input_file, string /*selection*/);
+xAOD::IParticle* to_iparticle(const leptonProperties& lp); 
 bool all_prompt(const vector<leptonProperties>& lps);
-double get_fake_weight(const ApplyFakeFactor& /*tool*/, FakeBkgTools::Weight& wgt);
-double get_stat_error(const ApplyFakeFactor& tool, FakeBkgTools::Weight& wgt, double nom);
-double get_syst_error(const ApplyFakeFactor& tool, FakeBkgTools::Weight& wgt, double nom);
+StatusCode set_fake_weight(double& wgt, string selection);
+StatusCode set_stat_error(double& stat_err, double nom_weight, string selection);
+StatusCode set_syst_error(double& syst_err, double nom_weight, string selection);
 
 ////////////////////////////////////////////////////////////////////////////////
 class TreeHelperBase 
@@ -114,3 +121,4 @@ class TreeHelperBase
   private:
     TTree* _ttree;
 };
+

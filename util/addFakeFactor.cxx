@@ -10,22 +10,33 @@
 #include "LexStop2LAnalysis/addFakeFactor.h"
 #include "LexStop2LAnalysis/TreeHelper.h"
 
+// std
+#include <algorithm>
+using std::max;
+
 // ROOT
 #include "TSystem.h"
 #include "TFile.h"
 
 // xAOD
-#include "xAODBase/IParticle.h"
+#include "xAODEventInfo/EventInfo.h"
+#include "xAODEventInfo/EventAuxInfo.h"
+#include "xAODBase/IParticleContainer.h"
 #include "xAODEgamma/Electron.h"
 #include "xAODMuon/Muon.h"
 
-// FakeBkdTools
-#include "FakeBkgTools/FakeBkgHelpers.h"
+using namespace asg::msgUserCode;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Globals
 ////////////////////////////////////////////////////////////////////////////////
 const float GeVtoMeV = 1000.0;
+asg::AnaToolHandle<CP::ILinearFakeBkgTool> m_fake_tool;
+CP::SystematicSet m_sysvars;
+// Process = fake processes one aims to model with data-driven estimates 
+// Questionable if fake factor method works for estimating anything other than
+// all events with >=1 fake lepton(s) passing ID requirements (i.e. ">=F[T]")
+string m_process = ">=1F[T]";
 
 ////////////////////////////////////////////////////////////////////////////////
 /// @brief Command line argument parser
@@ -156,17 +167,11 @@ int main(int argc, char* argv[]) {
         return 3;
     }
     
-    // Process = fake processes one aims to model with data-driven estimates 
-    // Questionable if fake factor method works for estimating anything other than
-    // all events with >=1 fake lepton(s) passing ID requirements (i.e. ">=F[T]")
-    string process = ">=1F[T]";
-    // Selection = final reco state for which one wants fake estimates
-    string selection = args.selection;
-
     ////////////////////////////////////////////////////////////////////////////
     // Main implementation
     ////////////////////////////////////////////////////////////////////////////
     // Initialize
+
     string file_mode = args.test ? "READ" : "UPDATE";
     TFile ifile(args.ifile_name.c_str(), file_mode.c_str());
     if (ifile.IsZombie()) {
@@ -179,14 +184,25 @@ int main(int argc, char* argv[]) {
     TreeHelper tree_helper(itree);
     tree_helper.initialize();
 
-    ApplyFakeFactor fake_tool;
-    if (!initialize_fakefactor_tool(fake_tool, args.fake_name)) {
+    std::unique_ptr<xAOD::EventInfo> eventInfo = std::make_unique<xAOD::EventInfo>();
+    std::unique_ptr<xAOD::EventAuxInfo> eventAuxInfo = std::make_unique<xAOD::EventAuxInfo>();
+    eventInfo->setStore(eventAuxInfo.get());
+
+    if (!initialize_fakefactor_tool(args.fake_name, args.selection)) {
         cerr << "ERROR :: Unable to initialize fake factor tool\n";
         return 1;
     } else {
         cout << "INFO :: Fake background tool initialized\n";
+        m_sysvars = m_fake_tool->affectingSystematics();
     }
-    FakeBkgTools::Weight fake_wgt;
+    if (args.debug) {
+        cout << "DEBUG :: Considering the following systematics:\n";
+        uint count = 0;
+        for(const CP::SystematicVariation& sysvar : m_sysvars) {
+            cout << "DEBUG :: \t(" << ++count << ") " << sysvar.name() << '\n';
+            m_fake_tool->getSystDescriptor().printUncertaintyDescription(sysvar);
+        }
+    }
 
     TTree fake_tree(args.fake_tree_name.c_str(), "");
     double fakeweight = 0; 
@@ -208,7 +224,7 @@ int main(int argc, char* argv[]) {
 
         // Build vector of xAOD leptons
         const vector<leptonProperties>& leptons = tree_helper.leptons();
-        vector<const xAOD::IParticle*> aod_leptons;
+        xAOD::IParticleContainer aod_leptons(SG::VIEW_ELEMENTS);
         for (const leptonProperties& lep : leptons) { 
             // Only pass ID and Anti-ID leptons to fake tool
             if (lep.recoStatus != RecoStatus::ID && lep.recoStatus != RecoStatus::ANTIID) {
@@ -218,16 +234,20 @@ int main(int argc, char* argv[]) {
         }
 
         // Get fake weights and error
-        fake_tool.addEvent(aod_leptons);
-        if (fake_tool.getEventWeight(fake_wgt, selection, process) != StatusCode::SUCCESS) { 
-            cerr << "ERROR: ApplyFakeFactor::getEventWeight() failed\n";
+        ANA_CHECK( m_fake_tool->addEvent(aod_leptons) );
+        if (set_fake_weight(fakeweight, args.selection) != StatusCode::SUCCESS) {
+            cerr << "ERROR :: Failed to get fake factor event weight\n";
             return 3;
-        } else {
-            for (const xAOD::IParticle* p : aod_leptons) { delete p; }
         }
-        fakeweight = get_fake_weight(fake_tool, fake_wgt);
-        syst_FAKEFACTOR_Stat = get_stat_error(fake_tool, fake_wgt, fakeweight);
-        syst_FAKEFACTOR_Syst = get_syst_error(fake_tool, fake_wgt, fakeweight);
+        if (set_stat_error(syst_FAKEFACTOR_Stat, fakeweight, args.selection) != StatusCode::SUCCESS) {
+            cerr << "ERROR :: Failed to get fake factor event weight statistical error\n";
+            return 3;
+        }
+        if (set_syst_error(syst_FAKEFACTOR_Syst, fakeweight, args.selection) != StatusCode::SUCCESS) {
+            cerr << "ERROR :: Failed to get fake factor event weight systematic error\n";
+            return 3;
+        }
+        //for (const xAOD::IParticle* p : aod_leptons) { delete p; }
 
         if (tree_helper.isMC()) {
             if (all_prompt(leptons)) {
@@ -265,16 +285,18 @@ int main(int argc, char* argv[]) {
     return 0;
 }
 
-bool initialize_fakefactor_tool(ApplyFakeFactor& tool, string input_file) {
-    tool.setProperty("InputFiles", input_file);
-    tool.setProperty("EnergyUnit", "GeV");
-    //tool.setProperty("OutputLevel", );
-    //tool.setProperty("SkipUncertainties", true);
-    //tool.setProperty("ConvertWhenMissing", true);
-    return tool.initialize().isSuccess();
+StatusCode initialize_fakefactor_tool(string input_file, string /*selection*/) {
+    m_fake_tool = asg::AnaToolHandle<CP::ILinearFakeBkgTool>("CP::ApplyFakeFactor/FakeTool");
+    vector<string> vec = {input_file};
+    ANA_CHECK( m_fake_tool.setProperty("InputFiles", vec) );
+    ANA_CHECK( m_fake_tool.setProperty("EnergyUnit", "GeV") );
+    //ANA_CHECK( m_fake_tool.setProperty("Selection", selection) ); // Seems to have no effect
+    //ANA_CHECK( m_fake_tool.setProperty("Process", ">=1F[T]") ); // Seems to have no effect
+    ANA_CHECK( m_fake_tool.initialize() );
+    return StatusCode::SUCCESS;
 }
 
-const xAOD::IParticle* to_iparticle(const leptonProperties& lp) { 
+xAOD::IParticle* to_iparticle(const leptonProperties& lp) { 
     if (lp.isEle) {
         xAOD::Electron* e = new xAOD::Electron();
         e->makePrivateStore();
@@ -291,32 +313,77 @@ const xAOD::IParticle* to_iparticle(const leptonProperties& lp) {
         return static_cast<xAOD::IParticle*>(m);
     }
 }
-double get_fake_weight(const ApplyFakeFactor& /*tool*/, FakeBkgTools::Weight& wgt) {
-    return wgt.value;
+
+StatusCode set_fake_weight(double& wgt, string selection) {
+    float tmp_wgt = 0;
+    ANA_CHECK( m_fake_tool->applySystematicVariation({}) );
+    ANA_CHECK( m_fake_tool->getEventWeight(tmp_wgt, selection, m_process) );
+    wgt = tmp_wgt;
+    return StatusCode::SUCCESS;
 }
 
-double get_stat_error(const ApplyFakeFactor& tool, FakeBkgTools::Weight& wgt, double nom) {
-    float rel_unc_sq = 0;
-    for(auto& kv : wgt.uncertainties) {
-        if (tool.isStatisticalUncertainty(kv.first)) {
-            double sym_unc = 0.5 * (fabs(kv.second.up) + fabs(kv.second.down));
-            double rel_unc = sym_unc / nom;
-            rel_unc_sq += rel_unc * rel_unc;
+inline double add_in_quad(double x, double y) { return sqrt(x*x + y*y); }
+
+StatusCode set_stat_error(double& stat_err, double nom_weight, string selection) {
+    double err_down = 0;
+    double err_up = 0;
+    for(const CP::SystematicVariation& sysvar : m_sysvars) {
+        ANA_CHECK( m_fake_tool->applySystematicVariation({sysvar}) );
+        if (!m_fake_tool->getSystDescriptor().isStatisticalUncertainty(sysvar)) {
+            continue;
         }
+
+        float sys_weight;
+        ANA_CHECK( m_fake_tool->getEventWeight(sys_weight, selection, m_process) );
+
+        double diff = fabs(sys_weight - nom_weight);
+        if (sys_weight > nom_weight) {
+            err_down = add_in_quad(err_down, diff);
+        } else if (sys_weight < nom_weight) {
+            err_up = add_in_quad(err_up, diff);
+        } 
+        //cout << "VERBOSE :: "
+        //     << "nom_weight = " << nom_weight << ", "
+        //     << "sys_weight = " << sys_weight << ", "
+        //     << "diff = " << diff << ", "
+        //     << "updated stat error = +" << err_up << " -" << err_down << '\n';
     }
-    return sqrt(rel_unc_sq) * fabs(nom);
+
+    // Determine total statistical error
+    //stat_err = max(err_down, err_up); // Option 1
+    stat_err = 0.5 * (err_down + err_down); // Option 2: 
+    return StatusCode::SUCCESS;
 }
 
-double get_syst_error(const ApplyFakeFactor& tool, FakeBkgTools::Weight& wgt, double nom) {
-    double rel_unc_sq = 0;
-    for(auto& kv : wgt.uncertainties) {
-        if (tool.isSystematicUncertainty(kv.first)) {
-            double sym_unc = 0.5 * (fabs(kv.second.up) + fabs(kv.second.down));
-            double rel_unc = sym_unc / nom;
-            rel_unc_sq += rel_unc * rel_unc;
+StatusCode set_syst_error(double& syst_err, double nom_weight, string selection) {
+    double err_down = 0;
+    double err_up = 0;
+    for(const CP::SystematicVariation& sysvar : m_sysvars) {
+        ANA_CHECK( m_fake_tool->applySystematicVariation({sysvar}) );
+        if (!m_fake_tool->getSystDescriptor().isSystematicUncertainty(sysvar)) {
+            continue;
         }
+
+        float sys_weight;
+        ANA_CHECK( m_fake_tool->getEventWeight(sys_weight, selection, m_process) );
+
+        double diff = fabs(sys_weight - nom_weight);
+        if (sys_weight > nom_weight) {
+            err_down = add_in_quad(err_down, diff);
+        } else if (sys_weight < nom_weight) {
+            err_up = add_in_quad(err_up, diff);
+        } 
+        //cout << "VERBOSE :: "
+        //     << "nom_weight = " << nom_weight << ", "
+        //     << "sys_weight = " << sys_weight << ", "
+        //     << "diff = " << diff << ", "
+        //     << "updated syst error = +" << err_up << " -" << err_down << '\n';
     }
-    return sqrt(rel_unc_sq) * fabs(nom);
+    
+    // Determine total statistical error
+    //syst_err = max(err_down, err_up); // Option 1
+    syst_err = 0.5 * (err_down + err_down); // Option 2: 
+    return StatusCode::SUCCESS;
 }
 
 bool all_prompt(const vector<leptonProperties>& lps) {

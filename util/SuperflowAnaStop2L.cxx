@@ -54,10 +54,6 @@ using std::map;
 //Jigsaw
 #include "jigsawcalculator/JigsawCalculator.h"
 
-//FakeBkdTools
-#include "FakeBkgTools/ApplyFakeFactor.h"
-#include "FakeBkgTools/FakeBkgHelpers.h"
-
 using namespace std;
 using namespace sflow;
 
@@ -69,11 +65,9 @@ string m_input_ttree_name = "susyNt";
 bool m_verbose = true;
 bool m_print_weighted_cutflow = true;
 int m_lumi = 1000; // inverse picobarns (ipb)
-Susy::AnalysisType m_ana_type = Susy::AnalysisType::Ana_Stop2L4B;
+Susy::AnalysisType m_ana_type = Susy::AnalysisType::Ana_Stop2L;
 const float ZMASS = 91.2;
 const float GeVtoMeV = 1000.0;
-const string m_ff_file = "LexStop2LAnalysis/fakeFactorHists.root";
-//const string m_ff_file = "LexStop2LAnalysis/fakeFactorDummy.root";
 
 ////////////////////////////////////////////////////////////////////////////////
 // Declarations
@@ -130,10 +124,6 @@ static TF1 pu_profile("pu_profile","gausn", -250, 250);
 
 static jigsaw::JigsawCalculator m_calculator;
 static std::map< std::string, float> m_jigsaw_vars;
-
-static ApplyFakeFactor m_fake_tool;
-static FakeBkgTools::Weight m_wgt;
-static bool m_add_fakes = false;
 
 // Helpful functions
 int get_lepton_truth_class(Susy::Lepton* lepton);
@@ -419,33 +409,6 @@ void set_global_variables(Superflow* sf) {
     // Jigsaw
     m_calculator.initialize("TTMET2LW");
 
-    // Fake estimates
-    // Add if fake weight input file exists and proper event selection chosen
-    bool fake_region = m_fake_baseline_DF || m_fake_baseline_SF || m_fake_zjets_3l;
-    if (!fake_region) {
-        m_add_fakes = false;
-    } else {
-        string fullpath = PathResolverFindDataFile(m_ff_file); 
-        if (fullpath != "") {
-            m_fake_tool.setProperty("InputFiles", fullpath);
-            m_fake_tool.setProperty("EnergyUnit", "GeV");
-            //m_fake_tool.setProperty("OutputLevel", );
-            //m_fake_tool.setProperty("SkipUncertainties", true);
-            //m_fake_tool.setProperty("ConvertWhenMissing", true);
-            if (!m_fake_tool.initialize().isSuccess()) {
-                cout << "ERROR :: Unable to initialize fake factor tool\n";
-                exit(1);
-            } else {
-                cout << "INFO :: Fake background tool initialized\n";
-            }
-            m_add_fakes = true;
-        } else {
-            cout << "WARNING :: Fake input file (" << m_ff_file << ") not found.\n";
-            cout << "INFO :: Not adding fake weight branch\n";
-            m_add_fakes = false;
-        }
-    }
-
     *sf << CutName("read in") << [](Superlink* sl) -> bool {
         ////////////////////////////////////////////////////////////////////////
         // Reset all globals used in cuts/variables
@@ -698,23 +661,6 @@ void set_global_variables(Superflow* sf) {
             m_jigsaw_vars = m_calculator.variables();
         }
 
-        bool found_probeLeps = m_probeLep1 != nullptr;
-        if (m_add_fakes && found_probeLeps) {
-            // New IParticles added to heap
-            vector<const xAOD::IParticle*> leptons = to_iparticle_vec(sl, fakeToolLeps);
-            m_fake_tool.addEvent(leptons);
-            // Selection = final reco state for which one wants fake estimates
-            string selection = m_fake_zjets_3l ? "3T,0!T,OS" : "2T,0!T,OS";  
-            // Process = fake processes one aims to model with data-driven estimates 
-            string process = ">=1F";
-            if (m_fake_tool.getEventWeight(m_wgt, selection, process) != StatusCode::SUCCESS) { 
-                cout << "ERROR: ApplyFakeFactor::getEventWeight() failed\n";
-                exit(1); 
-            }
-            // Free up memory
-            for (const xAOD::IParticle* p : leptons) { delete p; }
-            leptons.clear();
-        }
         ////////////////////////////////////////////////////////////////////////
         return true; // All events pass this cut
     };
@@ -908,13 +854,6 @@ void add_event_variables(Superflow* sf) {
         *sf << HFTname("w");
         *sf << [](Superlink* sl, var_double*) -> double {return sl->nt->evt()->w;};
         *sf << SaveVar();
-    }
-    if (m_add_fakes) {
-        *sf << NewVar("fake factor weight"); {
-            *sf << HFTname("fakeweight");
-            *sf << [](Superlink* /*sl*/, var_double*) -> double { return m_wgt.value; };
-            *sf << SaveVar();
-        }
     }
 
     // Scale Factors
@@ -1744,34 +1683,6 @@ void add_zjets2l_inc_variables(Superflow* sf) {
 }
 
 void add_weight_systematics(Superflow* sf) {
-    if (m_add_fakes) {
-        *sf << NewVar("shift in fake factor from statistical uncertainty"); {
-            *sf << HFTname("syst_FAKEFACTOR_Stat");
-            *sf << [](Superlink* /*sl*/, var_double*) -> double { 
-                double statUnc = 1;
-                for(auto& kv : m_wgt.uncertainties) {
-                    if (m_fake_tool.isStatisticalUncertainty(kv.first)) {
-                        statUnc *= 0.5 * (fabs(kv.second.up) + fabs(kv.second.down));
-                    }
-                }
-                return statUnc; 
-            };
-            *sf << SaveVar();
-        }
-        *sf << NewVar("shift in fake factor from statistical uncertainty"); {
-            *sf << HFTname("syst_FAKEFACTOR_Syst");
-            *sf << [](Superlink* /*sl*/, var_double*) -> double { 
-                float systUnc = 1;
-                for(auto& kv : m_wgt.uncertainties) {
-                    if (m_fake_tool.isSystematicUncertainty(kv.first)) {
-                        systUnc *= 0.5 * (fabs(kv.second.up) + fabs(kv.second.down));
-                    }
-                }
-                return systUnc; 
-            };
-            *sf << SaveVar();
-        }
-    }
     *sf << NewSystematic("FTAG EFF B"); {
         *sf << WeightSystematic(SupersysWeight::FT_EFF_B_UP, SupersysWeight::FT_EFF_B_DN);
         *sf << TreeName("FT_EFF_B");
@@ -1876,12 +1787,9 @@ int get_lepton_truth_class(Susy::Lepton* lepton) {
     // Get Truth information
     int T = lepton->mcType;
     int O = lepton->mcOrigin;
-    int MO = lepton->mcBkgTruthOrigin; // TODO: Update. BkgTruthOrigin != motherOrigin
-    int MT = 0; // Not stored in SusyNt::Lepton
-    int M_ID = lepton->mcBkgMotherPdgId;
-    //int MO = lepton->mcFirstEgMotherTruthOrigin;
-    //int MT = lepton->mcFirstEgMotherTruthType;
-    //int M_ID = lepton->mcFirstEgMotherPdgId;
+    int MO = lepton->mcFirstEgMotherTruthOrigin;
+    int MT = lepton->mcFirstEgMotherTruthType;
+    int M_ID = lepton->mcFirstEgMotherPdgId;
 
     using namespace MCTruthPartClassifier;
 
@@ -1891,12 +1799,12 @@ int get_lepton_truth_class(Susy::Lepton* lepton) {
     bool bkgEl_from_EMproc = T==BkgElectron && O==ElMagProc;
     bool fromSMBoson = O==WBoson || O==ZBoson || O==Higgs || O==DiBoson;
     bool MfromSMBoson = MO==WBoson || MO==ZBoson || MO==Higgs || MO==DiBoson;
-    //bool noChargeFlip = M_ID*lepton->q < 0;
-    //bool chargeFlip = M_ID*lepton->q > 0;
+    bool noChargeFlip = M_ID*lepton->q < 0;
+    bool chargeFlip = M_ID*lepton->q > 0;
 
     // Defs from https://indico.cern.ch/event/725960/contributions/2987219/attachments/1641430/2621432/TruthDef_April242018.pdf
-    bool promptEl1 = T==IsoElectron; //&& noChargeFlip;
-    bool promptEl2 = (bkgEl_from_phoConv && mother_is_el); //&& noChargeFlip;
+    bool promptEl1 = T==IsoElectron && noChargeFlip;
+    bool promptEl2 = (bkgEl_from_phoConv && mother_is_el) && noChargeFlip;
     bool promptEl3 = bkgEl_from_EMproc && MT==IsoElectron && (MO==top || MfromSMBoson);
     bool promptEl = promptEl1 || promptEl2 || promptEl3;
 
@@ -1904,9 +1812,9 @@ int get_lepton_truth_class(Susy::Lepton* lepton) {
     bool promptEl_from_FSR2 = T==NonIsoPhoton && O==FSRPhot;
     bool promptEl_from_FSR = promptEl_from_FSR1 || promptEl_from_FSR2;
 
-    //bool promptChargeFlipEl1 = T==IsoElectron && chargeFlip;
-    //bool promptChargeFlipEl2 = (bkgEl_from_phoConv && mother_is_el) && chargeFlip;
-    //bool promptChargeFlipEl = promptChargeFlipEl1 || promptChargeFlipEl2;
+    bool promptChargeFlipEl1 = T==IsoElectron && chargeFlip;
+    bool promptChargeFlipEl2 = (bkgEl_from_phoConv && mother_is_el) && chargeFlip;
+    bool promptChargeFlipEl = promptChargeFlipEl1 || promptChargeFlipEl2;
 
     bool promptMuon = T==IsoMuon && (O==top || fromSMBoson || O==HiggsMSSM || O==MCTruthPartClassifier::SUSY);
 
@@ -1962,7 +1870,7 @@ int get_lepton_truth_class(Susy::Lepton* lepton) {
     else if (!(T || O || MT || MO || M_ID)) return -1; // No Truth Info
     else if (T && O && !(MT || MO || M_ID)) return -2; // No Mother Info
     else if (T && !O) return -3; // No Origin Info
-    // else if (promptChargeFlipEl) return 2;
+    else if (promptChargeFlipEl) return 2;
     else if (T && O && M_ID) {
         cout << "Unexpected Truth Class: "
              << "T = " << T << ", "

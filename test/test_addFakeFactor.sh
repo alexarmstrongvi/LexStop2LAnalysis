@@ -3,7 +3,7 @@
 # Tests for running addFakeFactor from command line
 ################################################################################
 
-TEST_DIR="/data/uclhc/uci/user/armstro1/SusyNt/Stop2l/SusyNt_master/susynt-read/source/LexStop2LAnalysis/test"
+TEST_DIR="$(cd $(dirname $BASH_SOURCE) && pwd -P)"
 MACRO_PATH="/data/home/alarmstr/LexTools/RootMacros"
 PASS_TESTS=0
 
