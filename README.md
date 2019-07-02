@@ -15,11 +15,15 @@ It is assumed that the top level directory structure for the project contains a 
 From within this top level directory, do the following things
 
 # Packages
-- Add the n0308 tag of SusyNt packages to `source\` (see [UCINtSetup](https://gitlab.cern.ch/alarmstr/UCINtSetup))
 - Add [LexTools](https://github.com/alexarmstrongvi/LexTools) to the home directory, making sure to setup atlasrootstyle as described in the README
 - Add [PlotTools](https://github.com/alexarmstrongvi/PlotTools) to home directory or `source\`
+- Add the n0308 tag of SusyNt packages to `source\` (see [UCINtSetup](https://gitlab.cern.ch/alarmstr/UCINtSetup))
+- Add [SusyNtCutflowLooper](https://gitlab.cern.ch/alarmstr/SusyNtCutflowLooper) to `source\`
+- Add [susynt-submit](https://gitlab.cern.ch/susynt/susynt-submit) to `source\`
 - Add [Superflow](https://gitlab.cern.ch/susynt/superflow) to `source\`
 - Add [jigsawcalculator](https://gitlab.cern.ch/alarmstr/jigsawcalculator) to `source\`, which will describe how to set up RestFrames in `source\` as well
+- Add [AddFakeFactorToFlatNts](https://gitlab.cern.ch/alarmstr/AddFakeFactorToFlatNts) to `source\`
+- Add [IFFTruthClassifier](https://gitlab.cern.ch/ATLAS-IFF/IFFTruthClassifier) to `source\`
 
 # Setup
 
