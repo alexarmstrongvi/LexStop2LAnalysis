@@ -557,7 +557,7 @@ void set_global_variables(Superflow* sf) {
         m_triggerPass.emplace("HLT_mu20_iloose_L1MU15", is_1lep_trig_matched(sl, "HLT_mu20_iloose_L1MU15", m_triggerLeptons, 21));
         m_triggerPass.emplace("HLT_mu40", is_1lep_trig_matched(sl, "HLT_mu40", m_triggerLeptons, 41));
 
-        // TODO: Add to SusyNt, ADD_2LEP_TRIGGER_VAR(HLT_2mu10, m_mu0, m_mu1)
+        m_triggerPass.emplace("HLT_2mu10", is_2lep_trig_matched(sl, "HLT_2mu10", m_mu0, m_mu1, 11, 11));
         m_triggerPass.emplace("HLT_mu18_mu8noL1", is_2lep_trig_matched(sl, "HLT_mu18_mu8noL1", m_mu0, m_mu1, 19, 9));
 
         m_triggerPass.emplace("HLT_e17_lhloose_mu14", is_2lep_trig_matched(sl, "HLT_e17_lhloose_mu14", m_el0, m_mu0, 18, 15));
@@ -578,7 +578,7 @@ void set_global_variables(Superflow* sf) {
         m_triggerPass.emplace("HLT_mu26_ivarmedium", is_1lep_trig_matched(sl, "HLT_mu26_ivarmedium", m_triggerLeptons, 27));
         m_triggerPass.emplace("HLT_mu50", is_1lep_trig_matched(sl, "HLT_mu50", m_triggerLeptons, 51));
 
-        // TODO: Add to SusyNt, ADD_2LEP_TRIGGER_VAR(HLT_2mu14, m_mu0, m_mu1)
+        m_triggerPass.emplace("HLT_2mu14", is_2lep_trig_matched(sl, "HLT_2mu14", m_mu0, m_mu1, 15, 15));
         m_triggerPass.emplace("HLT_mu22_mu8noL1", is_2lep_trig_matched(sl, "HLT_mu22_mu8noL1", m_mu0, m_mu1, 23, 9));
 
         m_triggerPass.emplace("HLT_e17_lhloose_nod0_mu14", is_2lep_trig_matched(sl, "HLT_e17_lhloose_nod0_mu14", m_el0, m_mu0, 18, 15));
@@ -619,20 +619,21 @@ void set_global_variables(Superflow* sf) {
         bool passDilepTrig = false;
         if (year == 2015) {
             passDilepTrig |= m_triggerPass.at("HLT_2e12_lhloose_L12EM10VH")
+                          || m_triggerPass.at("HLT_2mu10")
                           || m_triggerPass.at("HLT_mu18_mu8noL1")
                           || m_triggerPass.at("HLT_e17_lhloose_mu14")
                           || m_triggerPass.at("HLT_e7_lhmedium_mu24");
         } else if (year == 2016) {
             passDilepTrig |= m_triggerPass.at("HLT_2e17_lhvloose_nod0")
                           || m_triggerPass.at("HLT_mu22_mu8noL1")
-                          //|| m_triggerPass.at("HLT_2mu14")
-                          //|| m_triggerPass.at("HLT_e26_lhmedium_nod0_L1EM22VHI_mu8noL1")
+                          || m_triggerPass.at("HLT_2mu14")
+                          || m_triggerPass.at("HLT_e26_lhmedium_nod0_L1EM22VHI_mu8noL1")
                           || m_triggerPass.at("HLT_e17_lhloose_nod0_mu14")
                           || m_triggerPass.at("HLT_e7_lhmedium_nod0_mu24");
         } else if (year == 2017) {
             passDilepTrig |= m_triggerPass.at("HLT_2e24_lhvloose_nod0")
                           || m_triggerPass.at("HLT_mu22_mu8noL1")
-                          //|| m_triggerPass.at("HLT_2mu14")
+                          || m_triggerPass.at("HLT_2mu14")
                           || m_triggerPass.at("HLT_e26_lhmedium_nod0_mu8noL1")
                           || m_triggerPass.at("HLT_e17_lhloose_nod0_mu14")
                           || m_triggerPass.at("HLT_e7_lhmedium_nod0_mu24");
@@ -640,7 +641,7 @@ void set_global_variables(Superflow* sf) {
             passDilepTrig |= m_triggerPass.at("HLT_2e24_lhvloose_nod0")
                           || m_triggerPass.at("HLT_2e17_lhvloose_nod0_L12EM15VHI")
                           || m_triggerPass.at("HLT_mu22_mu8noL1")
-                          //|| m_triggerPass.at("HLT_2mu14")
+                          || m_triggerPass.at("HLT_2mu14")
                           || m_triggerPass.at("HLT_e17_lhloose_nod0_mu14")
                           || m_triggerPass.at("HLT_e26_lhmedium_nod0_mu8noL1")
                           || m_triggerPass.at("HLT_e7_lhmedium_nod0_mu24");
@@ -996,7 +997,7 @@ void add_trigger_variables(Superflow* sf) {
     ADD_1LEP_TRIGGER_VAR(HLT_mu20_iloose_L1MU15, m_triggerLeptons)
     ADD_1LEP_TRIGGER_VAR(HLT_mu40, m_triggerLeptons)
 
-    // TODO: HLT_2mu10
+    ADD_2LEP_TRIGGER_VAR(HLT_2mu10, m_mu0, m_mu1)
     ADD_2LEP_TRIGGER_VAR(HLT_mu18_mu8noL1, m_mu0, m_mu1)
 
     ADD_2LEP_TRIGGER_VAR(HLT_e17_lhloose_mu14, m_el0, m_mu0)
@@ -1017,7 +1018,7 @@ void add_trigger_variables(Superflow* sf) {
     ADD_1LEP_TRIGGER_VAR(HLT_mu26_ivarmedium, m_triggerLeptons)
     ADD_1LEP_TRIGGER_VAR(HLT_mu50, m_triggerLeptons)
 
-    // TODO: HLT_2mu14
+    ADD_2LEP_TRIGGER_VAR(HLT_2mu14, m_mu0, m_mu1)
     ADD_2LEP_TRIGGER_VAR(HLT_mu22_mu8noL1, m_mu0, m_mu1)
 
     ADD_2LEP_TRIGGER_VAR(HLT_e17_lhloose_nod0_mu14, m_el0, m_mu0)
