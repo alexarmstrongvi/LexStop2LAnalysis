@@ -17,23 +17,27 @@ function main() {
     #echo "Setting up recent git version"
     #lsetup git
 
-    echo -e "\n\n"
+    #echo -e "\n\n"
     echo "Getting git summary"
     git_record=
-    #update_git_record "RestFrames" in detached head state
-    update_git_record "jigsawcalculator"
-    update_git_record "susynt-submit"
-    update_git_record "AddFakeFactorToFlatNts"
-    update_git_record "IFFTruthClassifier"
-    update_git_record "SusyNtCutflowLooper"
-    update_git_record "superflow"
-    #update_git_record "athena" in detached head state
-    update_git_record "SusyCommon"
-    update_git_record "SusyNtuple"
-    update_git_record "LexStop2LAnalysis"
+    #update_git_record "source/RestFrames" in detached head state
+    update_git_record "source/jigsawcalculator"
+    update_git_record "source/susynt-submit"
+    update_git_record "source/AddFakeFactorToFlatNts"
+    update_git_record "source/IFFTruthClassifier"
+    update_git_record "source/SusyNtCutflowLooper"
+    update_git_record "source/superflow"
+    #update_git_record "source/athena" in detached head state
+    update_git_record "source/SusyCommon"
+    update_git_record "source/SusyNtuple"
+    update_git_record "source/LexStop2LAnalysis"
+    update_git_record "${HOME}/LexEnv"
+    update_git_record "${HOME}/LexTools"
+    update_git_record "${HOME}/PlotTools"
 
     echo -e "\nGit status summary"
-    echo -e "\t- package (branch) : commits ahead and behind"
+    echo -e "\t++ package (branch) :: remote (commits ahead and behind); [# unstaged changes]++"
+    echo -e "\t+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
     echo -e $git_record
     
     echo ""
@@ -46,15 +50,32 @@ function get_branch() {
     echo "$(git branch | sed -n -e 's/^\* \(.*\)/\1/p')"
 }
 function get_diff_summary() {
-    echo "$(git rev-list --left-right --count "$(get_branch)"...origin/"$(get_branch)")"
+    local result=""
+    for remote in $(git remote); do
+        # Will get error if checking for branch that doesn't exist on remote
+        # So pipe error to dev/null to clean up script output
+        local tmp="$(git rev-list --left-right --count "$(get_branch)"...${remote}/"$(get_branch)" 2> /dev/null)"
+        if [ ! -z "$tmp" ]; then
+            # tmp looks like "X\tY" where X and Y are numbers
+            # change to "+X -Y"
+            result="${result}${remote} (+${tmp//$'\t'/ -}); "
+        fi
+    done
+    echo "$result"
+}
+function get_unstaged_changes() {
+    echo "$(git diff-index HEAD -- | wc -l)"
 }
 function update_git_record() {
-    package=${1}
-    cd source/${package}
+    path=${1}
+    dir=$(dirname $path)
+    package=$(basename $path)
+    old_dir=$PWD
+    cd ${dir}/${package}
     echo "Syncing ${package}..."
-    git fetch origin
-    git_record="\t- ${package} ($(get_branch)) : $(get_diff_summary)\n${git_record}"
-    cd ../..
+    git fetch --all -t -p
+    git_record="\t- ${package} ($(get_branch)) \t:: $(get_diff_summary) [$(get_unstaged_changes)]\n${git_record}"
+    cd $old_dir
 }
 
 main
