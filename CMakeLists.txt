@@ -11,6 +11,7 @@ atlas_depends_on_subdirs (
     SusyNtuple 
     Superflow 
     jigsawcalculator
+    IFFTruthClassifier
     Control/AthToolSupport/AsgTools
     PhysicsAnalysis/Interfaces/AsgAnalysisInterfaces
     PhysicsAnalysis/AnalysisCommon/PATInterfaces
@@ -26,7 +27,7 @@ atlas_add_library ( LexStop2LAnalysisLib
     LexStop2LAnalysis/*.h Root/*.cxx
     PUBLIC_HEADERS LexStop2LAnalysis
     INCLUDE_DIRS ${ROOT_INCLUDE_DIRS}
-    LINK_LIBRARIES SuperflowLib JigsawCalculator 
+    LINK_LIBRARIES SuperflowLib JigsawCalculator IFFTruthClassifierLib
     AsgAnalysisInterfaces AsgTools xAODEventInfo PATInterfaces
     ${ROOT_LIBRARIES}
 )

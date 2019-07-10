@@ -6,7 +6,7 @@
 ################################################################################
 
 #let script exit if a command fails
-set -o errexit 
+#set -o errexit 
 
 function main() {
     if is_true $VERBOSE; then
@@ -285,17 +285,18 @@ function process_samples() {
     for sample in $samples; do
         sample_name=$(get_sample_name $sample)
         susynt_dir="${SUSYNT_DIR}/${sample}"
-        ofile="${sample_name}_FlatNt" #extensions added by run_ntmaker
-        selection="baseline_DF"
+        ofile="${sample_name}_FlatNt" #extensions added by run_SuperflowAnaStop2l
+        selection="fake_zjets3l"
+        #selection="baseline_DF"
         run_SuperflowAnaStop2l $susynt_dir $selection $ofile $NEVTS
     done
 }
 
 function run_SuperflowAnaStop2l() {
-    susynt=$1
-    selection=$2
-    ofile=$3
-    nevts=$4
+    local susynt=$1
+    local selection=$2
+    local ofile=$3
+    local nevts=$4
 
     ########################################
     cmd="SuperflowAnaStop2L -i ${susynt}/ -c -s $selection -n $nevts"
@@ -310,6 +311,7 @@ function run_SuperflowAnaStop2l() {
         echo    
         strip_file_of_timestamps ${ofile}.log
         echo
+        extract_cutflow_result ${ofile}.log ${ofile}_cutflow.log
     fi
     mv CENTRAL*root "${ofile}.root"
 }
@@ -319,6 +321,13 @@ function strip_file_of_timestamps() {
     sed -i.bu '/\ 0x/d' $1 # remove printed pointers
     sed -i '/Analysis\ time/d' $1
     sed -i '/Analysis\ speed/d' $1
+}
+
+function extract_cutflow_result() {
+    local log=${1}
+    local ofile=${2}
+    Superflow::Terminate
+    sed '1,/Superflow::Terminate/d' $log > $ofile
 }
 
 function compare_results() {
@@ -351,22 +360,20 @@ function compare_results() {
         fi
         old_root=${store_dir}/${new_root}
         if [ ! -e $old_root ]; then
-            echo "No old root file found for $new_log"
+            echo "No old root file found for $new_root"
             continue
         fi
 
         stripped_name="${new_root%.*}" # remove file extension
-        log_file="${stripped_name}_cf_flatnt.log"
         
         executable=~/LexTools/RootMacros/rootFilesAreIdentical.py
         ops="$old_root $new_root -d INFO"
-        $executable $ops > $log_file
-
+        echo ">> $executable $ops"
+        $executable $ops
         if [ $? -eq 0 ]; then
             printf "PASS :: $new_root and $old_root files are identical\n"
         else
             printf "FAIL :: $new_root and $old_root files are NOT identical\n"
-            printf "INFO :: Check with -> vim $log_file\n" 
             ops="$old_root $new_root -t superNt --verbose"
             printf "INFO :: Make plots with python ~/PlotTools/compare_flat_ntuples.py $ops -s\n"
         fi
@@ -375,6 +382,7 @@ function compare_results() {
         #executable="~/PlotTools/compare_flat_ntuples.py"
         #ops="$old_root $new_root -t superNt --verbose"
         #files_are_same_pattern="Different: 0"
+        #log_file="${stripped_name}_cf_flatnt.log"
         #if grep -q "$files_are_same_pattern" $log_file; then 
         #   printf "\tPASS"
     done
@@ -440,7 +448,7 @@ set +x
 exit 0
 
 SELECTIONS=
-SELECTIONS="$SELECTIONSbaseline_DF"
+SELECTIONS="$SELECTIONS baseline_DF"
 #SELECTIONS="$SELECTIONS baseline_SF"
 #SELECTIONS="$SELECTIONS zjets2l_inc"
 #SELECTIONS="$SELECTIONS zjets3l"
