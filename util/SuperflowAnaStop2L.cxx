@@ -793,9 +793,8 @@ void add_analysis_cuts(Superflow* sf) {
                 return (m_sigLeps.size() == 2);
             };
         } else if (m_fake_baseline_DF || m_fake_baseline_SF) {
-            *sf << CutName("1 signal and 1 inverted lepton") << [](Superlink* /*sl*/) -> bool {
-                //TODO: change to 1+ inv leps
-                return (m_sigLeps.size() == 1 && m_invLeps.size() == 1);
+            *sf << CutName(">=1 inverted lepton") << [](Superlink* /*sl*/) -> bool {
+                return (m_invLeps.size() >= 1);
             };
         }
 
