@@ -10,15 +10,13 @@ import subprocess
 ################################################################################
 # Configuration
 ################################################################################
-work_dir = '/data/uclhc/uci/user/armstro1/SusyNt/Stop2l/SusyNt_master/susynt-read'
-input_files_dir = '%s/run/lists/file_lists_prefixed' % work_dir
 superflow = True; sumw = False
 condor_user = 'alarmstr'
 
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('-i','--ignore-id', nargs='*', help="Process IDs to ignore")
-parser.add_argument('-d','--directory', help="Directory with all condor output files", default='%s/run/batch/condor_output' % (work_dir))
+parser.add_argument('-d','--directory', help="Directory with all condor output files")
 parser.add_argument('--dumb-run', action='store_true', help="Resubmit all files without pass phrase, no other checks")
 args = parser.parse_args()
 

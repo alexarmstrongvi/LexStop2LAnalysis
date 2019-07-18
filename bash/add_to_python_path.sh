@@ -16,6 +16,6 @@ ggparent_dir="$(dirname "$gparent_dir")"
 #echo "ggparent_dir = $ggparent_dir"
 dir_to_add="${gparent_dir}/python"
 
-#export PYTHONPATH="$PYTHONPATH:${dir_to_add}"
+export PYTHONPATH="$PYTHONPATH:${dir_to_add}"
 echo "$dir_to_add added to PYTHONPATH"
 echo "Now you can run \"import file.py\" for files in LexStop2LAnalysis/python/"
