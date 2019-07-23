@@ -11,8 +11,8 @@ from analysis_DSIDs import DSID_GROUPS
 
 ################################################################################
 # Globals (not imported)
-_work_dir = '/data/uclhc/uci/user/armstro1/SusyNt/Stop2l/SusyNt_master/susynt-read'
-_plot_save_dir = '%s/run/plots/' % _work_dir
+_work_dir = '/data/uclhc/uci/user/armstro1/Analysis_Stop2L/SusyNt_AB_21_2_79'
+_plot_save_dir = '%s/run/plotting/plots/' % _work_dir
 
 _apply_sf = False
 _sf_samples = False # False -> DF samples
@@ -20,13 +20,13 @@ _fake_factor_looper = False
 
 _only1516 = False
 _only17 = False
-_only18 = False
+_only18 = True
 _only_dilep_trig = False
 assert _only1516 + _only17 + _only18 <= 1
 
 # Globals (imported)
-EVENT_LIST_DIR = '%s/run/lists/teventlists' % _work_dir
-YIELD_TBL_DIR = '%s/run/yields' % _work_dir
+EVENT_LIST_DIR = '%s/run/plotting/teventlists' % _work_dir
+YIELD_TBL_DIR = '%s/run/plotting/yields' % _work_dir
 SAMPLES = []
 REGIONS = []
 PLOTS = []
@@ -51,42 +51,45 @@ else:
 #             2015      2016      2017      2018
     _lumi = (3219.56 + 32988.1 + 44307.4 + 59937.2) / 1000.0 # inverse fb
 
-
 if _fake_factor_looper:
-    _sample_path_base = '%s/run/batch/output/SuperflowAnaStop2l_zjets3l' % _work_dir
+    _sample_path_base = '%s/run/flatNts/files/output_zjets3l' % _work_dir
     
 if _sf_samples:
-    _sample_path = '%s/run/batch/output/SuperflowAnaStop2l_SF' % _work_dir
+    _sample_path = '%s/run/flatNts/files/baseline_SF' % _work_dir
 else:
-    _sample_path = '%s/run/batch/output/SuperflowAnaStop2l_DF' % _work_dir
-    #_sample_path = '%s/run/batch/output/SuperflowAnaStop2l_DF_den' % _work_dir
-    #_sample_path = '%s/run/batch/output/SuperflowAnaStop2l_zjets2l_inc' % _work_dir
-    #_sample_path = '%s/run/batch/output/SuperflowAnaStop2l_zjets3l' % _work_dir
-    #_sample_path = '%s/run/batch/output/SuperflowAnaStop2l_zjets3l_den' % _work_dir
+    #_sample_path = '%s/run/flatNts/files/baseline_DF' % _work_dir
+    #_sample_path = '%s/run/flatNts/files/baseline_DF_den' % _work_dir
+    #_sample_path = '%s/run/flatNts/files/zjets2l_inc' % _work_dir
+    _sample_path = '%s/run/flatNts/outputs/zjets3l' % _work_dir
+    #_sample_path = '%s/run/flatNts/files/zjets3l_den' % _work_dir
 
 _samples_to_use = [
     'data',
-    #'ttbar',
+    'ttbar',
     #'singletop',
     #'ttX',
     #'wjets',
     #'zjets', # Combination: zjets_ee + zjets_mumu + zjets_tautau
-    #'zjets_ee',
-    #'zjets_mumu',
+    'zjets_ee',
+    'zjets_mumu',
     #'zjets_tautau',
     #'zgamma',
     #'wgamma',
     #'drellyan',
-    #'diboson',
+    'diboson',
+    #'diboson_1l',
+    #'diboson_2l',
+    #'diboson_3l',
+    #'diboson_4l',
     #'triboson',
     #'higgs',
     #'higgs_ggH', 'higgs_VBF', 'higgs_VH', 'higgs_ttH',
     #'fnp', # Fake non-prompt 
     #'other', # Combination: defined below
-    'fnp_fakefactor',
+    #'fnp_fakefactor',
     ############################## 
     #'no_truth',
-    'prompt',
+    #'prompt',
     #'LF',
     #'HF',
     #'conversion',
@@ -175,7 +178,7 @@ _regions_to_use = [
     #'VV_VR_SF_elel',
     #'VV_VR_SF_mumu',
     
-    'fnp_VR_DF',
+    #'fnp_VR_DF',
     #'fnp_VR_DF_elmu',
     #'fnp_VR_DF_muel',
 
@@ -197,7 +200,7 @@ _regions_to_use = [
 
     # For fake factor
     #'zjets2l_inc', 
-    #'zjets3l_CR_num', 
+    'zjets3l_CR_num', 
     #'zjets3l_CR_den',
     #'zjets3l_CR_num_ll_el', 
     #'zjets3l_CR_den_ll_el',
@@ -220,7 +223,7 @@ _region_cfs_to_use = [
 _vars_to_plot = [
     # Event weights and SFs
     #'runNumber',
-    #'eventweight',
+    #'eventweight_single',
     #'eventweight_multi',
     #'pupw',
     #'lepSf',
@@ -240,18 +243,25 @@ _vars_to_plot = [
     #'avgMuDataSF/nVtx',
 
     ## Basic Kinematics
-    'lep1Pt',
-    #'lep2Pt',
+    #'lepPt[0]',
+    #'lepPt[1]',
     #'jet1Pt',
-    #'jet2Pt',
+    #'jetPt[1]',
     #'mll',
     #'fabs(mll-91.2)',
-    'met',
+    #'met',
     #'metrel',
     #'dpTll',
-    #'lep1mT',
-    #'lep2mT',
+    #'lepmT[0]',
+    #'lepmT[1]',
     #'pTll',
+
+    ## Zjets region
+    #'ZLepPt[0]',
+    #'ZLepPt[1]',
+    'ZpT',
+    #'probeLepPt[0]',
+    'Zmass',
 
     ## Complex kinematics
     #'MT2'
@@ -259,13 +269,13 @@ _vars_to_plot = [
     ## Truth
     #'lep1TruthClass',
     #'lep2TruthClass',
-    #'probeLep1TruthClass',
+    #'probeLepTruthClass[0]',
 
     ## Fake Factor
-    'probeLep1Pt',
-    'fabs(probeLep1Eta)',
-    #'probeLep1Eta',
-    #'probeLep1mT',
+    #'probeLepPt[0]',
+    #'fabs(probeLepEta[0])',
+    #'probeLepEta[0]',
+    #'probeLepmT[0]',
     #'Z2_mll',
     #'mlll',
     #'dR_ZLep1_probeLep1',
@@ -273,8 +283,8 @@ _vars_to_plot = [
     #'dR_Z_probeLep1',
     #'probeLep1_d0sigBSCorr',
     #'probeLep1_z0SinTheta',
-    #'nInvLeps',
-    #'fabs(probeLep1Eta):probeLep1Pt',
+    #'n_invLeps',
+    #'fabs(probeLepEta[0]):probeLepPt[0]',
 
     ## Angles
     #'dR_ll',
@@ -290,10 +300,11 @@ _vars_to_plot = [
 
     ## Multiplicites
     #'nLightJets',
-    'nBJets',
+    #'nBJets',
     #'nForwardJets',
-    'nNonBJets',
-    #'nSigLeps',
+    #'nNonBJets',
+    #'n_sigLeps',
+    #'n_leps',
 
     # Multi-object
     #'max_HT_pTV_reco',
@@ -325,8 +336,8 @@ _vars_to_plot = [
     #'deltaPhi_met_lep2:pTll',
 
     #'dR_ll:lep1mT' 
-    #'probeLep1Pt:probeLep1mT',
-    #'probeLep1Pt:met',
+    #'probeLepPt[0]:probeLepmT[0]',
+    #'probeLepPt[0]:met',
 ]
 ################################################################################
 # Make samples
@@ -385,7 +396,7 @@ _pupw_corr_vals = [
     #("364255", "1.27", "0.64", "1.27"),
     #("346345", "0.25", "1.00", "1.00"),
     #("364286", "1.47", "0.73", "0.73"),
-    ("410472", "1.10", "0.61", "1.10"),
+    #("410472", "1.10", "0.61", "1.10"),
 ]
 pupw_corr = []
 for dsid, ca, cd, ce in _pupw_corr_vals:
@@ -407,15 +418,17 @@ if _only1516 or _only17 or _only18:
     MCsample.weight_str = 'eventweight_single'
 
     # Single campaign w/o PRW
-    #MCsample.weight_str = 'eventweight / pupw' 
+    #MCsample.weight_str = 'eventweight_single / (pupw / period_weight)' 
 else:
     # Multi-campaign w/ PRW
-    MCsample.weight_str = 'eventweight_multi * %s' % pupw_corr
+    MCsample.weight_str = 'eventweight_multi' # * %s' % pupw_corr
 
     # Multi-campaign w/o PRW
     #MCsample.weight_str = 'eventweight_multi / pupw'
 
 MCsample.scale_factor = _lumi
+#MCsample.scale_factor = 1
+#MCsample.weight_str = '1'
 
 # Build combined DSID groups
 if _only1516:
@@ -621,15 +634,15 @@ truth_lep1_prompt = '(lep1TruthClass == 1 || lep1TruthClass == 2)'
 truth_lep1_fake = '(lep1TruthClass < 1 || 2 < lep1TruthClass)'
 truth_lep2_prompt = '(lep2TruthClass == 1 || lep2TruthClass == 2)'
 truth_lep2_fake = '(lep2TruthClass < 1 || 2 < lep2TruthClass)'
-truth_probe1_prompt = '(probeLep1TruthClass == 1 || probeLep1TruthClass == 2)'
-truth_probe1_fake = '(probeLep1TruthClass < 1 || 2 < probeLep1TruthClass)'
+truth_probe1_prompt = '(probeLepTruthClass[0] == 1 || probeLepTruthClass[0] == 2)'
+truth_probe1_fake = '(probeLepTruthClass[0] < 1 || 2 < probeLepTruthClass[0])'
 
-probe_is_no_truth = 'probeLep1TruthClass < 1'
+probe_is_no_truth = 'probeLepTruthClass[0] < 1'
 probe_is_prompt = truth_probe1_prompt
-probe_is_LF = 'probeLep1TruthClass == 5'
-probe_is_HF = '(probeLep1TruthClass == 8 || probeLep1TruthClass == 9)'
-probe_is_conversion = '(probeLep1TruthClass == 4 || probeLep1TruthClass == 10)'
-probe_is_other_fake = '(probeLep1TruthClass == 3 || probeLep1TruthClass == 6 || probeLep1TruthClass == 7)'
+probe_is_LF = 'probeLepTruthClass[0] == 5'
+probe_is_HF = '(probeLepTruthClass[0] == 8 || probeLepTruthClass[0] == 9)'
+probe_is_conversion = '(probeLepTruthClass[0] == 4 || probeLepTruthClass[0] == 10)'
+probe_is_other_fake = '(probeLepTruthClass[0] == 3 || probeLepTruthClass[0] == 6 || probeLepTruthClass[0] == 7)'
 if any('zjets3l' in r for r in _regions_to_use):
     tag_is_prompt = truth_lep1_prompt + " && " + truth_lep2_prompt
 else:
@@ -747,7 +760,7 @@ for s in SAMPLES:
     else:
         if s.name == 'fnp_fakefactor':
             print "TMP :: Hack for FNP samples"
-            sample_path = '%s/run/batch/output/SuperflowAnaStop2l_DF_den' % _work_dir
+            sample_path = '%s/run/flatNts/files/baseline_DF_den' % _work_dir
             exclude_str = []
             s.set_chain_from_dsid_list(DSID_GROUPS[s.name], sample_path, checklist, search_str, exclude_str)
         else:
@@ -861,12 +874,14 @@ def add_DF_channels(reg, REGs):
     reg.compare_regions.append(muel_channel)
     REGs.append(muel_channel)
 
-def add_SF_channels(reg, REGs):
-    elel_channel = reg.build_channel('elel', 'ee', '$ee$', cuts=elel)
+def add_SF_channels(reg, REGs, useZleps = False):
+    ee_cut = "ZisElEl" if useZleps else elel
+    elel_channel = reg.build_channel('elel', 'ee', '$ee$', cuts=ee_cut)
     reg.compare_regions.append(elel_channel)
     REGs.append(elel_channel)
 
-    mumu_channel = reg.build_channel('mumu', '#mu#mu', '$\\mu \\mu$', cuts=mumu)
+    mm_cut = "ZisMuMu" if useZleps else mumu
+    mumu_channel = reg.build_channel('mumu', '#mu#mu', '$\\mu \\mu$', cuts=mm_cut)
     reg.compare_regions.append(mumu_channel)
     REGs.append(mumu_channel)
 
@@ -889,19 +904,18 @@ REGIONS.append(region)
 region = Region('presel_DF','DF Preselection')
 region.tcut = trigger_sel
 region.tcut += ' && ' + DF
-region.tcut += ' && lep2Pt > 20'
+region.tcut += ' && lepPt[1] > 20'
 REGIONS.append(region)
 
 region = Region('presel_SF','SF Preselection')
 region.tcut = trigger_sel
 region.tcut += ' && ' + SF
-region.tcut += ' && lep2Pt > 20'
+region.tcut += ' && lepPt[1] > 20'
 REGIONS.append(region)
 
 # Loose control regions
 region = Region('ttbar_CR_loose', 'Loose t#bar{t} CR', 'Loose $t\\bar{t}$ CR')
 region.tcut = trigger_sel
-region.tcut += ' && ' + DF + ' && ' + OS
 region.tcut += ' && nBJets == 2'
 REGIONS.append(region)
 add_DF_channels(region, REGIONS)
@@ -935,19 +949,18 @@ region.tcut += ' && nBJets == 0' # Remove Top
 region.tcut += ' && (30 < mll && mll < 60)' # Remove Z->ee and Z->mumu
 region.tcut += ' && nLightJets > 0' # Remove W+jets
 region.tcut += ' && 20 < met && met < 80' # Select Z->tautau
-region.tcut += ' && (20 < lep1Pt && lep1Pt < 50.0)' # Select Z->tautau
+region.tcut += ' && (20 < lepPt[0] && lepPt[0] < 50.0)' # Select Z->tautau
 region.tcut += ' && dR_ll > 2.0' # Select Z->tautau
 REGIONS.append(region)
 add_DF_channels(region, REGIONS)
 
 region = Region('zjets_CR_loose', 'Loose Z/#gamma*(#rightarrowll)+jets','Loose $Z/\gamma^{*}(\\rightarrow \ell\ell)$+jets')
 region.tcut = trigger_sel
-region.tcut += ' && ' + SF + ' && ' + OS
 region.tcut += ' && nBJets == 0' # Remove Top
-region.tcut += ' && nLightJets > 0' # Remove W+jets
-region.tcut += ' && (fabs(mll - 91.2) < 10)' # Select Z->ee and Z->mumu
+region.tcut += ' && nNonBJets > 0' # Remove W+jets
+region.tcut += ' && (fabs(Zmass - 91.2) < 10)' # Select Z->ee and Z->mumu
 REGIONS.append(region)
-add_SF_channels(region, REGIONS)
+add_SF_channels(region, REGIONS, useZleps=True)
 
 region = Region('wjets_CR_loose', 'Loose W+jets CR')
 region.tcut = trigger_sel
@@ -961,8 +974,8 @@ add_DF_channels(region, REGIONS)
 ########################################
 # Baseline
 base_selection = trigger_sel
-base_selection += ' && lep1Pt > 25'
-base_selection += ' && lep2Pt > 20'
+base_selection += ' && lepPt[0] > 25'
+base_selection += ' && lepPt[1] > 20'
 
 ########################################
 # Control regions
@@ -1106,39 +1119,40 @@ else:
 region = Region('zjets2l_inc', 'Z+jets (#ge2 lep)','$Z$+jets (\ge2 $\\ell_\\text{ID}$)')
 region.tcut = trigger_sel
 region.tcut += ' && ' + SF + ' && ' + OS
-region.tcut += ' && lep1Pt > 25'
-region.tcut += ' && lep2Pt > 20'
+region.tcut += ' && lepPt[0] > 25'
+region.tcut += ' && lepPt[1] > 20'
 region.tcut += ' && (fabs(mll - 91.2) < 10)'
 #region.tcut += ' && met < 40'
 REGIONS.append(region)
 
 # Fake factor regions
 zjets3l_sel = trigger_sel
-zjets3l_sel += ' && ' + SF + ' && ' + OS
-zjets3l_sel += ' && lep1Pt > 25'
-zjets3l_sel += ' && lep2Pt > 20'
-zjets3l_sel += ' && (fabs(mll - 91.2) < 10)'
-zjets3l_sel += ' && probeLep1mT < 40'
-zjets3l_sel += ' && (probeLep1Pt < 16 || met < 50)'
-#zjets3l_sel += ' && probeLep1Pt < 8'
+zjets3l_sel += ' && (ZLepIsEle[0] == ZLepIsEle[1])' # Same flavor
+zjets3l_sel += ' && (ZLepq[0] * ZLepq[1] < 0)'  # Opposite sign
+zjets3l_sel += ' && ZLepPt[0] > 25'
+zjets3l_sel += ' && ZLepPt[1] > 20'
+zjets3l_sel += ' && (fabs(Zmass - 91.2) < 10)'
+#zjets3l_sel += ' && probeLepmT[0] < 40'
+#zjets3l_sel += ' && (probeLepPt[0] < 16 || met < 50)'
+#zjets3l_sel += ' && probeLepPt[0] < 8'
 #zjets3l_sel += ' && (fabs(Z2_mll - 91.2) > 10)'
-zjets3l_sel += ' && dR_ZLep1_probeLep1 > 0.2 && dR_ZLep2_probeLep1 > 0.2' 
+#zjets3l_sel += ' && dR_ZLep1_probeLep1 > 0.2 && dR_ZLep2_probeLep1 > 0.2' 
 if "fnp_fakefactor" in _samples_to_use:
     zjets3l_sel += ' && (!isMC || %s)' % zjets_truth_num
     zjets3l_sel_num = zjets3l_sel
     zjets3l_sel_den = zjets3l_sel
 else:
-    zjets3l_sel_num = zjets3l_sel + " && nSigLeps == 3 && nInvLeps == 0"
-    zjets3l_sel_den = zjets3l_sel + " && nSigLeps == 2 && nInvLeps == 1"
+    zjets3l_sel_num = zjets3l_sel + " && n_sigLeps == 3 && n_invLeps == 0"
+    zjets3l_sel_den = zjets3l_sel + " && n_sigLeps == 2 && n_invLeps == 1"
 
 def add_zjets3L_channels(reg, REGs):
     # Define selections
-    ll_el_sel = 'probeLep1Flav == 0'
-    ll_mu_sel = 'probeLep1Flav == 1'
-    elel_el_sel = 'lep1Flav == 0 && lep2Flav == 0 && probeLep1Flav == 0'
-    mumu_el_sel = 'lep1Flav == 1 && lep2Flav == 1 && probeLep1Flav == 0'
-    elel_mu_sel = 'lep1Flav == 0 && lep2Flav == 0 && probeLep1Flav == 1'
-    mumu_mu_sel = 'lep1Flav == 1 && lep2Flav == 1 && probeLep1Flav == 1'
+    ll_el_sel = 'probeLepIsEle[0] == 1'
+    ll_mu_sel = 'probeLepIsEle[0] == 0'
+    elel_el_sel = 'ZLepIsEle[0] == 1 && ZLepIsEle[1] == 1 && probeLepIsEle[0] == 1'
+    mumu_el_sel = 'ZLepIsEle[0] == 0 && ZLepIsEle[1] == 0 && probeLepIsEle[0] == 1'
+    elel_mu_sel = 'ZLepIsEle[0] == 1 && ZLepIsEle[1] == 1 && probeLepIsEle[0] == 0'
+    mumu_mu_sel = 'ZLepIsEle[0] == 0 && ZLepIsEle[1] == 0 && probeLepIsEle[0] == 0'
     
     # Create channels
     ch = reg.build_channel('ll_el', 'll+e', '$\\ell\\ell+e$',cuts=ll_el_sel)
@@ -1164,7 +1178,7 @@ def add_zjets3L_channels(reg, REGs):
 region = Region('zjets3l_CR_num', 'Z+jets CR (3 ID)','$Z$+jets CR (3 $\\ell_\\text{ID}$)')
 region.tcut = zjets3l_sel_num
 REGIONS.append(region)
-add_zjets3L_channels(region, REGIONS)
+#add_zjets3L_channels(region, REGIONS)
 
 region = Region('zjets3l_CR_den', 'Z+jets CR (2 ID + 1 #bar{ID})','$Z$+jets CR (2 $\\ell_\\text{ID}$ + 1 $\\ell_{\\bar{\\text{ID}}}$)')
 region.tcut = zjets3l_sel_den
@@ -1257,7 +1271,7 @@ PlotBase.atlas_lumi = '#sqrt{s} = 13 TeV, %d fb^{-1}' % _lumi
 
 plots_defaults = {
     'runNumber' : Plot1D(bin_range=[284000, 311000], bin_width=1000, xlabel='Run Number', add_underflow=True, doLogY=True),
-    'eventweight' : Plot1D(bin_range=[-0.001, 0.01], nbins=100, xlabel='Event Weight', add_underflow=True, doLogY=True, doNorm=True),
+    'eventweight_single' : Plot1D(bin_range=[-0.1, 0.1], nbins=100, xlabel='Event Weight', add_underflow=True, doLogY=True, doNorm=True),
     'eventweight_multi' : Plot1D(bin_range=[-0.002, 0.003], nbins=100, xlabel='Multi-period Event Weight', add_underflow=True, doLogY=True, doNorm=True),
     'pupw' : Plot1D(bin_range=[0, 4], nbins=100, xlabel='Pilup Weight', add_underflow=True, doLogY=True, doNorm=True),
     'lepSf' : Plot1D(bin_range=[0, 2], nbins=100, xlabel='Lepton SF', add_underflow=True, doLogY=True, doNorm=True),
@@ -1277,9 +1291,9 @@ plots_defaults = {
     'avgMuDataSF/nVtx' : Plot1D(bin_range=[0,10], nbins=100, xlabel='Actual pileup / nVertices', add_underflow=True),
     
     # Kinematics
-    'lep1Pt' : Plot1D(bin_range=[0,150], bin_width = 5, xlabel='p_{T}^{leading lep}', xunits='GeV', xcut_is_max=False),
-    'lep2Pt' : Plot1D(bin_range=[0,150], bin_width = 5, xlabel='p_{T}^{subleading lep}', xunits='GeV', xcut_is_max=False),
-    'jet1Pt'  : Plot1D(bin_range=[0,150], bin_width = 5, xlabel='p_{T}^{leading jet}', xunits='GeV'),
+    'lepPt[0]' : Plot1D(bin_range=[0,150], bin_width = 5, xlabel='p_{T}^{leading lep}', xunits='GeV', xcut_is_max=False),
+    'lepPt[1]' : Plot1D(bin_range=[0,150], bin_width = 5, xlabel='p_{T}^{subleading lep}', xunits='GeV', xcut_is_max=False),
+    'jet1Pt'  : Plot1D(bin_range=[0,350], bin_width = 10, xlabel='p_{T}^{leading jet}', xunits='GeV'),
     'jet2Pt'  : Plot1D(bin_range=[0,150], bin_width = 5, xlabel='p_{T}^{subleading jet}', xunits='GeV'),
     'mll'     : Plot1D(bin_range=[0, 300], bin_width=10, xlabel='M_{ll}', xunits='GeV', xcut_is_max=False),
     'fabs(mll-91.2)'     : Plot1D(bin_range=[0, 50], bin_width=1, xlabel='|M_{ll} - 91.2|', xunits='GeV', xcut_is_max=False),
@@ -1291,20 +1305,26 @@ plots_defaults = {
     'lep1mT' : Plot1D(bin_range=[0, 150], bin_width=5, xlabel='m_{T}^{l_{1}}', xunits='GeV', xcut_is_max=True),
     'lep2mT' : Plot1D(bin_range=[0, 150], bin_width=5, xlabel='m_{T}^{l_{2}}', xunits='GeV', xcut_is_max=False),
 
+    # Z+jets kinematics
+    'ZLepPt[0]' : Plot1D(bin_range=[0,150], bin_width = 5, xlabel='p_{T}^{leading Z lep}', xunits='GeV'),
+    'ZLepPt[1]' : Plot1D(bin_range=[0,150], bin_width = 5, xlabel='p_{T}^{subleading Z lep}', xunits='GeV'),
+    'ZpT'       : Plot1D(bin_range=[0,150], bin_width = 5, xlabel='p_{T}^{Z}', xunits='GeV'),
+    'Zmass'     : Plot1D(bin_range=[75, 105], bin_width=1, xlabel='M_{ll} Z-tagged leptons', xunits='GeV'),
+
     #Truth
     'lep1TruthClass'      : Plot1D( bin_range=[-4.5, 11.5],  bin_width=1, doNorm=True, doLogY=False, xlabel='Leading lepton truth classification'),
     'lep2TruthClass'      : Plot1D( bin_range=[-4.5, 11.5],  bin_width=1, doNorm=True, doLogY=False, xlabel='Subleading lepton truth classification'),
-    'probeLep1TruthClass' : Plot1D( bin_range=[-4.5, 11.5],  bin_width=1, doNorm=True, doLogY=False, xlabel='Probe lepton truth classification'),
+    'probeLepTruthClass[0]' : Plot1D( bin_range=[-4.5, 11.5],  bin_width=1, doNorm=True, doLogY=False, xlabel='Probe lepton truth classification'),
 
     # Fake Factor
-    'probeLep1Pt' : Plot1D(bin_edges=[0, 3, 3.5, 4, 4.5, 5, 6, 7, 8, 9, 10, 11, 13, 16, 20, 30, 50], xlabel='p_{T}^{probe lep}', xunits='GeV', doLogY=False),
-    #'probeLep1Pt' : Plot1D(bin_range=[0,150], bin_width = 5, xlabel='p_{T}^{probe lep}', xunits='GeV'),
-    'fabs(probeLep1Eta)' : Plot1D(bin_edges=[0.0, 0.6, 0.8, 1.15, 1.37, 1.52, 1.81, 2.01, 2.37, 2.5, 3.0], xlabel='#eta^{probe lep}', xunits='', add_underflow=True),
-    #'fabs(probeLep1Eta)' : Plot1D(bin_edges=[0.0, 0.1, 1.05, 1.5, 2.0, 2.5, 2.7, 3.0], xlabel='#eta^{probe lep}', xunits='', add_underflow=True),
-    #'probeLep1Eta' : Plot1D(bin_edges=[-3.0, -2.7, -1.05, 0, 1.05, 2.7, 3.0], xlabel='#eta^{probe lep}', xunits='', add_underflow=True),
-    #'probeLep1Eta' : Plot1D(bin_edges=[-3.0, -2.5, -2.0, -1.45, -1.0, -0.5, 0, 0.5, 1.0, 1.45, 2.0, 2.5, 3.0], xlabel='#eta^{probe lep}', xunits='', add_underflow=True),
-    'probeLep1Eta' : Plot1D(bin_range=[-3.0, 3.0], bin_width=0.25, xlabel='#eta^{probe lep}', xunits='', add_underflow=True),
-    'probeLep1mT'  : Plot1D(bin_range=[0, 150], bin_width=5, xlabel='m_{T}^{probe lep}', xunits='GeV', xcut_is_max=True),
+    'probeLepPt[0]' : Plot1D(bin_edges=[0, 3, 3.5, 4, 4.5, 5, 6, 7, 8, 9, 10, 11, 13, 16, 20, 30, 50], xlabel='p_{T}^{probe lep}', xunits='GeV', doLogY=False),
+    #'probeLepPt[0]' : Plot1D(bin_range=[0,150], bin_width = 5, xlabel='p_{T}^{probe lep}', xunits='GeV'),
+    'fabs(probeLepEta[0])' : Plot1D(bin_edges=[0.0, 0.6, 0.8, 1.15, 1.37, 1.52, 1.81, 2.01, 2.37, 2.5, 3.0], xlabel='#eta^{probe lep}', xunits='', add_underflow=True),
+    #'fabs(probeLepEta[0])' : Plot1D(bin_edges=[0.0, 0.1, 1.05, 1.5, 2.0, 2.5, 2.7, 3.0], xlabel='#eta^{probe lep}', xunits='', add_underflow=True),
+    #'probeLepEta[0]' : Plot1D(bin_edges=[-3.0, -2.7, -1.05, 0, 1.05, 2.7, 3.0], xlabel='#eta^{probe lep}', xunits='', add_underflow=True),
+    #'probeLepEta[0]' : Plot1D(bin_edges=[-3.0, -2.5, -2.0, -1.45, -1.0, -0.5, 0, 0.5, 1.0, 1.45, 2.0, 2.5, 3.0], xlabel='#eta^{probe lep}', xunits='', add_underflow=True),
+    'probeLepEta[0]' : Plot1D(bin_range=[-3.0, 3.0], bin_width=0.25, xlabel='#eta^{probe lep}', xunits='', add_underflow=True),
+    'probeLepmT[0]'  : Plot1D(bin_range=[0, 150], bin_width=5, xlabel='m_{T}^{probe lep}', xunits='GeV', xcut_is_max=True),
     'mlll'         : Plot1D(bin_range=[70, 150], bin_width=5, xlabel='M_{lll}', xunits='GeV', add_underflow=True),
     'Z2_mll'       : Plot1D(bin_range=[50, 140], bin_width=5, xlabel='Z2 M_{ll}', xunits='GeV', add_underflow=True),
     'dR_ZLep1_probeLep1' : Plot1D(bin_range=[0, 6], bin_width=0.2, xlabel='#DeltaR(l^{probe}_{1},l_{Z1})'),
@@ -1312,7 +1332,7 @@ plots_defaults = {
     'dR_Z_probeLep1' : Plot1D(bin_range=[0, 6], bin_width=0.2, xlabel='#DeltaR(l^{probe}_{1},l_{Z})'),
     'probeLep1_d0sigBSCorr'   : Plot1D( bin_range=[-20, 20],     bin_width=0.8, add_underflow=True, doNorm=False, doLogY=True, xlabel='l^{probe}_{1} d_{0}/#sigma_{d_{0}} BSCorr'),
     'probeLep1_z0SinTheta'    : Plot1D( bin_range=[-0.5, 0.5],     bin_width=0.02, add_underflow=True, doNorm=False, doLogY=True, xunits='mm', xlabel='l^{probe}_{1} z_{0}sin(#theta)'),
-    'nInvLeps' : Plot1D(bin_range=[-1.5, 10.5], bin_width=1, xlabel='N_{Anti-ID leps}'),
+    'n_invLeps' : Plot1D(bin_range=[-1.5, 10.5], bin_width=1, xlabel='N_{Anti-ID leps}'),
 
     # Angles
     'dR_ll' : Plot1D(bin_range=[0, 6], bin_width=0.2, xlabel='#DeltaR(l_{1},l_{2})', xcut_is_max=False),
@@ -1330,7 +1350,8 @@ plots_defaults = {
     'nBJets'     : Plot1D(bin_range=[-1.5, 10.5], bin_width=1, xlabel='N_{B jets}'),
     'nForwardJets' : Plot1D(bin_range=[-1.5, 10.5], bin_width=1, xlabel='N_{forward jets}'),
     'nNonBJets' : Plot1D(bin_range=[-1.5, 10.5], bin_width=1, xlabel='N_{Signal jets}', xcut_is_max=True),
-    'nSigLeps' : Plot1D(bin_range=[-1.5, 10.5], bin_width=1, xlabel='N_{Signal leps}'),
+    'n_sigLeps' : Plot1D(bin_range=[-1.5, 10.5], bin_width=1, xlabel='N_{Signal leps}'),
+    'n_leps' : Plot1D(bin_range=[-1.5, 5.5], bin_width=1, xlabel='N_{leps}'),
 
     # Super-razor
     'shat' : Plot1D(bin_range=[0, 1000], bin_width=40, xlabel='m_{PP} or #sqrt{#hat{s}_{R}}', xunits='GeV'),
@@ -1358,20 +1379,20 @@ plots_defaults = {
     'deltaPhi_met_lep2:lep1mT' : Plot2D(bin_range=[0, 150, 0, 3.2], xbin_width = 10, ybin_width = 0.2, xlabel='lep1mT', ylabel='deltaPhi_met_lep2'), 
     'deltaPhi_met_lep2:lep2mT' : Plot2D(bin_range=[0, 150, 0, 3.2], xbin_width = 10, ybin_width = 0.2, xlabel='lep2mT', ylabel='deltaPhi_met_lep2'), 
     'deltaPhi_met_lep2:pTll'    : Plot2D(bin_range=[0, 300, 0, 3.2], xbin_width = 20, ybin_width = 0.2, xlabel='pTll', ylabel='deltaPhi_met_lep2'), 
-    'fabs(probeLep1Eta):probeLep1Pt'  : Plot2D(xbin_edges=[0, 3, 3.5, 4, 4.5, 5, 6, 7, 8, 9, 10, 11, 13, 16, 20, 30, 1000], xlabel='p_{T}^{probe lep}',
+    'fabs(probeLepEta[0]):probeLepPt[0]'  : Plot2D(xbin_edges=[0, 3, 3.5, 4, 4.5, 5, 6, 7, 8, 9, 10, 11, 13, 16, 20, 30, 1000], xlabel='p_{T}^{probe lep}',
                                                ybin_edges=[0.0, 0.6, 0.8, 1.15, 1.37, 1.52, 1.81, 2.01, 2.37, 2.5, 3.0], ylabel='|#eta^{probe lep}|'), 
-    'probeLep1Pt:probeLep1mT'    : Plot2D(bin_range=[0, 150, 0, 150], xbin_width = 10, ybin_width = 10, xlabel='m_{T}^{probe lep}', ylabel='p_{T}^{probe lep}'), 
-    'probeLep1Pt:met'    : Plot2D(bin_range=[0, 150, 0, 150], xbin_width = 10, ybin_width = 10, xlabel='E_{T}^{miss}', ylabel='p_{T}^{probe lep}', ), 
+    'probeLepPt[0]:probeLepmT[0]'    : Plot2D(bin_range=[0, 150, 0, 150], xbin_width = 10, ybin_width = 10, xlabel='m_{T}^{probe lep}', ylabel='p_{T}^{probe lep}'), 
+    'probeLepPt[0]:met'    : Plot2D(bin_range=[0, 150, 0, 150], xbin_width = 10, ybin_width = 10, xlabel='E_{T}^{miss}', ylabel='p_{T}^{probe lep}', ), 
 }
 l_truthClass_labels = ['','no Origin','no Mother','no Truth','Uncategorized','El','Mu','Pho','El from FSR','LF','Mu as El','Tau','HF B','HF C', 'pho conv (noM)','']
 plots_defaults['lep1TruthClass'].bin_labels = l_truthClass_labels
 plots_defaults['lep2TruthClass'].bin_labels = l_truthClass_labels
-plots_defaults['probeLep1TruthClass'].bin_labels = l_truthClass_labels
+plots_defaults['probeLepTruthClass[0]'].bin_labels = l_truthClass_labels
 
 region_plots = {}
 region_plots['default'] = {
-  'lep1Pt'                  : deepcopy(plots_defaults['lep1Pt']),
-  'lep2Pt'                  : deepcopy(plots_defaults['lep2Pt']),
+  'lepPt[0]'                  : deepcopy(plots_defaults['lepPt[0]']),
+  'lepPt[1]'                  : deepcopy(plots_defaults['lepPt[1]']),
   'mll'                     : deepcopy(plots_defaults['mll']),
   'nBJets'                  : deepcopy(plots_defaults['nBJets']),
   'nNonBJets'               : deepcopy(plots_defaults['nNonBJets']),
@@ -1381,8 +1402,8 @@ region_plots['default'] = {
   'DPB_vSS'                 : deepcopy(plots_defaults['DPB_vSS']),
   'abs_costheta_b'          : deepcopy(plots_defaults['abs_costheta_b']),
   'DPB_vSS - 0.9*abs_costheta_b'        : deepcopy(plots_defaults['DPB_vSS - 0.9*abs_costheta_b']),
-  'fabs(probeLep1Eta):probeLep1Pt'        : deepcopy(plots_defaults['fabs(probeLep1Eta):probeLep1Pt']),
-  'fabs(probeLep1Eta)'            : deepcopy(plots_defaults['fabs(probeLep1Eta)']),
+  'fabs(probeLepEta[0]):probeLepPt[0]'        : deepcopy(plots_defaults['fabs(probeLepEta[0]):probeLepPt[0]']),
+  'fabs(probeLepEta[0])'            : deepcopy(plots_defaults['fabs(probeLepEta[0])']),
 }
 region_plots['presel_DF'] = deepcopy(region_plots['default'])
 region_plots['ttbar_CR'] = deepcopy(region_plots['default'])
@@ -1402,8 +1423,8 @@ region_plots['presel_DF']['abs_costheta_b'].update(bin_range = [0, 1, 1E-2, 1E0]
 region_plots['presel_DF']['DPB_vSS'].update(bin_range = [0, 3.2, 5E-3, 1E0], bin_width=0.1, doLogY=True)
 region_plots['presel_DF']['gamInvRp1'].update(bin_range = [0, 1, 1E-3, 1E1], bin_width=0.05, doLogY=True)
 
-region_plots['mW_DF_pre']['lep1Pt'].update(bin_range = [25, 500, 1E-1, 1E12], nbins=11, doLogY=True)
-region_plots['mW_DF_pre']['lep2Pt'].update(bin_range = [20, 500, 1E-1, 1E12], bin_width=40, doLogY=True)
+region_plots['mW_DF_pre']['lepPt[0]'].update(bin_range = [25, 500, 1E-1, 1E12], nbins=11, doLogY=True)
+region_plots['mW_DF_pre']['lepPt[1]'].update(bin_range = [20, 500, 1E-1, 1E12], bin_width=40, doLogY=True)
 region_plots['mW_DF_pre']['MDR'].update(bin_range = [0, 200, 1E-1, 1E12], bin_width=20, doLogY=True)
 region_plots['mW_DF_pre']['nBJets'].update(bin_range = [0, 3, 1E-1, 1E12], bin_width=1, doLogY=True)
 region_plots['mW_DF_pre']['nNonBJets'].update(bin_range = [0, 15, 1E-1, 1E12], bin_width=1, doLogY=True)
@@ -1414,8 +1435,8 @@ region_plots['mW_DF_pre']['RPT'].update(bin_range = [0, 1, 1E-1, 1E12], bin_widt
 region_plots['mW_DF_pre']['DPB_vSS - 0.9*abs_costheta_b'].update(bin_range = [-1.5, 4, 1E-1, 1E12], bin_width=0.5, doLogY=True)
 #region_plots['mW_DF_pre']['DPB_vSS - 0.9*abs_costheta_b'].update(bin_range = [-1.5, 4, 1E-3, 1E1], bin_width=0.5, doLogY=True)
 
-region_plots['mW_SF_pre']['lep1Pt'].update(bin_range = [25, 400, 1E-1, 1E13], nbins=9, doLogY=True)
-region_plots['mW_SF_pre']['lep2Pt'].update(bin_range = [20, 500, 1E-1, 1E13], bin_width=40, doLogY=True)
+region_plots['mW_SF_pre']['lepPt[0]'].update(bin_range = [25, 400, 1E-1, 1E13], nbins=9, doLogY=True)
+region_plots['mW_SF_pre']['lepPt[1]'].update(bin_range = [20, 500, 1E-1, 1E13], bin_width=40, doLogY=True)
 region_plots['mW_SF_pre']['MDR'].update(bin_range = [0, 200, 1E-1, 1E13], bin_width=10, doLogY=True)
 region_plots['mW_SF_pre']['nBJets'].update(bin_range = [0, 3, 1E-1, 1E13], bin_width=1, doLogY=True)
 region_plots['mW_SF_pre']['nNonBJets'].update(bin_range = [0, 15, 1E-1, 1E13], bin_width=1, doLogY=True)
@@ -1426,8 +1447,8 @@ region_plots['mW_SF_pre']['RPT'].update(bin_range = [0, 1, 1E-1, 1E13], bin_widt
 region_plots['mW_SF_pre']['DPB_vSS - 0.9*abs_costheta_b'].update(bin_range = [-1.5, 4, 1E-1, 1E13], bin_width=0.5, doLogY=True)
 #region_plots['mW_SF_pre']['DPB_vSS - 0.9*abs_costheta_b'].update(bin_range = [-1.5, 4, 1E-3, 1E1], bin_width=0.5, doLogY=True)
 
-region_plots['mT_DF_pre']['lep1Pt'].update(bin_range = [25, 500, 1E-1, 1E12], nbins=11, doLogY=True)
-region_plots['mT_DF_pre']['lep2Pt'].update(bin_range = [20, 500, 1E-1, 1E12], bin_width=40, doLogY=True)
+region_plots['mT_DF_pre']['lepPt[0]'].update(bin_range = [25, 500, 1E-1, 1E12], nbins=11, doLogY=True)
+region_plots['mT_DF_pre']['lepPt[1]'].update(bin_range = [20, 500, 1E-1, 1E12], bin_width=40, doLogY=True)
 region_plots['mT_DF_pre']['MDR'].update(bin_range = [0, 200, 1E-1, 1E12], bin_width=10, doLogY=True)
 region_plots['mT_DF_pre']['nBJets'].update(bin_range = [0, 6, 1E-1, 1E12], bin_width=1, doLogY=True)
 region_plots['mT_DF_pre']['nNonBJets'].update(bin_range = [0, 15, 1E-1, 1E12], bin_width=1, doLogY=True)
@@ -1438,8 +1459,8 @@ region_plots['mT_DF_pre']['RPT'].update(bin_range = [0, 1, 1E-1, 1E12], bin_widt
 region_plots['mT_DF_pre']['DPB_vSS - 0.9*abs_costheta_b'].update(bin_range = [-1.5, 4, 1E-1, 1E12], bin_width=0.5, doLogY=True)
 #region_plots['mT_DF_pre']['DPB_vSS - 0.9*abs_costheta_b'].update(bin_range = [-1.5, 4, 1E-3, 1E1], bin_width=0.5, doLogY=True)
 
-region_plots['mT_SF_pre']['lep1Pt'].update(bin_range = [25, 500, 1E-1, 1E13], nbins=11, doLogY=True)
-region_plots['mT_SF_pre']['lep2Pt'].update(bin_range = [20, 400, 1E-1, 1E13], nbins=9, doLogY=True)
+region_plots['mT_SF_pre']['lepPt[0]'].update(bin_range = [25, 500, 1E-1, 1E13], nbins=11, doLogY=True)
+region_plots['mT_SF_pre']['lepPt[1]'].update(bin_range = [20, 400, 1E-1, 1E13], nbins=9, doLogY=True)
 region_plots['mT_SF_pre']['MDR'].update(bin_range = [0, 200, 1E-1, 1E13], bin_width=10, doLogY=True)
 region_plots['mT_SF_pre']['nBJets'].update(bin_range = [0, 6, 1E-1, 1E13], bin_width=1, doLogY=True)
 region_plots['mT_SF_pre']['nNonBJets'].update(bin_range = [0, 15, 1E-1, 1E13], bin_width=1, doLogY=True)
@@ -1450,7 +1471,7 @@ region_plots['mT_SF_pre']['RPT'].update(bin_range = [0, 1, 1E-1, 1E13], bin_widt
 region_plots['mT_SF_pre']['DPB_vSS - 0.9*abs_costheta_b'].update(bin_range = [-1.5, 4, 1E-1, 1E13], bin_width=0.5, doLogY=True)
 #region_plots['mT_SF_pre']['DPB_vSS - 0.9*abs_costheta_b'].update(bin_range = [-1.5, 4, 1E-3, 1E1], bin_width=0.5, doLogY=True)
 
-region_plots['ttbar_CR']['lep1Pt'].update(bin_range = [25, 600, 1E-1, 1E8], nbins=19, doLogY=True)
+region_plots['ttbar_CR']['lepPt[0]'].update(bin_range = [25, 600, 1E-1, 1E8], nbins=19, doLogY=True)
 region_plots['ttbar_CR']['nBJets'].update(bin_range = [0, 10, 1E-1, 1E9], bin_width=1, doLogY=True)
 region_plots['ttbar_CR']['nNonBJets'].update(bin_range = [0, 12, 1E-1, 1E9], bin_width=1, doLogY=True)
 region_plots['ttbar_CR']['MDR'].update(bin_range = [80, 200, 1E-1, 1E9], bin_width=5, doLogY=True)
@@ -1461,7 +1482,7 @@ region_plots['ttbar_CR']['abs_costheta_b'].update(bin_range = [0, 1, 1E-1, 1E9],
 region_plots['ttbar_CR_elmu'] = region_plots['ttbar_CR']
 region_plots['ttbar_CR_muel'] = region_plots['ttbar_CR']
 
-region_plots['ttbar_VR']['lep1Pt'].update(bin_range = [25, 300], nbins=13)
+region_plots['ttbar_VR']['lepPt[0]'].update(bin_range = [25, 300], nbins=13)
 region_plots['ttbar_VR']['nBJets'].update(bin_range = [0, 3], bin_width=1)
 region_plots['ttbar_VR']['nNonBJets'].update(bin_range = [0, 10], bin_width=1)
 region_plots['ttbar_VR']['MDR'].update(bin_range = [80, 135], bin_width=5)
@@ -1470,7 +1491,7 @@ region_plots['ttbar_VR']['gamInvRp1'].update(bin_range = [0, 1], bin_width=0.1)
 region_plots['ttbar_VR']['DPB_vSS'].update(bin_range = [1.8, 3.2], bin_width=0.2)
 region_plots['ttbar_VR']['abs_costheta_b'].update(bin_range = [0, 1], bin_width=0.1)
 
-region_plots['VV_CR_DF']['lep1Pt'].update(bin_range = [25, 100], nbins=7)
+region_plots['VV_CR_DF']['lepPt[0]'].update(bin_range = [25, 100], nbins=7)
 region_plots['VV_CR_DF']['nBJets'].update(bin_range = [0, 3], bin_width=1)
 region_plots['VV_CR_DF']['nNonBJets'].update(bin_range = [0, 7], bin_width=1)
 region_plots['VV_CR_DF']['MDR'].update(bin_range = [50, 140], bin_width=10)
@@ -1479,7 +1500,7 @@ region_plots['VV_CR_DF']['gamInvRp1'].update(bin_range = [0.7, 1], bin_width=0.0
 region_plots['VV_CR_DF']['DPB_vSS'].update(bin_range = [0, 2.8], nbins=6)
 region_plots['VV_CR_DF']['abs_costheta_b'].update(bin_range = [0, 1], nbins=7)
 
-region_plots['VV_VR_DF']['lep1Pt'].update(bin_range = [25, 70], bin_width=5)
+region_plots['VV_VR_DF']['lepPt[0]'].update(bin_range = [25, 70], bin_width=5)
 region_plots['VV_VR_DF']['nBJets'].update(bin_range = [0, 3], bin_width=1)
 region_plots['VV_VR_DF']['nNonBJets'].update(bin_range = [0, 7], bin_width=1)
 region_plots['VV_VR_DF']['MDR'].update(bin_range = [50, 95], nbins=5)
@@ -1488,7 +1509,7 @@ region_plots['VV_VR_DF']['gamInvRp1'].update(bin_range = [0.7, 1], nbins=6)
 region_plots['VV_VR_DF']['DPB_vSS'].update(bin_range = [1.8, 3.2], nbins=7)
 region_plots['VV_VR_DF']['abs_costheta_b'].update(bin_range = [0, 1], bin_width=0.2)
 
-region_plots['VV_CR_SF']['lep1Pt'].update(bin_range = [25, 105], nbins=5)
+region_plots['VV_CR_SF']['lepPt[0]'].update(bin_range = [25, 105], nbins=5)
 region_plots['VV_CR_SF']['nBJets'].update(bin_range = [0, 3], bin_width=1)
 region_plots['VV_CR_SF']['nNonBJets'].update(bin_range = [0, 7], bin_width=1)
 region_plots['VV_CR_SF']['MDR'].update(bin_range = [70, 100], bin_width=5)
@@ -1497,7 +1518,7 @@ region_plots['VV_CR_SF']['gamInvRp1'].update(bin_range = [0.7, 1], nbins=8)
 region_plots['VV_CR_SF']['DPB_vSS'].update(bin_range = [0, 2.8], nbins=6)
 region_plots['VV_CR_SF']['abs_costheta_b'].update(bin_range = [0, 1], bin_width=0.2)
 
-region_plots['VV_VR_SF']['lep1Pt'].update(bin_range = [25, 70], nbins=4)
+region_plots['VV_VR_SF']['lepPt[0]'].update(bin_range = [25, 70], nbins=4)
 region_plots['VV_VR_SF']['nBJets'].update(bin_range = [0, 3], bin_width=1)
 region_plots['VV_VR_SF']['nNonBJets'].update(bin_range = [0, 7], bin_width=1)
 region_plots['VV_VR_SF']['MDR'].update(bin_range = [60, 100], bin_width=5)
@@ -1512,8 +1533,8 @@ region_plots['zjets3l_CR_num_elel_el'] = region_plots['zjets3l_CR_num']
 region_plots['zjets3l_CR_num_mumu_el'] = region_plots['zjets3l_CR_num']
 
 region_plots['zjets3l_CR_num_ll_mu'] = deepcopy(region_plots['zjets3l_CR_num'])
-region_plots['zjets3l_CR_num_ll_mu']['fabs(probeLep1Eta):probeLep1Pt'].update(ybin_edges=[0.0, 0.1, 1.05, 1.5, 2.0, 2.5, 2.7, 3.0])
-region_plots['zjets3l_CR_num_ll_mu']['fabs(probeLep1Eta)'].update(bin_edges=[0.0, 0.1, 1.05, 1.5, 2.0, 2.5, 2.7, 3.0])
+region_plots['zjets3l_CR_num_ll_mu']['fabs(probeLepEta[0]):probeLepPt[0]'].update(ybin_edges=[0.0, 0.1, 1.05, 1.5, 2.0, 2.5, 2.7, 3.0])
+region_plots['zjets3l_CR_num_ll_mu']['fabs(probeLepEta[0])'].update(bin_edges=[0.0, 0.1, 1.05, 1.5, 2.0, 2.5, 2.7, 3.0])
 region_plots['zjets3l_CR_num_elel_mu'] = region_plots['zjets3l_CR_num_ll_mu']
 region_plots['zjets3l_CR_num_mumu_mu'] = region_plots['zjets3l_CR_num_ll_mu']
 

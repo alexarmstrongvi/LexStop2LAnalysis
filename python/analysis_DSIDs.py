@@ -219,33 +219,33 @@ DSID_GROUPS = {
                 "364141", #Sherpa221_Ztautau_1000_E_CM
     ],
     "zgamma" : [
-            "364500", #Sherpa_222_NNPDF30NNLO_eegamma_pty_7_15
+            #"364500", #Sherpa_222_NNPDF30NNLO_eegamma_pty_7_15
             "364501", #Sherpa_222_NNPDF30NNLO_eegamma_pty_15_35
             "364502", #Sherpa_222_NNPDF30NNLO_eegamma_pty_35_70
             "364503", #Sherpa_222_NNPDF30NNLO_eegamma_pty_70_140
             "364504", #Sherpa_222_NNPDF30NNLO_eegamma_pty_140_E_CMS
-            "364505", #Sherpa_222_NNPDF30NNLO_mumugamma_pty_7_15
+            #"364505", #Sherpa_222_NNPDF30NNLO_mumugamma_pty_7_15
             "364506", #Sherpa_222_NNPDF30NNLO_mumugamma_pty_15_35
             "364507", #Sherpa_222_NNPDF30NNLO_mumugamma_pty_35_70
             "364508", #Sherpa_222_NNPDF30NNLO_mumugamma_pty_70_140
             "364509", #Sherpa_222_NNPDF30NNLO_mumugamma_pty_140_E_CMS
-            "364510", #Sherpa_222_NNPDF30NNLO_tautaugamma_pty_7_15
+            #"364510", #Sherpa_222_NNPDF30NNLO_tautaugamma_pty_7_15
             "364511", #Sherpa_222_NNPDF30NNLO_tautaugamma_pty_15_35
             "364512", #Sherpa_222_NNPDF30NNLO_tautaugamma_pty_35_70
             "364514", #Sherpa_222_NNPDF30NNLO_tautaugamma_pty_140_E_CMS
     ],
     "wgamma" : [
-            "364521", #Sherpa_222_NNPDF30NNLO_enugamma_pty_7_15
+            #"364521", #Sherpa_222_NNPDF30NNLO_enugamma_pty_7_15
             "364522", #Sherpa_222_NNPDF30NNLO_enugamma_pty_15_35
             "364523", #Sherpa_222_NNPDF30NNLO_enugamma_pty_35_70
             "364524", #Sherpa_222_NNPDF30NNLO_enugamma_pty_70_140
             "364525", #Sherpa_222_NNPDF30NNLO_enugamma_pty_140_E_CMS
-            "364526", #Sherpa_222_NNPDF30NNLO_munugamma_pty_7_15
+            #"364526", #Sherpa_222_NNPDF30NNLO_munugamma_pty_7_15
             "364527", #Sherpa_222_NNPDF30NNLO_munugamma_pty_15_35
             "364528", #Sherpa_222_NNPDF30NNLO_munugamma_pty_35_70
             "364529", #Sherpa_222_NNPDF30NNLO_munugamma_pty_70_140
             "364530", #Sherpa_222_NNPDF30NNLO_munugamma_pty_140_E_CMS
-            "364531", #Sherpa_222_NNPDF30NNLO_taunugamma_pty_7_15
+            #"364531", #Sherpa_222_NNPDF30NNLO_taunugamma_pty_7_15
             "364532", #Sherpa_222_NNPDF30NNLO_taunugamma_pty_15_35
             "364533", #Sherpa_222_NNPDF30NNLO_taunugamma_pty_35_70
             "364534", #Sherpa_222_NNPDF30NNLO_taunugamma_pty_70_140

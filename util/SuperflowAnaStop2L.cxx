@@ -127,7 +127,7 @@ static LeptonVector m_fnpSigLeps;
 static LeptonVector m_fnpInvLeps;
 
 static LeptonVector m_ZLeps;
-static Susy::Lepton* m_probeLep;
+static LeptonVector m_probeLeps;
 
 static Susy::Electron *m_el0, *m_el1;
 static Susy::Muon *m_mu0, *m_mu1;
@@ -185,7 +185,7 @@ bool is_2lep_trig_matched(Superlink* sl, string trig_name, Susy::Lepton* lep1, S
         *sf << SaveVar(); \
     } \
     *sf << NewVar(#lep_name" isEle"); { \
-        *sf << HFTname(#lep_name"isEle"); \
+        *sf << HFTname(#lep_name"IsEle"); \
         *sf << [](Superlink* /*sl*/, var_int_array*) -> vector<int> { \
             vector<int> out; \
             for(const auto& l : m_##lep_name##s) { out.push_back( l->isEle() ); } \
@@ -280,7 +280,7 @@ bool is_2lep_trig_matched(Superlink* sl, string trig_name, Susy::Lepton* lep1, S
         *sf << SaveVar(); \
     } \
     *sf << NewVar("delta Phi of "#lep_name" and met"); { \
-        *sf << HFTname("deltaPhi_met_"#lep_name); \
+        *sf << HFTname("dPhi_met_"#lep_name); \
         *sf << [](Superlink* /*sl*/, var_float_array*) -> vector<double> { \
             vector<double> out; \
             for(const auto& l : m_##lep_name##s) { \
@@ -435,16 +435,16 @@ int main(int argc, char* argv[])
     add_mc_lepton_variables(superflow);
     add_jet_variables(superflow);
     add_met_variables(superflow);
+    add_dilepton_variables(superflow);
     if (m_baseline_DF || m_baseline_SF || m_fake_baseline_DF || m_fake_baseline_SF) {
-        add_dilepton_variables(superflow);
         add_jigsaw_variables(superflow);
-        add_miscellaneous_variables(superflow);
     } else if (m_zjets_3l || m_fake_zjets_3l || m_zjets2l_inc) {
         add_Zlepton_variables(superflow);
     }
     if (m_zjets_3l || m_fake_zjets_3l) {
         add_Zll_probeLep_variables(superflow);
     };
+    add_miscellaneous_variables(superflow);
     add_multi_object_variables(superflow);
 
     // Systematics
@@ -515,7 +515,7 @@ bool set_global_variables(Superflow* sf) {
         m_fnpSigLeps.clear();
         m_fnpInvLeps.clear();
         m_ZLeps.clear();
-        m_probeLep = 0;
+        m_probeLeps.clear();
         m_el0 = m_el1 = 0;
         m_mu0 = m_mu1 = 0;
         m_triggerLeptons.clear();
@@ -602,12 +602,12 @@ bool set_global_variables(Superflow* sf) {
             if      (ztagged_idx1 != 0 && ztagged_idx2 != 0) { probeLep_idx = 0; }
             else if (ztagged_idx1 != 1 && ztagged_idx2 != 1) { probeLep_idx = 1; }
             else if (ztagged_idx1 != 2 && ztagged_idx2 != 2) { probeLep_idx = 2; }
-            m_probeLep = m_sigLeps.at(probeLep_idx);
+            m_probeLeps.push_back(m_sigLeps.at(probeLep_idx));
             m_triggerLeptons.push_back(m_ZLeps.at(0));
             m_triggerLeptons.push_back(m_ZLeps.at(1));
         } else if (m_fake_zjets_3l && m_sigLeps.size() == 2 && m_invLeps.size() == 1 && ztagged) {
             m_ZLeps = m_sigLeps;
-            m_probeLep = m_invLeps.at(0);
+            m_probeLeps.push_back(m_invLeps.at(0));
             m_triggerLeptons.push_back(m_ZLeps.at(0));
             m_triggerLeptons.push_back(m_ZLeps.at(1));
         } else if (m_zjets2l_inc && m_sigLeps.size() >= 2 && ztagged) {
@@ -822,9 +822,9 @@ void add_analysis_cuts(Superflow* sf) {
     ////////////////////////////////////////////////////////////////////////////
     // Z+Jets Fake Factor Selections
     } else if (m_zjets_3l || m_fake_zjets_3l || m_zjets2l_inc) {
-        //*sf << CutName("3 baseline leptons") << [](Superlink* /*sl*/) -> bool {
-        //    return (m_leps.size() == 3);
-        //};
+        *sf << CutName("3 baseline leptons") << [](Superlink* /*sl*/) -> bool {
+            return (m_leps.size() == 3);
+        };
         if (m_zjets_3l) {
             *sf << CutName("3 signal and 0 inverted leptons") << [](Superlink* /*sl*/) -> bool {
                 return (m_sigLeps.size() == 3 && m_invLeps.size() == 0);
@@ -845,13 +845,30 @@ void add_analysis_cuts(Superflow* sf) {
             return m_ZLeps.at(0)->isEle() == m_ZLeps.at(1)->isEle();
         };
         *sf << CutName("|mZ_ll - Zmass| < 10 GeV") << [](Superlink* /*sl*/) -> bool {
-            TLorentzVector ZlepsP4 = *m_ZLeps.at(0) + *m_ZLeps.at(1);
-            return fabs(ZlepsP4.M() - ZMASS) < 10;
+            TLorentzVector ZLepsP4 = *m_ZLeps.at(0) + *m_ZLeps.at(1);
+            return fabs(ZLepsP4.M() - ZMASS) < 10;
         };
     }
 }
 
 void add_4bcutflow_cuts(Superflow* sf) {
+    *sf << CutName("Error flags") << [](Superlink* sl) -> bool {
+        return (sl->tools->passLarErr(m_cutflags)
+                && sl->tools->passTileErr(m_cutflags)
+                && sl->tools->passSCTErr(m_cutflags)
+                && sl->tools->passTTC(m_cutflags));
+    };
+    *sf << CutName("pass Good Vertex") << [](Superlink * sl) -> bool {
+        return (sl->tools->passGoodVtx(m_cutflags));
+    };
+    *sf << CutName("pass Trigger") << [](Superlink * sl) -> bool {
+        return (sl->tools->triggerTool().passTrigger(sl->nt->evt()->trigBits, "HLT_e17_lhloose_nod0_mu14"));
+    };
+
+    *sf << CutName("pass cleaing") << [](Superlink* sl) -> bool {
+        return (sl->tools->passJetCleaning(sl->baseJets)
+                && sl->tools->passBadMuon(sl->preMuons));
+    };
     *sf << CutName("exactly two base leptons") << [](Superlink* /*sl*/) -> bool {
         return m_leps.size() == 2;
     };
@@ -892,6 +909,9 @@ void add_4bcutflow_cuts(Superflow* sf) {
         return passEta1 && passEta2;
     };
 
+    *sf << CutName("pass HLT_e17_lhloose_nod0_mu14") << [](Superlink* /*sl*/) -> bool {
+        return (m_triggerPass.at("HLT_e17_lhloose_nod0_mu14"));
+    };
 
     *sf << CutName("m_ll > 20 GeV") << [](Superlink* /*sl*/) -> bool {
         TLorentzVector dilepP4 = *m_leps.at(0) + *m_leps.at(1);
@@ -913,21 +933,31 @@ void add_4bcutflow_cuts(Superflow* sf) {
 
 void add_event_variables(Superflow* sf) {
     // Event weights
-    *sf << NewVar("event weight"); {
-        *sf << HFTname("eventweight");
-        *sf << [](Superlink* sl, var_double*) -> double { return sl->weights->product() * sl->nt->evt()->wPileup; };
-        *sf << SaveVar();
-    }
-
     *sf << NewVar("event weight (multi period)"); {
         *sf << HFTname("eventweight_multi");
-        *sf << [](Superlink* sl, var_double*) -> double { return sl->weights->product_multi() * sl->nt->evt()->wPileup; };
+        *sf << [](Superlink* sl, var_double*) -> double { 
+            return sl->weights->susynt_multi
+                 * sl->weights->lepSf
+                 * sl->weights->jvtSf
+                 * sl->weights->btagSf
+                 * sl->weights->trigSf
+                 * sl->nt->evt()->wPileup // multi-period pileup weight
+                 ; 
+        };
         *sf << SaveVar();
     }
 
     *sf << NewVar("event weight (single period)"); {
         *sf << HFTname("eventweight_single");
-        *sf << [](Superlink* sl, var_double*) -> double {return sl->weights->product() * sl->nt->evt()->wPileup / sl->nt->evt()->wPileup_period; };
+        *sf << [](Superlink* sl, var_double*) -> double {
+            return sl->weights->susynt
+                 * sl->weights->lepSf
+                 * sl->weights->jvtSf
+                 * sl->weights->btagSf
+                 * sl->weights->trigSf
+                 * (sl->nt->evt()->wPileup / sl->nt->evt()->wPileup_period)
+                 ; 
+        };
         *sf << SaveVar();
     }
 
@@ -995,7 +1025,7 @@ void add_event_variables(Superflow* sf) {
 
     *sf << NewVar("is Monte Carlo"); {
         *sf << HFTname("isMC");
-        *sf << [](Superlink* sl, var_bool*) -> bool { return sl->isMC ? true : false; };
+        *sf << [](Superlink* sl, var_bool*) -> bool { return sl->isMC; };
         *sf << SaveVar();
     }
 
@@ -1049,7 +1079,7 @@ void add_event_variables(Superflow* sf) {
     }
 
     *sf << NewVar("pT ordering of signal and inverted lepton types"); {
-        *sf << HFTname("nRecoLepOrderType");
+        *sf << HFTname("recoLepOrderType");
         *sf << [](Superlink* /*sl*/, var_int*) -> int { 
             bool l0isSig = false, l1isSig = false, l2isSig = false;
             bool l0isInv = false, l1isInv = false, l2isInv = false;
@@ -1084,7 +1114,7 @@ void add_event_variables(Superflow* sf) {
     }
     
     *sf << NewVar("pT ordering of prompt and fnp lepton types"); {
-        *sf << HFTname("nTruthLepOrderType");
+        *sf << HFTname("truthLepOrderType");
         *sf << [](Superlink* sl, var_int*) -> int { 
             if (!sl->isMC) return -1;
             bool l0isPmt = false, l1isPmt = false, l2isPmt = false;
@@ -1207,7 +1237,7 @@ void add_lepton_variables(Superflow* sf) {
     ADD_LEPTON_VARS(sigLep);
     ADD_LEPTON_VARS(invLep);
     ADD_LEPTON_VARS(ZLep);
-
+    ADD_LEPTON_VARS(probeLep);
     add_lepton_property_flags(sf);
     add_lepton_property_indexes(sf);
 }
@@ -1279,7 +1309,7 @@ void add_lepton_property_flags(Superflow* sf) {
         };
         *sf << SaveVar();
     }
-    *sf << NewVar("lepton is signal (i.e. ID)"); {
+    *sf << NewVar("lepton is inverted (i.e. Anti-ID)"); {
         *sf << HFTname("lepIsInv");
         *sf << [](Superlink* /*sl*/, var_int_array*) -> vector<int> {
             vector<int> out;
@@ -1551,13 +1581,13 @@ void add_dilepton_variables(Superflow* sf) {
     }
 
     *sf << NewVar("delta Eta of di-lepton system"); {
-        *sf << HFTname("deta_ll");
+        *sf << HFTname("dEta_ll");
         *sf << [](Superlink* /*sl*/, var_float*) -> double { return fabs(m_leps.at(0)->Eta() - m_leps.at(1)->Eta()); };
         *sf << SaveVar();
     }
 
     *sf << NewVar("delta Phi of di-lepton system"); {
-        *sf << HFTname("dphi_ll");
+        *sf << HFTname("dPhi_ll");
         *sf << [](Superlink* /*sl*/, var_float*) -> double { return fabs(m_leps.at(0)->DeltaPhi(*m_leps.at(1))); };
         *sf << SaveVar();
     }
@@ -1594,25 +1624,25 @@ void add_Zlepton_variables(Superflow* sf) {
     }
 
     *sf << NewVar("Pt difference of Z-tagged leptons"); {
-        *sf << HFTname("dpT_Zleps");
+        *sf << HFTname("dpT_ZLeps");
         *sf << [](Superlink* /*sl*/, var_float*) -> double { return m_ZLeps.at(0)->Pt() - m_ZLeps.at(1)->Pt(); };
         *sf << SaveVar();
     }
 
     *sf << NewVar("delta Eta of Z-tagged leptons"); {
-        *sf << HFTname("deta_Zleps");
+        *sf << HFTname("dEta_ZLeps");
         *sf << [](Superlink* /*sl*/, var_float*) -> double { return fabs(m_ZLeps.at(0)->Eta() - m_ZLeps.at(1)->Eta()); };
         *sf << SaveVar();
     }
 
     *sf << NewVar("delta Phi of Z-tagged leptons"); {
-        *sf << HFTname("dphi_Zleps");
+        *sf << HFTname("dPhi_ZLeps");
         *sf << [](Superlink* /*sl*/, var_float*) -> double { return fabs(m_ZLeps.at(0)->DeltaPhi(*m_ZLeps.at(1))); };
         *sf << SaveVar();
     }
 
     *sf << NewVar("delta R of Z-tagged leptons"); {
-        *sf << HFTname("dR_Zleps");
+        *sf << HFTname("dR_ZLeps");
         *sf << [](Superlink* /*sl*/, var_float*) -> double { return m_ZLeps.at(0)->DeltaR(*m_ZLeps.at(1)); };
         *sf << SaveVar();
     }
@@ -1621,7 +1651,7 @@ void add_Zlepton_variables(Superflow* sf) {
 void add_multi_object_variables(Superflow* sf) {
     // Jets and MET
     *sf << NewVar("delta Phi of leading jet and met"); {
-        *sf << HFTname("deltaPhi_met_jet1");
+        *sf << HFTname("dPhi_met_jet1");
         *sf << [](Superlink* sl, var_float*) -> double {
             return sl->jets->size() >= 1 ? sl->jets->at(0)->DeltaPhi(m_MET) : -DBL_MAX;
         };
@@ -1629,7 +1659,7 @@ void add_multi_object_variables(Superflow* sf) {
     }
 
     *sf << NewVar("delta Phi of subleading jet and met"); {
-        *sf << HFTname("deltaPhi_met_jet2");
+        *sf << HFTname("dPhi_met_jet2");
         *sf << [](Superlink* sl, var_float*) -> double {
             return sl->jets->size() >= 2 ? sl->jets->at(1)->DeltaPhi(m_MET) : -DBL_MAX;
         };
@@ -1742,73 +1772,73 @@ void add_Zll_probeLep_variables(Superflow* sf) {
     *sf << NewVar("Mlll: Invariant mass of 3lep system"); {
       *sf << HFTname("mlll");
       *sf << [](Superlink* /*sl*/, var_double*) -> double {
-          return (*m_ZLeps.at(0) + *m_ZLeps.at(1) + *m_probeLep).M();
+          return (*m_ZLeps.at(0) + *m_ZLeps.at(1) + *m_probeLeps.at(0)).M();
       };
       *sf << SaveVar();
     }
-    *sf << NewVar("DeltaR of probeLep1 and Zlep1"); {
+    *sf << NewVar("DeltaR of probeLep1 and ZLep1"); {
       *sf << HFTname("dR_ZLep1_probeLep1");
       *sf << [](Superlink* /*sl*/, var_double*) -> double {
-        return (*m_ZLeps.at(0)).DeltaR(*m_probeLep);
+        return (*m_ZLeps.at(0)).DeltaR(*m_probeLeps.at(0));
       };
       *sf << SaveVar();
     }
-    *sf << NewVar("DeltaR of probeLep1 and Zlep2"); {
+    *sf << NewVar("DeltaR of probeLep1 and ZLep2"); {
       *sf << HFTname("dR_ZLep2_probeLep1");
       *sf << [](Superlink* /*sl*/, var_double*) -> double {
-        return (*m_ZLeps.at(1)).DeltaR(*m_probeLep);
+        return (*m_ZLeps.at(1)).DeltaR(*m_probeLeps.at(0));
       };
       *sf << SaveVar();
     }
     *sf << NewVar("DeltaR of probeLep1 and Z"); {
       *sf << HFTname("dR_Z_probeLep1");
       *sf << [](Superlink* /*sl*/, var_double*) -> double {
-        TLorentzVector ZlepsP4 = *m_ZLeps.at(0) + *m_ZLeps.at(1);
-        return ZlepsP4.DeltaR(*m_probeLep);
+        TLorentzVector ZLepsP4 = *m_ZLeps.at(0) + *m_ZLeps.at(1);
+        return ZLepsP4.DeltaR(*m_probeLeps.at(0));
       };
       *sf << SaveVar();
     }
-    *sf << NewVar("DeltaPhi of probeLep1 and Zlep1"); {
+    *sf << NewVar("DeltaPhi of probeLep1 and ZLep1"); {
       *sf << HFTname("dPhi_ZLep1_probeLep1");
       *sf << [](Superlink* /*sl*/, var_double*) -> double {
-        return (*m_ZLeps.at(0)).DeltaPhi(*m_probeLep);
+        return (*m_ZLeps.at(0)).DeltaPhi(*m_probeLeps.at(0));
       };
       *sf << SaveVar();
     }
-    *sf << NewVar("DeltaPhi of probeLep1 and Zlep2"); {
+    *sf << NewVar("DeltaPhi of probeLep1 and ZLep2"); {
       *sf << HFTname("dPhi_ZLep2_probeLep1");
       *sf << [](Superlink* /*sl*/, var_double*) -> double {
-        return (*m_ZLeps.at(1)).DeltaPhi(*m_probeLep);
+        return (*m_ZLeps.at(1)).DeltaPhi(*m_probeLeps.at(0));
       };
       *sf << SaveVar();
     }
     *sf << NewVar("DeltaPhi of probeLep1 and Z"); {
       *sf << HFTname("dPhi_Z_probeLep1");
       *sf << [](Superlink* /*sl*/, var_double*) -> double {
-        TLorentzVector ZlepsP4 = *m_ZLeps.at(0) + *m_ZLeps.at(1);
-        return ZlepsP4.DeltaPhi(*m_probeLep);
+        TLorentzVector ZLepsP4 = *m_ZLeps.at(0) + *m_ZLeps.at(1);
+        return ZLepsP4.DeltaPhi(*m_probeLeps.at(0));
       };
       *sf << SaveVar();
     }
-    *sf << NewVar("DeltaEta of probeLep1 and Zlep1"); {
+    *sf << NewVar("DeltaEta of probeLep1 and ZLep1"); {
       *sf << HFTname("dEta_ZLep1_probeLep1");
       *sf << [](Superlink* /*sl*/, var_double*) -> double {
-        return m_probeLep->Eta() - m_ZLeps.at(0)->Eta() ;
+        return m_probeLeps.at(0)->Eta() - m_ZLeps.at(0)->Eta() ;
       };
       *sf << SaveVar();
     }
-    *sf << NewVar("DeltaEta of probeLep1 and Zlep2"); {
+    *sf << NewVar("DeltaEta of probeLep1 and ZLep2"); {
       *sf << HFTname("dEta_ZLep2_probeLep1");
       *sf << [](Superlink* /*sl*/, var_double*) -> double {
-        return m_probeLep->Eta() - m_ZLeps.at(1)->Eta() ;
+        return m_probeLeps.at(0)->Eta() - m_ZLeps.at(1)->Eta() ;
       };
       *sf << SaveVar();
     }
     *sf << NewVar("DeltaEta of probeLep1 and Z"); {
       *sf << HFTname("dEta_Z_probeLep1");
       *sf << [](Superlink* /*sl*/, var_double*) -> double {
-        TLorentzVector ZlepsP4 = *m_ZLeps.at(0) + *m_ZLeps.at(1);
-        return m_probeLep->Eta() - ZlepsP4.Eta() ;
+        TLorentzVector ZLepsP4 = *m_ZLeps.at(0) + *m_ZLeps.at(1);
+        return m_probeLeps.at(0)->Eta() - ZLepsP4.Eta() ;
       };
       *sf << SaveVar();
     }
@@ -1899,7 +1929,7 @@ int to_int(IFF::Type t) {
         case IFF::Type::KnownUnknown:             return 1;
         case IFF::Type::PromptElectron:           return 2;
         case IFF::Type::ChargeFlipPromptElectron: return 3;
-        case IFF::Type::NonPromptIsoElectron:     return 4;
+        case IFF::Type::NonPromptPhotonConv:      return 4;
         case IFF::Type::PromptMuon:               return 5;
         case IFF::Type::PromptPhotonConversion:   return 6;
         case IFF::Type::ElectronFromMuon:         return 7;
