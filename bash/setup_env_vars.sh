@@ -28,8 +28,7 @@ export SF_EXEC="SuperflowAnaStop2L"
 export CONDOR_EXEC="${SF_EXEC}"
 
 # Sum of weights file for use in multi-period processing
-#export SUMW_FILE="${SUSYNT_DIR}/data/sumw_file.root"
-export SUMW_FILE="${RUN_DIR}/sumw_files/sumw_file_mc16ade.root"
+#export SUMW_FILE="${RUN_DIR}/sumw_files/sumw_mc16ade.root"
 
 # Directory for dumping the output of batch jobs
 export BATCH_OUTPUT_DIR="${RUN_DIR}/batch/condor_output"

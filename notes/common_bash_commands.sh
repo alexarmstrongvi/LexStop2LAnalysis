@@ -1,9 +1,9 @@
-python submit_to_condor.py ../lists/file_lists_prefixed/*/*txt --selection zjets3l `cat ../../source/LexStop2LAnalysis/notes/samples_to_split.txt` -o output/SuperflowAnaStop2l_zjets3l --tar-file output/SuperflowAnaStop2l_zjets3l/area.tgz
-python submit_to_condor.py ../lists/file_lists_prefixed/*/*txt --selection fake_zjets3l `cat ../../source/LexStop2LAnalysis/notes/samples_to_split.txt` -o output/SuperflowAnaStop2l_zjets3l_den --tar-file output/SuperflowAnaStop2l_zjets3l_den/area.tgz
-python submit_to_condor.py ../lists/file_lists_prefixed/data*/*txt --selection fake_zjets3l -o output/tmp --tar-file output/tmp/area.tgz
-python submit_to_condor.py ../lists/file_lists_prefixed/*/*txt --selection zjets2l_inc `cat ../../source/LexStop2LAnalysis/notes/samples_to_split.txt` -o output/SuperflowAnaStop2l_zjets2l_inc --tar-file output/SuperflowAnaStop2l_zjets2l_inc/area.tgz
+python submit_to_condor.py sample_lists/fax_links/*txt --selection zjets3l `cat ../../source/LexStop2LAnalysis/notes/samples_to_split.txt` -o outputs/zjets3l --tar-file outputs/zjets3l/area.tgz
+python submit_to_condor.py sample_lists/fax_links/*txt --selection fake_zjets3l `cat ../../source/LexStop2LAnalysis/notes/samples_to_split.txt` -o outputs/zjets3l_den --tar-file outputs/zjets3l_den/area.tgz
+python submit_to_condor.py sample_lists/fax_links/*data*/*txt --selection fake_zjets3l -o outputs/tmp --tar-file outputs/tmp/area.tgz
+python submit_to_condor.py sample_lists/fax_links/*txt --selection zjets2l_inc `cat ../../source/LexStop2LAnalysis/notes/samples_to_split.txt` -o outputs/zjets2l_inc --tar-file outputs/zjets2l_inc/area.tgz
 # Sumw submit
-python submit_to_condor.py ../lists/file_lists_prefixed/mc16*/*txt --exec grabSumw -o sumw_output/
+python submit_to_condor.py sample_lists/fax_links/*mc16*/*txt --exec grabSumw -o sumw_output/
 
 # Building prefixed filelists from base names
 for f in */*txt; do sed 's;/group/phys-susy;root://fax.mwt2.org:1094//pnfs/uchicago.edu/atlaslocalgroupdisk/rucio/group/phys-susy;g' $f > ../../file_lists_prefixed/$f; done

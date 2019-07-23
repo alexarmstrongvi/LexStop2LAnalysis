@@ -49,12 +49,3 @@ foreach(file ${files})
 endforeach()
 
 atlas_install_data( data/* )
-
-atlas_add_test( test_addFakeFactor
-    SOURCES test/test_addFakeFactor.cxx
-    INCLUDE_DIRS ${ROOT_INCLUDE_DIRS}
-    LINK_LIBRARIES ${ROOT_LIBRARIES} AsgTools
-)
-atlas_add_test( test_addFakeFactorSH
-    SCRIPT test/test_addFakeFactor.sh
-)
