@@ -19,6 +19,8 @@ using std::string;
 #include <getopt.h>
 #include <map>
 using std::map;
+#include <utility>
+using std::pair;
 
 // ROOT
 #include "TChain.h"
@@ -101,10 +103,10 @@ void add_shape_systematics(Superflow* sf);
 // Selections (set with user input)
 // Formatting: m_<region>_<SF/DF>_<den>
 bool m_baseline_DF = false;
-bool m_baseline_SF = false;
+bool m_baseline_SS = false;
+bool m_baseline_SS_den = false;
 bool m_zjets_3l = false;
 bool m_fake_baseline_DF = false;
-bool m_fake_baseline_SF= false;
 bool m_fake_zjets_3l = false;
 bool m_zjets2l_inc = false;
 
@@ -128,10 +130,184 @@ static LeptonVector m_fnpInvLeps;
 
 static LeptonVector m_ZLeps;
 static LeptonVector m_probeLeps;
+static int m_ztagged_idx1;
+static int m_ztagged_idx2;
+static int m_probeLep_idx;
+static int m_trigLep_idx0;
+static int m_trigLep_idx1;
+static string m_firedTrig;
+static map< uint, vector<string> > m_single_ele_trigs {
+    { 2015, {
+        "HLT_e120_lhloose",
+        "HLT_e60_lhmedium",
+        "HLT_e24_lhmedium_L1EM20VH"
+    } },
+    { 2016, {
+        "HLT_e140_lhloose_nod0",
+        "HLT_e60_lhmedium_nod0",
+        "HLT_e26_lhtight_nod0_ivarloose"
+    } },
+    { 2017, {
+        "HLT_e140_lhloose_nod0",
+        "HLT_e60_lhmedium_nod0",
+        "HLT_e26_lhtight_nod0_ivarloose"
+    } },
+    { 2018, {
+        "HLT_e140_lhloose_nod0",
+        "HLT_e60_lhmedium_nod0",
+        "HLT_e26_lhtight_nod0_ivarloose"
+    } }
+};
+static map< uint, vector<string> > m_single_mu_trigs {
+    { 2015, {
+        "HLT_mu40",
+        "HLT_mu20_iloose_L1MU15"
+    } },
+    { 2016, {
+        "HLT_mu50",
+        "HLT_mu26_ivarmedium"
+    } },
+    { 2017, {
+        "HLT_mu50",
+        "HLT_mu26_ivarmedium"
+    } },
+    { 2018, {
+        "HLT_mu50",
+        "HLT_mu26_ivarmedium",
+    } }
+};
+static map< uint, vector<string> > m_dielectron_trigs {
+    { 2015, {
+        "HLT_2e12_lhloose_L12EM10VH"
+    } },
+    { 2016, {
+        "HLT_2e17_lhvloose_nod0"
+    } },
+    { 2017, {
+        "HLT_2e24_lhvloose_nod0"
+    } },
+    { 2018, {
+        "HLT_2e24_lhvloose_nod0",
+        "HLT_2e17_lhvloose_nod0_L12EM15VHI"
+    } }
+};
+static map< uint, vector<string> > m_dimuon_trigs {
+    { 2015, {
+        "HLT_2mu10",
+        "HLT_mu18_mu8noL1"
+    } },
+    { 2016, {
+        "HLT_2mu14",
+        "HLT_mu22_mu8noL1"
+    } },
+    { 2017, {
+        "HLT_2mu14",
+        "HLT_mu22_mu8noL1"
+    } },
+    { 2018, {
+        "HLT_2mu14",
+        "HLT_mu22_mu8noL1"
+    } },
+};
+static map< uint, vector<string> > m_diff_flav_trigs {
+    { 2015, {
+        "HLT_e17_lhloose_mu14",
+        "HLT_e7_lhmedium_mu24"
+    } },
+    { 2016, {
+        "HLT_e26_lhmedium_nod0_L1EM22VHI_mu8noL1",
+        "HLT_e17_lhloose_nod0_mu14",
+        "HLT_e7_lhmedium_nod0_mu24"
+    } },
+    { 2017, {
+        "HLT_e26_lhmedium_nod0_mu8noL1",
+        "HLT_e17_lhloose_nod0_mu14",
+        "HLT_e7_lhmedium_nod0_mu24"
+    } },
+    { 2018, {
+        "HLT_e26_lhmedium_nod0_mu8noL1",
+        "HLT_e17_lhloose_nod0_mu14",
+        "HLT_e7_lhmedium_nod0_mu24"
+    } },
+};
+static map<string, float> m_single_lep_pT_thresholds = {
+    // Electron
+    // 2015
+    {"HLT_e24_lhmedium_L1EM20VH", 25},
+    {"HLT_e60_lhmedium", 61},
+    {"HLT_e120_lhloose", 121},
+    // 2016-2018
+    {"HLT_e26_lhtight_nod0_ivarloose", 27},
+    {"HLT_e60_lhmedium_nod0", 61},
+    {"HLT_e140_lhloose_nod0", 141},
 
-static Susy::Electron *m_el0, *m_el1;
-static Susy::Muon *m_mu0, *m_mu1;
-static LeptonVector m_triggerLeptons;
+    // Muon
+    // 2015
+    {"HLT_mu20_iloose_L1MU15", 21},
+    {"HLT_mu40", 41},
+    // 2016-2018
+    {"HLT_mu26_ivarmedium", 27},
+    {"HLT_mu50", 51},
+};
+static map<string, pair<float,float>> m_dilepton_pT_thresholds = {
+    // Electron-Electron
+    // 2015
+    {"HLT_2e12_lhloose_L12EM10VH", std::make_pair(13, 13)},
+    // 2016
+    {"HLT_2e17_lhvloose_nod0", std::make_pair(18, 18)},
+    // 2017-2018
+    {"HLT_2e24_lhvloose_nod0", std::make_pair(25, 25)},
+    // 2018
+    {"HLT_2e17_lhvloose_nod0_L12EM15VHI", std::make_pair(18, 18)},
+
+    // Muon-Muon
+    // 2015
+    {"HLT_2mu10", std::make_pair(11, 11)},
+    {"HLT_mu18_mu8noL1", std::make_pair(19, 9)},
+    // 2016-2018
+    {"HLT_2mu14", std::make_pair(15, 15)},
+    {"HLT_mu22_mu8noL1", std::make_pair(23, 9)},
+
+    // Different flavor
+    // 2015
+    {"HLT_e17_lhloose_mu14", std::make_pair(18, 15)},
+    {"HLT_e7_lhmedium_mu24",std::make_pair( 8, 25)},
+    // 2016
+    {"HLT_e26_lhmedium_nod0_L1EM22VHI_mu8noL1", std::make_pair(27, 9)},
+    // 2016-2018
+    {"HLT_e17_lhloose_nod0_mu14", std::make_pair(18, 15)},
+    {"HLT_e7_lhmedium_nod0_mu24",std::make_pair( 8, 25)},
+    // 2017-2018
+    {"HLT_e26_lhmedium_nod0_mu8noL1", std::make_pair(27, 9)},
+};
+static map<string, uint> m_trig_enum = {
+    {"HLT_e120_lhloose",                          1},
+    {"HLT_e60_lhmedium",                          2},
+    {"HLT_e24_lhmedium_L1EM20VH",                 3},
+    {"HLT_e140_lhloose_nod0",                     4},
+    {"HLT_e60_lhmedium_nod0",                     5},
+    {"HLT_e26_lhtight_nod0_ivarloose",            6},
+    {"HLT_mu40",                                  7},
+    {"HLT_mu20_iloose_L1MU15",                    8},
+    {"HLT_mu50",                                  9},
+    {"HLT_mu26_ivarmedium",                      10},
+    {"HLT_2e12_lhloose_L12EM10VH",               11},
+    {"HLT_2e17_lhvloose_nod0",                   12},
+    {"HLT_2e24_lhvloose_nod0",                   13},
+    {"HLT_2e17_lhvloose_nod0_L12EM15VHI",        14},
+    {"HLT_mu18_mu8noL1",                         15},
+    {"HLT_2mu10",                                16},
+    {"HLT_mu22_mu8noL1",                         17},
+    {"HLT_2mu14",                                18},
+    {"HLT_e17_lhloose_mu14",                     19},
+    {"HLT_e7_lhmedium_mu24",                     20},
+    {"HLT_e26_lhmedium_nod0_L1EM22VHI_mu8noL1",  21},
+    {"HLT_e17_lhloose_nod0_mu14",                22},
+    {"HLT_e7_lhmedium_nod0_mu24",                23},
+    {"HLT_e26_lhmedium_nod0_mu8noL1",            24}
+};
+
+
 static map<string, bool> m_triggerPass;
 
 static IFFTruthClassifier m_truthClassifier("truthClassifier");
@@ -146,6 +322,7 @@ bool isInverted(const Susy::Lepton* lepton, Superlink* sl);
 bool isInverted(const Susy::Lepton* lepton);
 bool isPrompt(Susy::Lepton* lepton);
 bool isFNP(Susy::Lepton* lepton);
+bool isUnknownTruth(Susy::Lepton* lepton);
 void add_lepton_property_flags(Superflow* sf);
 void add_lepton_property_indexes(Superflow* sf);
 void add_mc_lepton_property_flags(Superflow* sf);
@@ -155,7 +332,7 @@ const xAOD::Electron* to_iff_aod_electron(Susy::Electron& ele);
 const xAOD::Muon* to_iff_aod_muon(Susy::Muon& muo);
 int to_int(IFF::Type t);
 
-bool is_1lep_trig_matched(Superlink* sl, string trig_name, LeptonVector leptons, float pt_min = 0);
+bool is_1lep_trig_matched(Superlink* sl, string trig_name, Susy::Lepton* lep, float pt_min = 0);
 bool is_2lep_trig_matched(Superlink* sl, string trig_name, Susy::Lepton* lep1, Susy::Lepton* lep2, float pt_min1 = 0, float pt_min2 = 0);
 #define ADD_LEP_TRIGGER_VAR(trig_name) { \
     *sf << NewVar(#trig_name" trigger bit"); { \
@@ -207,6 +384,22 @@ bool is_2lep_trig_matched(Superlink* sl, string trig_name, Susy::Lepton* lep1, S
         *sf << [](Superlink* /*sl*/, var_float_array*) -> vector<double> { \
             vector<double> out; \
             for(const auto& l : m_##lep_name##s) { out.push_back( l->Eta() ); } \
+            return out; \
+        }; \
+        *sf << SaveVar(); \
+    } \
+    *sf << NewVar(#lep_name" clusBE2 eta"); { \
+        *sf << HFTname(#lep_name"ClusEtaBE"); \
+        *sf << [](Superlink* /*sl*/, var_float_array*) -> vector<double> { \
+            vector<double> out; \
+            for(const auto& l : m_##lep_name##s) { \
+                if (l->isEle()) { \
+                    auto el = static_cast<Susy::Electron*>(l); \
+                    out.push_back(el->clusEtaBE); \
+                } else { \
+                    out.push_back(l->Eta()); \
+                } \
+            } \
             return out; \
         }; \
         *sf << SaveVar(); \
@@ -290,17 +483,202 @@ bool is_2lep_trig_matched(Superlink* sl, string trig_name, Susy::Lepton* lep1, S
         }; \
         *sf << SaveVar(); \
     } \
+    *sf << NewVar("dR between "#lep_name" and closest lep"); { \
+        *sf << HFTname("dR_lep_"#lep_name); \
+        *sf << [](Superlink* /*sl*/, var_float_array*) -> vector<double> { \
+            vector<double> out; \
+            for(const auto& l : m_##lep_name##s) { \
+                double dR = m_leps.size() ? DBL_MAX : -DBL_MAX; \
+                for (Susy::Lepton* l2 : m_leps) { \
+                    if (l2 == l) continue; \
+                    float tmp_dR = fabs(l2->DeltaR(*l)); \
+                    if (tmp_dR < dR) dR = tmp_dR; \
+                } \
+                out.push_back( fabs(dR) ); \
+            } \
+            return out; \
+        }; \
+        *sf << SaveVar(); \
+    } \
     *sf << NewVar("dR between "#lep_name" and closest jet"); { \
         *sf << HFTname("dR_jet_"#lep_name); \
         *sf << [](Superlink* sl, var_float_array*) -> vector<double> { \
             vector<double> out; \
             for(const auto& l : m_##lep_name##s) { \
-                double dPhi = sl->jets->size() ? DBL_MAX : -DBL_MAX; \
+                double dR = sl->jets->size() ? DBL_MAX : -DBL_MAX; \
                 for (Susy::Jet* jet : *sl->jets) { \
-                    float tmp_dphi = fabs(jet->DeltaPhi(*l)); \
-                    if (tmp_dphi < dPhi) dPhi = tmp_dphi; \
+                    float tmp_dR = fabs(jet->DeltaR(*l)); \
+                    if (tmp_dR < dR) dR = tmp_dR; \
+                } \
+                out.push_back( fabs(dR) ); \
+            } \
+            return out; \
+        }; \
+        *sf << SaveVar(); \
+    } \
+    *sf << NewVar("dR between "#lep_name" and closest b-jet"); { \
+        *sf << HFTname("dR_bjet_"#lep_name); \
+        *sf << [](Superlink* sl, var_float_array*) -> vector<double> { \
+            vector<double> out; \
+            for(const auto& l : m_##lep_name##s) { \
+                double dR = sl->tools->numberOfBJets(*sl->jets) ? DBL_MAX : -DBL_MAX; \
+                for (Susy::Jet* jet : *sl->jets) { \
+                    if (!sl->tools->jetSelector().isBJet(jet)) continue; \
+                    float tmp_dR = fabs(jet->DeltaR(*l)); \
+                    if (tmp_dR < dR) dR = tmp_dR; \
+                } \
+                out.push_back( fabs(dR) ); \
+            } \
+            return out; \
+        }; \
+        *sf << SaveVar(); \
+    } \
+    *sf << NewVar("dR between "#lep_name" and closest non b-jet"); { \
+        *sf << HFTname("dR_nonbjet_"#lep_name); \
+        *sf << [](Superlink* sl, var_float_array*) -> vector<double> { \
+            vector<double> out; \
+            for(const auto& l : m_##lep_name##s) { \
+                double dR = sl->jets->size() ? DBL_MAX : -DBL_MAX; \
+                for (Susy::Jet* jet : *sl->jets) { \
+                    if (sl->tools->jetSelector().isBJet(jet)) continue; \
+                    float tmp_dR = fabs(jet->DeltaR(*l)); \
+                    if (tmp_dR < dR) dR = tmp_dR; \
+                } \
+                out.push_back( fabs(dR) ); \
+            } \
+            return out; \
+        }; \
+        *sf << SaveVar(); \
+    } \
+    *sf << NewVar("dPhi between "#lep_name" and closest lep"); { \
+        *sf << HFTname("dPhi_lep_"#lep_name); \
+        *sf << [](Superlink* /*sl*/, var_float_array*) -> vector<double> { \
+            vector<double> out; \
+            for(const auto& l : m_##lep_name##s) { \
+                double dPhi = m_leps.size() ? DBL_MAX : -DBL_MAX; \
+                for (Susy::Lepton* l2 : m_leps) { \
+                    if (l2 == l) continue; \
+                    float tmp_dPhi = fabs(l2->DeltaPhi(*l)); \
+                    if (tmp_dPhi < dPhi) dPhi = tmp_dPhi; \
                 } \
                 out.push_back( fabs(dPhi) ); \
+            } \
+            return out; \
+        }; \
+        *sf << SaveVar(); \
+    } \
+    *sf << NewVar("dPhi between "#lep_name" and closest jet"); { \
+        *sf << HFTname("dPhi_jet_"#lep_name); \
+        *sf << [](Superlink* sl, var_float_array*) -> vector<double> { \
+            vector<double> out; \
+            for(const auto& l : m_##lep_name##s) { \
+                double dPhi = sl->jets->size() ? DBL_MAX : -DBL_MAX; \
+                for (Susy::Jet* jet : *sl->jets) { \
+                    float tmp_dPhi = fabs(jet->DeltaPhi(*l)); \
+                    if (tmp_dPhi < dPhi) dPhi = tmp_dPhi; \
+                } \
+                out.push_back( fabs(dPhi) ); \
+            } \
+            return out; \
+        }; \
+        *sf << SaveVar(); \
+    } \
+    *sf << NewVar("dPhi between "#lep_name" and closest b-jet"); { \
+        *sf << HFTname("dPhi_bjet_"#lep_name); \
+        *sf << [](Superlink* sl, var_float_array*) -> vector<double> { \
+            vector<double> out; \
+            for(const auto& l : m_##lep_name##s) { \
+                double dPhi = sl->tools->numberOfBJets(*sl->jets) ? DBL_MAX : -DBL_MAX; \
+                for (Susy::Jet* jet : *sl->jets) { \
+                    if (!sl->tools->jetSelector().isBJet(jet)) continue; \
+                    float tmp_dPhi = fabs(jet->DeltaPhi(*l)); \
+                    if (tmp_dPhi < dPhi) dPhi = tmp_dPhi; \
+                } \
+                out.push_back( fabs(dPhi) ); \
+            } \
+            return out; \
+        }; \
+        *sf << SaveVar(); \
+    } \
+    *sf << NewVar("dPhi between "#lep_name" and closest non b-jet"); { \
+        *sf << HFTname("dPhi_nonbjet_"#lep_name); \
+        *sf << [](Superlink* sl, var_float_array*) -> vector<double> { \
+            vector<double> out; \
+            for(const auto& l : m_##lep_name##s) { \
+                double dPhi = sl->jets->size() ? DBL_MAX : -DBL_MAX; \
+                for (Susy::Jet* jet : *sl->jets) { \
+                    if (sl->tools->jetSelector().isBJet(jet)) continue; \
+                    float tmp_dPhi = fabs(jet->DeltaPhi(*l)); \
+                    if (tmp_dPhi < dPhi) dPhi = tmp_dPhi; \
+                } \
+                out.push_back( fabs(dPhi) ); \
+            } \
+            return out; \
+        }; \
+        *sf << SaveVar(); \
+    } \
+    *sf << NewVar("dEta between "#lep_name" and closest lep"); { \
+        *sf << HFTname("dEta_lep_"#lep_name); \
+        *sf << [](Superlink* /*sl*/, var_float_array*) -> vector<double> { \
+            vector<double> out; \
+            for(const auto& l : m_##lep_name##s) { \
+                double dEta = m_leps.size() ? DBL_MAX : -DBL_MAX; \
+                for (Susy::Lepton* l2 : m_leps) { \
+                    if (l2 == l) continue; \
+                    float tmp_dEta = fabs(l2->Eta() - l->Eta()); \
+                    if (tmp_dEta < dEta) dEta = tmp_dEta; \
+                } \
+                out.push_back( fabs(dEta) ); \
+            } \
+            return out; \
+        }; \
+        *sf << SaveVar(); \
+    } \
+    *sf << NewVar("dEta between "#lep_name" and closest jet"); { \
+        *sf << HFTname("dEta_jet_"#lep_name); \
+        *sf << [](Superlink* sl, var_float_array*) -> vector<double> { \
+            vector<double> out; \
+            for(const auto& l : m_##lep_name##s) { \
+                double dEta = sl->jets->size() ? DBL_MAX : -DBL_MAX; \
+                for (Susy::Jet* jet : *sl->jets) { \
+                    float tmp_dEta = fabs(jet->Eta() - l->Eta()); \
+                    if (tmp_dEta < dEta) dEta = tmp_dEta; \
+                } \
+                out.push_back( fabs(dEta) ); \
+            } \
+            return out; \
+        }; \
+        *sf << SaveVar(); \
+    } \
+    *sf << NewVar("dEta between "#lep_name" and closest b-jet"); { \
+        *sf << HFTname("dEta_bjet_"#lep_name); \
+        *sf << [](Superlink* sl, var_float_array*) -> vector<double> { \
+            vector<double> out; \
+            for(const auto& l : m_##lep_name##s) { \
+                double dEta = sl->tools->numberOfBJets(*sl->jets) ? DBL_MAX : -DBL_MAX; \
+                for (Susy::Jet* jet : *sl->jets) { \
+                    if (!sl->tools->jetSelector().isBJet(jet)) continue; \
+                    float tmp_dEta = fabs(jet->Eta() - l->Eta()); \
+                    if (tmp_dEta < dEta) dEta = tmp_dEta; \
+                } \
+                out.push_back( fabs(dEta) ); \
+            } \
+            return out; \
+        }; \
+        *sf << SaveVar(); \
+    } \
+    *sf << NewVar("dEta between "#lep_name" and closest non b-jet"); { \
+        *sf << HFTname("dEta_nonbjet_"#lep_name); \
+        *sf << [](Superlink* sl, var_float_array*) -> vector<double> { \
+            vector<double> out; \
+            for(const auto& l : m_##lep_name##s) { \
+                double dEta = sl->jets->size() ? DBL_MAX : -DBL_MAX; \
+                for (Susy::Jet* jet : *sl->jets) { \
+                    if (sl->tools->jetSelector().isBJet(jet)) continue; \
+                    float tmp_dEta = fabs(jet->Eta() - l->Eta()); \
+                    if (tmp_dEta < dEta) dEta = tmp_dEta; \
+                } \
+                out.push_back( fabs(dEta) ); \
             } \
             return out; \
         }; \
@@ -379,18 +757,18 @@ int main(int argc, char* argv[])
     if (options.ana_selection == "baseline_DF") {
         m_baseline_DF = true;
         cout << "INFO :: Running baseline DF selections\n";
-    } else if (options.ana_selection == "baseline_SF") {
-        m_baseline_SF = true;
+    } else if (options.ana_selection == "baseline_SS") {
+        m_baseline_SS = true;
         cout << "INFO :: Running baseline SF selections\n";
+    } else if (options.ana_selection == "baseline_SS_den") {
+        m_baseline_SS_den = true;
+        cout << "INFO :: Running baseline SF denominator selections\n";
     } else if (options.ana_selection == "zjets3l") {
         m_zjets_3l = true;
         cout << "INFO :: Running Z+jets selections\n";
     } else if (options.ana_selection == "fake_baseline_DF") {
         m_fake_baseline_DF = true;
         cout << "INFO :: Running baseline DF denominator selections\n";
-    } else if (options.ana_selection == "fake_baseline_SF") {
-        m_fake_baseline_SF = true;
-        cout << "INFO :: Running baseline SF denominator selections\n";
     } else if (options.ana_selection == "fake_zjets3l") {
         m_fake_zjets_3l = true;
         cout << "INFO :: Running Z+jets denominator selections\n";
@@ -436,7 +814,7 @@ int main(int argc, char* argv[])
     add_jet_variables(superflow);
     add_met_variables(superflow);
     add_dilepton_variables(superflow);
-    if (m_baseline_DF || m_baseline_SF || m_fake_baseline_DF || m_fake_baseline_SF) {
+    if (m_baseline_DF || m_baseline_SS || m_baseline_SS_den || m_fake_baseline_DF) {
         add_jigsaw_variables(superflow);
     } else if (m_zjets_3l || m_fake_zjets_3l || m_zjets2l_inc) {
         add_Zlepton_variables(superflow);
@@ -449,7 +827,7 @@ int main(int argc, char* argv[])
 
     // Systematics
     add_weight_systematics(superflow);
-    //add_shape_systematics(superflow);
+    add_shape_systematics(superflow);
 
     // Run Superflow
     chain->Process(superflow, options.input.c_str(), options.n_events_to_process);
@@ -481,6 +859,7 @@ Superflow* create_new_superflow(SFOptions sf_options, TChain* chain) {
     sf->setCountWeights(m_print_weighted_cutflow);
     sf->setChain(chain);
     sf->setDebug(sf_options.dbg);
+    sf->setOutput(sf_options.output_name);
     sf->nttools().initTriggerTool(ChainHelper::firstFile(sf_options.input, 0.0));
     if(sf_options.suffix_name != "") {
         sf->setFileSuffix(sf_options.suffix_name);
@@ -516,9 +895,6 @@ bool set_global_variables(Superflow* sf) {
         m_fnpInvLeps.clear();
         m_ZLeps.clear();
         m_probeLeps.clear();
-        m_el0 = m_el1 = 0;
-        m_mu0 = m_mu1 = 0;
-        m_triggerLeptons.clear();
         m_triggerPass.clear();
 
         ////////////////////////////////////////////////////////////////////////
@@ -567,8 +943,8 @@ bool set_global_variables(Superflow* sf) {
                 }
             }
         }
-        int ztagged_idx1 = -1;
-        int ztagged_idx2 = -1;
+        m_ztagged_idx1 = -1;
+        m_ztagged_idx2 = -1;
         if (m_sigLeps.size() >= 2) {
             float Z_diff = FLT_MAX;
             for (uint ii = 0; ii < m_sigLeps.size(); ++ii) {
@@ -581,113 +957,108 @@ bool set_global_variables(Superflow* sf) {
                     float Z_diff_cf = fabs((*lep_ii+*lep_jj).M() - ZMASS);
                     if (Z_diff_cf < Z_diff) {
                         Z_diff = Z_diff_cf;
-                        ztagged_idx1 = ii;
-                        ztagged_idx2 = jj;
+                        m_ztagged_idx1 = ii;
+                        m_ztagged_idx2 = jj;
                     }
                 }
             }
         }
-        bool ztagged = ztagged_idx1 >= 0 && ztagged_idx2 >=0;
+        bool ztagged = m_ztagged_idx1 >= 0 && m_ztagged_idx2 >=0;
+        LeptonVector prefTrigLeptons;
+        LeptonVector allTrigLeptons;
+        allTrigLeptons.reserve(m_sigLeps.size() + m_invLeps.size());
+        allTrigLeptons.insert( allTrigLeptons.end(), m_sigLeps.begin(), m_sigLeps.end() );
+        allTrigLeptons.insert( allTrigLeptons.end(), m_invLeps.begin(), m_invLeps.end() );
         // Define region specific globals
-        if ((m_baseline_DF || m_baseline_SF) && m_sigLeps.size() == 2) {
-            m_triggerLeptons.push_back(m_sigLeps.at(0));
-            m_triggerLeptons.push_back(m_sigLeps.at(1));
-        } else if ((m_fake_baseline_DF || m_fake_baseline_SF) && m_sigLeps.size() == 1 && m_invLeps.size() == 1) {
-            m_triggerLeptons.push_back(m_sigLeps.at(0));
-            // TODO: Cannot use dilepton triggers without introducing trigger bias
+        if ((m_baseline_DF || m_baseline_SS) && m_sigLeps.size() == 2) {
+            prefTrigLeptons = m_sigLeps;
+        } else if ((m_fake_baseline_DF || m_baseline_SS_den) && m_sigLeps.size() == 1 && m_invLeps.size() == 1) {
+            prefTrigLeptons = m_sigLeps;
         } else if (m_zjets_3l && m_sigLeps.size() == 3 && ztagged) {
-            m_ZLeps.push_back( m_sigLeps.at(ztagged_idx1) );
-            m_ZLeps.push_back( m_sigLeps.at(ztagged_idx2) );
-            int probeLep_idx = -1;
-            if      (ztagged_idx1 != 0 && ztagged_idx2 != 0) { probeLep_idx = 0; }
-            else if (ztagged_idx1 != 1 && ztagged_idx2 != 1) { probeLep_idx = 1; }
-            else if (ztagged_idx1 != 2 && ztagged_idx2 != 2) { probeLep_idx = 2; }
-            m_probeLeps.push_back(m_sigLeps.at(probeLep_idx));
-            m_triggerLeptons.push_back(m_ZLeps.at(0));
-            m_triggerLeptons.push_back(m_ZLeps.at(1));
+            m_ZLeps.push_back( m_sigLeps.at(m_ztagged_idx1) );
+            m_ZLeps.push_back( m_sigLeps.at(m_ztagged_idx2) );
+            m_probeLep_idx = -1;
+            if      (m_ztagged_idx1 != 0 && m_ztagged_idx2 != 0) { m_probeLep_idx = 0; }
+            else if (m_ztagged_idx1 != 1 && m_ztagged_idx2 != 1) { m_probeLep_idx = 1; }
+            else if (m_ztagged_idx1 != 2 && m_ztagged_idx2 != 2) { m_probeLep_idx = 2; }
+            m_probeLeps.push_back(m_sigLeps.at(m_probeLep_idx));
+            prefTrigLeptons.push_back(m_ZLeps.at(0));
+            prefTrigLeptons.push_back(m_ZLeps.at(1));
         } else if (m_fake_zjets_3l && m_sigLeps.size() == 2 && m_invLeps.size() == 1 && ztagged) {
             m_ZLeps = m_sigLeps;
             m_probeLeps.push_back(m_invLeps.at(0));
-            m_triggerLeptons.push_back(m_ZLeps.at(0));
-            m_triggerLeptons.push_back(m_ZLeps.at(1));
+            m_probeLep_idx = -1;
+            if      (m_ztagged_idx1 != 0 && m_ztagged_idx2 != 0) { m_probeLep_idx = 0; }
+            else if (m_ztagged_idx1 != 1 && m_ztagged_idx2 != 1) { m_probeLep_idx = 1; }
+            else if (m_ztagged_idx1 != 2 && m_ztagged_idx2 != 2) { m_probeLep_idx = 2; }
+            prefTrigLeptons.push_back(m_ZLeps.at(0));
+            prefTrigLeptons.push_back(m_ZLeps.at(1));
         } else if (m_zjets2l_inc && m_sigLeps.size() >= 2 && ztagged) {
-            m_ZLeps.push_back( m_sigLeps.at(ztagged_idx1) );
-            m_ZLeps.push_back( m_sigLeps.at(ztagged_idx2) );
-            m_triggerLeptons.push_back(m_ZLeps.at(0));
-            m_triggerLeptons.push_back(m_ZLeps.at(1));
+            m_ZLeps.push_back( m_sigLeps.at(m_ztagged_idx1) );
+            m_ZLeps.push_back( m_sigLeps.at(m_ztagged_idx2) );
+            prefTrigLeptons.push_back(m_ZLeps.at(0));
+            prefTrigLeptons.push_back(m_ZLeps.at(1));
         } else {
             // These events should be removed by the cutflow requirements
             // Need to define ZLeps to be apply some selection though
             m_ZLeps = m_sigLeps;
+            allTrigLeptons.clear();
         }
-        // Set globals for dilepton trigger matching
-        for (Susy::Lepton* lep : m_triggerLeptons) {
-            if (lep->isEle()) {
-                if (!m_el0) m_el0 = static_cast<Susy::Electron*>(lep);
-                else if (!m_el1) m_el1 = static_cast<Susy::Electron*>(lep);
+        int year = sl->nt->evt()->treatAsYear;
+        // Implement trigger strategy
+        m_trigLep_idx0 = -1;
+        m_trigLep_idx1 = -1;
+        m_firedTrig = "";
+
+        for (auto const& it : m_single_lep_pT_thresholds) { m_triggerPass.emplace(it.first, false);}
+        for (auto const& it : m_dilepton_pT_thresholds) { m_triggerPass.emplace(it.first, false);}
+
+        for (const LeptonVector& trigLeps : {prefTrigLeptons, allTrigLeptons}) {
+            for (uint idx0 = 0; idx0 < m_leps.size(); idx0++) {
+            for (uint idx1 = idx0 + 1; idx1 < m_leps.size(); idx1++) {
+                Susy::Lepton* lep0 = m_leps.at(idx0);
+                if (std::find(trigLeps.begin(), trigLeps.end(), lep0) == trigLeps.end()) continue;
+                Susy::Lepton* lep1 = m_leps.at(idx1);
+                if (std::find(trigLeps.begin(), trigLeps.end(), lep1) == trigLeps.end()) continue;
+
+                vector<string> dilepton_trigs;
+                if (lep0->isEle() == lep1->isEle()) {
+                    dilepton_trigs = lep0->isEle() ? m_dielectron_trigs.at(year) : m_dimuon_trigs.at(year);
+                } else {
+                    dilepton_trigs = m_diff_flav_trigs.at(year);
+                    // pT thresholds for DF trigs assume electron is lep0
+                    if (lep1->isEle()) { std::swap(lep0, lep1); }
+                }
+                for (const string& trig_name : dilepton_trigs ) {
+                    float pt_thresh0 = m_dilepton_pT_thresholds.at(trig_name).first;
+                    float pt_thresh1 = m_dilepton_pT_thresholds.at(trig_name).second;
+                    bool pass = is_2lep_trig_matched(sl, trig_name, lep0, lep1, pt_thresh0, pt_thresh1);
+                    m_triggerPass.at(trig_name) |= pass;
+                    if (m_firedTrig == "" && pass) {
+                       m_trigLep_idx0 = idx0;
+                       m_trigLep_idx1 = idx1;
+                       m_firedTrig = trig_name;
+                    }
+                }
             }
-            else if (lep->isMu()) {
-                if (!m_mu0) m_mu0 = static_cast<Susy::Muon*>(lep);
-                else if (!m_mu1) m_mu1 = static_cast<Susy::Muon*>(lep);
+            }
+            for (uint idx = 0; idx < m_leps.size(); idx++) {
+                Susy::Lepton* lep = m_leps.at(idx);
+                if (std::find(trigLeps.begin(), trigLeps.end(), lep) == trigLeps.end()) continue;
+                vector<string> single_lep_trigs = lep->isEle() ? m_single_ele_trigs.at(year) : m_single_mu_trigs.at(year);
+                for (const string& trig_name : single_lep_trigs ) {
+                    float pt_thresh = m_single_lep_pT_thresholds.at(trig_name);
+                    bool pass = is_1lep_trig_matched(sl, trig_name, lep, pt_thresh);
+                    m_triggerPass.at(trig_name) |= pass;
+                    if (m_firedTrig == "" && pass) {
+                       m_trigLep_idx0 = idx;
+                       m_firedTrig = trig_name;
+                    }
+                }
             }
         }
-
-        // Triggers
-        // For DF dilepton trig matching, the electron should always be the first
-        // lepton parameter provided
-        ////////////////////////////////////////////////////////////////////////////
-        // 2015
-        m_triggerPass.emplace("HLT_e24_lhmedium_L1EM20VH", is_1lep_trig_matched(sl, "HLT_e24_lhmedium_L1EM20VH", m_triggerLeptons, 25));
-        m_triggerPass.emplace("HLT_e60_lhmedium", is_1lep_trig_matched(sl, "HLT_e60_lhmedium", m_triggerLeptons, 61));
-        m_triggerPass.emplace("HLT_e120_lhloose", is_1lep_trig_matched(sl, "HLT_e120_lhloose", m_triggerLeptons, 121));
-
-        m_triggerPass.emplace("HLT_2e12_lhloose_L12EM10VH", is_2lep_trig_matched(sl, "HLT_2e12_lhloose_L12EM10VH", m_el0, m_el1, 13, 13));
-
-        m_triggerPass.emplace("HLT_mu20_iloose_L1MU15", is_1lep_trig_matched(sl, "HLT_mu20_iloose_L1MU15", m_triggerLeptons, 21));
-        m_triggerPass.emplace("HLT_mu40", is_1lep_trig_matched(sl, "HLT_mu40", m_triggerLeptons, 41));
-
-        m_triggerPass.emplace("HLT_2mu10", is_2lep_trig_matched(sl, "HLT_2mu10", m_mu0, m_mu1, 11, 11));
-        m_triggerPass.emplace("HLT_mu18_mu8noL1", is_2lep_trig_matched(sl, "HLT_mu18_mu8noL1", m_mu0, m_mu1, 19, 9));
-
-        m_triggerPass.emplace("HLT_e17_lhloose_mu14", is_2lep_trig_matched(sl, "HLT_e17_lhloose_mu14", m_el0, m_mu0, 18, 15));
-        m_triggerPass.emplace("HLT_e7_lhmedium_mu24", is_2lep_trig_matched(sl, "HLT_e7_lhmedium_mu24", m_el0, m_mu0, 8, 25));
-
-        ////////////////////////////////////////////////////////////////////////////
-        // 2016
-        m_triggerPass.emplace("HLT_2e17_lhvloose_nod0", is_2lep_trig_matched(sl, "HLT_2e17_lhvloose_nod0", m_el0, m_el1, 18, 18));
-        m_triggerPass.emplace("HLT_e26_lhmedium_nod0_L1EM22VHI_mu8noL1", is_2lep_trig_matched(sl, "HLT_e26_lhmedium_nod0_L1EM22VHI_mu8noL1", m_el0, m_mu0, 27, 9));
-
-        ////////////////////////////////////////////////////////////////////////////
-        // 2016-2018
-
-        m_triggerPass.emplace("HLT_e26_lhtight_nod0_ivarloose", is_1lep_trig_matched(sl, "HLT_e26_lhtight_nod0_ivarloose", m_triggerLeptons, 27));
-        m_triggerPass.emplace("HLT_e60_lhmedium_nod0", is_1lep_trig_matched(sl, "HLT_e60_lhmedium_nod0", m_triggerLeptons, 61));
-        m_triggerPass.emplace("HLT_e140_lhloose_nod0", is_1lep_trig_matched(sl, "HLT_e140_lhloose_nod0", m_triggerLeptons, 141));
-
-        m_triggerPass.emplace("HLT_mu26_ivarmedium", is_1lep_trig_matched(sl, "HLT_mu26_ivarmedium", m_triggerLeptons, 27));
-        m_triggerPass.emplace("HLT_mu50", is_1lep_trig_matched(sl, "HLT_mu50", m_triggerLeptons, 51));
-
-        m_triggerPass.emplace("HLT_2mu14", is_2lep_trig_matched(sl, "HLT_2mu14", m_mu0, m_mu1, 15, 15));
-        m_triggerPass.emplace("HLT_mu22_mu8noL1", is_2lep_trig_matched(sl, "HLT_mu22_mu8noL1", m_mu0, m_mu1, 23, 9));
-
-        m_triggerPass.emplace("HLT_e17_lhloose_nod0_mu14", is_2lep_trig_matched(sl, "HLT_e17_lhloose_nod0_mu14", m_el0, m_mu0, 18, 15));
-        m_triggerPass.emplace("HLT_e7_lhmedium_nod0_mu24", is_2lep_trig_matched(sl, "HLT_e7_lhmedium_nod0_mu24", m_el0, m_mu0, 8, 25));
-
-        ////////////////////////////////////////////////////////////////////////////
-        // 2017-2018
-        m_triggerPass.emplace("HLT_2e24_lhvloose_nod0", is_2lep_trig_matched(sl, "HLT_2e24_lhvloose_nod0", m_el0, m_el1, 25, 25));
-
-        m_triggerPass.emplace("HLT_e26_lhmedium_nod0_mu8noL1", is_2lep_trig_matched(sl, "HLT_e26_lhmedium_nod0_mu8noL1", m_el0, m_mu0, 27, 9));
-
-        ////////////////////////////////////////////////////////////////////////////
-        // 2018
-        // L1_2EM15VHI was accidentally prescaled in periods B5-B8 of 2017
-        // (runs 326834-328393) with an effective reduction of 0.6 fb-1
-        m_triggerPass.emplace("HLT_2e17_lhvloose_nod0_L12EM15VHI", is_2lep_trig_matched(sl, "HLT_2e17_lhvloose_nod0_L12EM15VHI", m_el0, m_el1, 18, 18));
-
         ////////////////////////////////////////////////////////////////////////////
         // Combined triggers
-        int year = sl->nt->evt()->treatAsYear;
 
         bool passSingleLepTrig = false;
         if (year == 2015) {
@@ -773,9 +1144,9 @@ void add_cleaning_cuts(Superflow* sf) {
     *sf << CutName("pass bad muon veto") << [](Superlink* sl) -> bool {
         return (sl->tools->passBadMuon(sl->preMuons));
     };
-    *sf << CutName("pass cosmic muon veto") << [](Superlink* sl) -> bool {
-        return (sl->tools->passCosmicMuon(sl->baseMuons));
-    };
+    //*sf << CutName("pass cosmic muon veto") << [](Superlink* sl) -> bool {
+    //    return (sl->tools->passCosmicMuon(sl->baseMuons));
+    //};
     *sf << CutName("pass jet cleaning") << [](Superlink* sl) -> bool {
         return (sl->tools->passJetCleaning(sl->baseJets));
     };
@@ -783,36 +1154,38 @@ void add_cleaning_cuts(Superflow* sf) {
 void add_analysis_cuts(Superflow* sf) {
     ////////////////////////////////////////////////////////////////////////////
     // Baseline Selections
-    if (m_baseline_DF || m_baseline_SF || m_fake_baseline_DF || m_fake_baseline_SF) {
+    if (m_baseline_DF || m_baseline_SS || m_fake_baseline_DF || m_baseline_SS_den) {
         *sf << CutName("2 baseline leptons") << [](Superlink* /*sl*/) -> bool {
             return m_leps.size() == 2;
         };
 
-        if (m_baseline_DF || m_baseline_SF) {
+        if (m_baseline_DF || m_baseline_SS) {
             *sf << CutName("2 signal leptons") << [](Superlink* /*sl*/) -> bool {
                 return (m_sigLeps.size() == 2);
             };
-        } else if (m_fake_baseline_DF || m_fake_baseline_SF) {
-            *sf << CutName(">=1 inverted lepton") << [](Superlink* /*sl*/) -> bool {
-                return (m_invLeps.size() >= 1);
+        } else if (m_fake_baseline_DF || m_baseline_SS_den) {
+            *sf << CutName("1 inverted and signal lepton") << [](Superlink* /*sl*/) -> bool {
+                return (m_invLeps.size() == 1 && m_sigLeps.size() == 1);
             };
         }
-
-        *sf << CutName("opposite sign") << [](Superlink* /*sl*/) -> bool {
-            return (m_leps.at(0)->q * m_leps.at(1)->q < 0);
-        };
         if (m_baseline_DF || m_fake_baseline_DF) {
+            *sf << CutName("opposite sign") << [](Superlink* /*sl*/) -> bool {
+                return (m_leps.at(0)->q * m_leps.at(1)->q < 0);
+            };
             *sf << CutName("dilepton flavor (emu/mue)") << [](Superlink* /*sl*/) -> bool {
                 return (m_leps.at(0)->isEle() != m_leps.at(1)->isEle());
             };
-        } else if (m_baseline_SF || m_fake_baseline_SF) {
-            *sf << CutName("dilepton flavor (ee/mumu)") << [](Superlink* /*sl*/) -> bool {
-                return m_leps.at(0)->isEle() == m_leps.at(1)->isEle();
+        } else if (m_baseline_SS || m_baseline_SS_den) {
+            *sf << CutName("same sign") << [](Superlink* /*sl*/) -> bool {
+                return (m_leps.at(0)->q * m_leps.at(1)->q > 0);
             };
-
-            *sf << CutName("|m_ll - Zmass| > 10 GeV") << [](Superlink* /*sl*/) -> bool {
-                TLorentzVector dilepP4 = *m_leps.at(0) + *m_leps.at(1);
-                return fabs(dilepP4.M() - ZMASS) > 10;
+            *sf << CutName("if SF, then |mll - mZ| > 20") << [](Superlink* /*sl*/) -> bool {
+                if (m_leps.at(0)->isEle() == m_leps.at(1)->isEle()) {
+                    TLorentzVector dilepP4 = *m_leps.at(0) + *m_leps.at(1);
+                    return fabs(dilepP4.M() - ZMASS) > 20.0;
+                } else {
+                    return true;
+                }
             };
         }
         *sf << CutName("m_ll > 20 GeV") << [](Superlink* /*sl*/) -> bool {
@@ -849,6 +1222,9 @@ void add_analysis_cuts(Superflow* sf) {
             return fabs(ZLepsP4.M() - ZMASS) < 10;
         };
     }
+    *sf << CutName("pass trigger") << [](Superlink* /*sl*/) -> bool {
+        return m_triggerPass.at("lepTrigs");
+    };
 }
 
 void add_4bcutflow_cuts(Superflow* sf) {
@@ -935,14 +1311,14 @@ void add_event_variables(Superflow* sf) {
     // Event weights
     *sf << NewVar("event weight (multi period)"); {
         *sf << HFTname("eventweight_multi");
-        *sf << [](Superlink* sl, var_double*) -> double { 
+        *sf << [](Superlink* sl, var_double*) -> double {
             return sl->weights->susynt_multi
                  * sl->weights->lepSf
                  * sl->weights->jvtSf
                  * sl->weights->btagSf
                  * sl->weights->trigSf
                  * sl->nt->evt()->wPileup // multi-period pileup weight
-                 ; 
+                 ;
         };
         *sf << SaveVar();
     }
@@ -956,7 +1332,7 @@ void add_event_variables(Superflow* sf) {
                  * sl->weights->btagSf
                  * sl->weights->trigSf
                  * (sl->nt->evt()->wPileup / sl->nt->evt()->wPileup_period)
-                 ; 
+                 ;
         };
         *sf << SaveVar();
     }
@@ -974,9 +1350,15 @@ void add_event_variables(Superflow* sf) {
     }
 
     // Scale Factors
-    *sf << NewVar("Pile-up weight"); {
-        *sf << HFTname("pupw");
+    *sf << NewVar("Pile-up weight (Multi-period)"); {
+        *sf << HFTname("pupw_multi");
         *sf << [](Superlink* sl, var_double*) -> double {return sl->nt->evt()->wPileup;};
+        *sf << SaveVar();
+    }
+
+    *sf << NewVar("Pile-up weight (Single-period)"); {
+        *sf << HFTname("pupw_single");
+        *sf << [](Superlink* sl, var_double*) -> double {return sl->nt->evt()->wPileup / sl->nt->evt()->wPileup_period;};
         *sf << SaveVar();
     }
 
@@ -1080,7 +1462,7 @@ void add_event_variables(Superflow* sf) {
 
     *sf << NewVar("pT ordering of signal and inverted lepton types"); {
         *sf << HFTname("recoLepOrderType");
-        *sf << [](Superlink* /*sl*/, var_int*) -> int { 
+        *sf << [](Superlink* /*sl*/, var_int*) -> int {
             bool l0isSig = false, l1isSig = false, l2isSig = false;
             bool l0isInv = false, l1isInv = false, l2isInv = false;
             if (m_leps.size() >= 2) {
@@ -1112,10 +1494,10 @@ void add_event_variables(Superflow* sf) {
         };
         *sf << SaveVar();
     }
-    
+
     *sf << NewVar("pT ordering of prompt and fnp lepton types"); {
         *sf << HFTname("truthLepOrderType");
-        *sf << [](Superlink* sl, var_int*) -> int { 
+        *sf << [](Superlink* sl, var_int*) -> int {
             if (!sl->isMC) return -1;
             bool l0isPmt = false, l1isPmt = false, l2isPmt = false;
             bool l0isFnp = false, l1isFnp = false, l2isFnp = false;
@@ -1230,6 +1612,44 @@ void add_trigger_variables(Superflow* sf) {
         *sf << SaveVar();
     }
 
+    *sf << NewVar("Inverted lepton fired trigger"); {
+        *sf << HFTname("trigMatchedToInvLep");
+        *sf << [](Superlink* /*sl*/, var_bool*) -> bool {
+            return (m_trigLep_idx0 >=0 && isInverted(m_leps.at(m_trigLep_idx0))) 
+                || (m_trigLep_idx1 >=0 && isInverted(m_leps.at(m_trigLep_idx1)));
+        };
+        *sf << SaveVar();
+    }
+    *sf << NewVar("pT ordering of leptons firing trigger"); {
+        *sf << HFTname("trigLepOrderType");
+        *sf << [](Superlink* /*sl*/, var_int*) -> int {
+            bool l0Fired = m_trigLep_idx0 == 0 || m_trigLep_idx1 == 0;
+            bool l1Fired = m_trigLep_idx0 == 1 || m_trigLep_idx1 == 1;
+            bool l2Fired = m_trigLep_idx0 == 2 || m_trigLep_idx1 == 2;
+            if (m_leps.size() >= 2) {
+                if ( l0Fired && !l1Fired) return 1;
+                if (!l0Fired &&  l1Fired) return 2;
+                if ( l0Fired &&  l1Fired) return 3;
+            }
+            if (m_leps.size() >= 3) {
+                if ( l0Fired && !l1Fired && !l2Fired) return 4;
+                if (!l0Fired &&  l1Fired && !l2Fired) return 5;
+                if (!l0Fired && !l1Fired &&  l2Fired) return 6;
+                if ( l0Fired &&  l1Fired && !l2Fired) return 7;
+                if ( l0Fired && !l1Fired &&  l2Fired) return 8;
+                if (!l0Fired &&  l1Fired &&  l2Fired) return 9;
+            }
+            return 0;
+        };
+        *sf << SaveVar();
+    }
+    *sf << NewVar("Fired trigger"); {
+        *sf << HFTname("firedTrig");
+        *sf << [](Superlink* /*sl*/, var_int*) -> int {
+            return m_trig_enum.at(m_firedTrig);
+        };
+        *sf << SaveVar();
+    }
 }
 void add_lepton_variables(Superflow* sf) {
 
@@ -1245,11 +1665,11 @@ void add_lepton_variables(Superflow* sf) {
 void add_mc_lepton_variables(Superflow* sf) {
     ADD_LEPTON_VARS(promptLep);
     ADD_LEPTON_VARS(fnpLep);
-    ADD_LEPTON_VARS(promptSigLep);
-    ADD_LEPTON_VARS(promptInvLep);
-    ADD_LEPTON_VARS(fnpSigLep);
-    ADD_LEPTON_VARS(fnpInvLep);
-    
+    //ADD_LEPTON_VARS(promptSigLep);
+    //ADD_LEPTON_VARS(promptInvLep);
+    //ADD_LEPTON_VARS(fnpSigLep);
+    //ADD_LEPTON_VARS(fnpInvLep);
+
     add_mc_lepton_property_flags(sf);
     add_mc_lepton_property_indexes(sf);
 }
@@ -1288,7 +1708,9 @@ bool isPrompt(Susy::Lepton* lep) {
     IFF::Type t = get_IFF_class(lep);
     switch (t) {
         case IFF::Type::PromptElectron: return true;
-        case IFF::Type::PromptMuon: return true; 
+        case IFF::Type::ChargeFlipPromptElectron: return true;
+        //TODO case IFF::Type::NonPromptIsoElectron return true;
+        case IFF::Type::PromptMuon: return true;
         default:
             return false;
     }
@@ -1299,6 +1721,16 @@ bool isFNP(Susy::Lepton* lep) {
     // Reconsider this if unknowns are a problem
     return !(isPrompt(lep));
 }
+bool isUnknownTruth(Susy::Lepton* lep) {
+    //IFF::Type t = get_IFF_class(lep);
+    switch (get_IFF_class(lep)) {
+        case IFF::Type::Unknown: return true;
+        case IFF::Type::KnownUnknown: return true;
+        default:
+            return false;
+    }
+}
+
 void add_lepton_property_flags(Superflow* sf) {
     *sf << NewVar("lepton is signal (i.e. ID)"); {
         *sf << HFTname("lepIsSig");
@@ -1324,9 +1756,9 @@ void add_mc_lepton_property_flags(Superflow* sf) {
         *sf << HFTname("lepIsPrompt");
         *sf << [](Superlink* sl, var_int_array*) -> vector<int> {
             vector<int> out;
-            for (Susy::Lepton* l : m_leps) { 
+            for (Susy::Lepton* l : m_leps) {
                 bool result = sl->isMC ? isPrompt(l) : false;
-                out.push_back(result); 
+                out.push_back(result);
             }
             return out;
         };
@@ -1336,10 +1768,44 @@ void add_mc_lepton_property_flags(Superflow* sf) {
         *sf << HFTname("lepIsFNP");
         *sf << [](Superlink* sl, var_int_array*) -> vector<int> {
             vector<int> out;
-            for (Susy::Lepton* l : m_leps) { 
+            for (Susy::Lepton* l : m_leps) {
                 bool result = sl->isMC ? isFNP(l) : false;
-                out.push_back(result); 
+                out.push_back(result);
             }
+            return out;
+        };
+        *sf << SaveVar();
+    }
+    *sf << NewVar("lepton is fake or non-prompt"); {
+        *sf << HFTname("lepTruthIsUnknown");
+        *sf << [](Superlink* sl, var_int_array*) -> vector<int> {
+            vector<int> out;
+            for (Susy::Lepton* l : m_leps) {
+                bool result = sl->isMC ? isUnknownTruth(l) : false;
+                out.push_back(result);
+            }
+            return out;
+        };
+        *sf << SaveVar();
+    }
+    *sf << NewVar("lepton is Z-tagged"); {
+        *sf << HFTname("lepIsZtagged");
+        *sf << [](Superlink* /*sl*/, var_int_array*) -> vector<int> {
+            vector<int> out;
+            for (Susy::Lepton* l : m_leps) {
+                bool found = std::find(m_ZLeps.begin(), m_ZLeps.end(), l) != m_ZLeps.end();
+                out.push_back(found);
+            }
+            return out;
+        };
+        *sf << SaveVar();
+    }
+    *sf << NewVar("lepton is trig matched"); {
+        *sf << HFTname("lepIsTrigMatched");
+        *sf << [](Superlink* /*sl*/, var_int_array*) -> vector<int> {
+            vector<int> out(m_leps.size(), false);
+            if (m_trigLep_idx0 >= 0) out.at(m_trigLep_idx0) = true;
+            if (m_trigLep_idx1 >= 0) out.at(m_trigLep_idx1) = true;
             return out;
         };
         *sf << SaveVar();
@@ -1364,6 +1830,38 @@ void add_lepton_property_indexes(Superflow* sf) {
             for (unsigned int idx=0; idx < m_leps.size(); idx++) {
                 if (isInverted(m_leps.at(idx))) { out.push_back(idx); }
             }
+            return out;
+        };
+        *sf << SaveVar();
+    }
+    *sf << NewVar("index of probe leptons"); {
+        *sf << HFTname("probeLepIdx");
+        *sf << [](Superlink* /*sl*/, var_int_array*) -> vector<int> {
+            vector<int> out;
+            //for (unsigned int idx=0; idx < m_leps.size(); idx++) {
+            //    if (isProbe(m_leps.at(idx))) { out.push_back(idx); }
+            //}
+            out.push_back(m_probeLep_idx);
+            return out;
+        };
+        *sf << SaveVar();
+    }
+    *sf << NewVar("index of Z-tagged leptons"); {
+        *sf << HFTname("ZLepIdx");
+        *sf << [](Superlink* /*sl*/, var_int_array*) -> vector<int> {
+            vector<int> out;
+            out.push_back(m_ztagged_idx1);
+            out.push_back(m_ztagged_idx2);
+            return out;
+        };
+        *sf << SaveVar();
+    }
+    *sf << NewVar("index of trigger matched lepton"); {
+        *sf << HFTname("trigMatchedLepIdx");
+        *sf << [](Superlink* /*sl*/, var_int_array*) -> vector<int> {
+            vector<int> out;
+            if (m_trigLep_idx0 >= 0) out.push_back(m_trigLep_idx0);
+            if (m_trigLep_idx1 >= 0) out.push_back(m_trigLep_idx1);
             return out;
         };
         *sf << SaveVar();
@@ -1439,6 +1937,12 @@ void add_mc_lepton_property_indexes(Superflow* sf) {
 }
 
 void add_jet_variables(Superflow* sf) {
+    *sf << NewVar("number of jets"); {
+        *sf << HFTname("nJets");
+        *sf << [](Superlink* sl, var_int*) -> int {return sl->jets->size(); };
+        *sf << SaveVar();
+    }
+
     *sf << NewVar("number of light jets"); {
         *sf << HFTname("nLightJets");
         *sf << [](Superlink* /*sl*/, var_int*) -> int {return m_light_jets.size(); };
@@ -1620,6 +2124,18 @@ void add_Zlepton_variables(Superflow* sf) {
     *sf << NewVar("Pt of Z-tagged leptons"); {
         *sf << HFTname("ZpT");
         *sf << [](Superlink* /*sl*/, var_float*) -> double {return (*m_ZLeps.at(0) + *m_ZLeps.at(1)).Pt();};
+        *sf << SaveVar();
+    }
+
+    *sf << NewVar("Eta of Z-tagged leptons"); {
+        *sf << HFTname("ZEta");
+        *sf << [](Superlink* /*sl*/, var_float*) -> double {return (*m_ZLeps.at(0) + *m_ZLeps.at(1)).Eta();};
+        *sf << SaveVar();
+    }
+
+    *sf << NewVar("Phi of Z-tagged leptons"); {
+        *sf << HFTname("ZPhi");
+        *sf << [](Superlink* /*sl*/, var_float*) -> double {return (*m_ZLeps.at(0) + *m_ZLeps.at(1)).Phi();};
         *sf << SaveVar();
     }
 
@@ -1823,14 +2339,14 @@ void add_Zll_probeLep_variables(Superflow* sf) {
     *sf << NewVar("DeltaEta of probeLep1 and ZLep1"); {
       *sf << HFTname("dEta_ZLep1_probeLep1");
       *sf << [](Superlink* /*sl*/, var_double*) -> double {
-        return m_probeLeps.at(0)->Eta() - m_ZLeps.at(0)->Eta() ;
+        return fabs(m_probeLeps.at(0)->Eta() - m_ZLeps.at(0)->Eta());
       };
       *sf << SaveVar();
     }
     *sf << NewVar("DeltaEta of probeLep1 and ZLep2"); {
       *sf << HFTname("dEta_ZLep2_probeLep1");
       *sf << [](Superlink* /*sl*/, var_double*) -> double {
-        return m_probeLeps.at(0)->Eta() - m_ZLeps.at(1)->Eta() ;
+        return fabs(m_probeLeps.at(0)->Eta() - m_ZLeps.at(1)->Eta());
       };
       *sf << SaveVar();
     }
@@ -1838,7 +2354,7 @@ void add_Zll_probeLep_variables(Superflow* sf) {
       *sf << HFTname("dEta_Z_probeLep1");
       *sf << [](Superlink* /*sl*/, var_double*) -> double {
         TLorentzVector ZLepsP4 = *m_ZLeps.at(0) + *m_ZLeps.at(1);
-        return m_probeLeps.at(0)->Eta() - ZLepsP4.Eta() ;
+        return fabs(m_probeLeps.at(0)->Eta() - ZLepsP4.Eta()) ;
       };
       *sf << SaveVar();
     }
@@ -1850,50 +2366,47 @@ void add_weight_systematics(Superflow* sf) {
         *sf << TreeName("FT_EFF_B");
         *sf << SaveSystematic();
     }
-    //*sf << NewSystematic("shift in electron ID efficiency"); {
-    //    *sf << WeightSystematic(SupersysWeight::EL_EFF_ID_TOTAL_Uncorr_UP, SupersysWeight::EL_EFF_ID_TOTAL_Uncorr_DN);
-    //    *sf << TreeName("EL_EFF_ID");
-    //    *sf << SaveSystematic();
-    //}
-    //*sf << NewSystematic("shift in electron ISO efficiency"); {
-    //    *sf << WeightSystematic(SupersysWeight::EL_EFF_Iso_TOTAL_Uncorr_UP, SupersysWeight::EL_EFF_Iso_TOTAL_Uncorr_DN);
-    //    *sf << TreeName("EL_EFF_Iso");
-    //    *sf << SaveSystematic();
-    //}
-    //*sf << NewSystematic("shift in electron RECO efficiency"); {
-    //    *sf << WeightSystematic(SupersysWeight::EL_EFF_Reco_TOTAL_Uncorr_UP, SupersysWeight::EL_EFF_Reco_TOTAL_Uncorr_DN);
-    //    *sf << TreeName("EL_EFF_Reco");
-    //    *sf << SaveSystematic();
-    //}
+    *sf << NewSystematic("shift in electron ID efficiency"); {
+        *sf << WeightSystematic(SupersysWeight::EL_EFF_ID_TOTAL_Uncorr_UP, SupersysWeight::EL_EFF_ID_TOTAL_Uncorr_DN);
+        *sf << TreeName("EL_EFF_ID");
+        *sf << SaveSystematic();
+    }
+    *sf << NewSystematic("shift in electron ISO efficiency"); {
+        *sf << WeightSystematic(SupersysWeight::EL_EFF_Iso_TOTAL_Uncorr_UP, SupersysWeight::EL_EFF_Iso_TOTAL_Uncorr_DN);
+        *sf << TreeName("EL_EFF_Iso");
+        *sf << SaveSystematic();
+    }
+    *sf << NewSystematic("shift in electron RECO efficiency"); {
+        *sf << WeightSystematic(SupersysWeight::EL_EFF_Reco_TOTAL_Uncorr_UP, SupersysWeight::EL_EFF_Reco_TOTAL_Uncorr_DN);
+        *sf << TreeName("EL_EFF_Reco");
+        *sf << SaveSystematic();
+    }
 }
 void add_shape_systematics(Superflow* sf) {
-    (void)sf;
-    //*sf << NewSystematic("shift in e-gamma resolution (UP)"); {
-    //    *sf << EventSystematic(NtSys::EG_RESOLUTION_ALL_UP);
-    //    *sf << TreeName("EG_RESOLUTION_ALL_UP");
-    //    *sf << SaveSystematic();
-    //}
-    //*sf << NewSystematic("shift in e-gamma resolution (DOWN)"); {
-    //    *sf << EventSystematic(NtSys::EG_RESOLUTION_ALL_DN);
-    //    *sf << TreeName("EG_RESOLUTION_ALL_DN");
-    //    *sf << SaveSystematic();
-    //}
-    //*sf << NewSystematic("shift in e-gamma scale (UP)"); {
-    //    *sf << EventSystematic(NtSys::EG_SCALE_ALL_UP);
-    //    *sf << TreeName("EG_SCALE_ALL_UP");
-    //    *sf << SaveSystematic();
-    //}
+    *sf << NewSystematic("shift in e-gamma resolution (UP)"); {
+        *sf << EventSystematic(NtSys::EG_RESOLUTION_ALL_UP);
+        *sf << TreeName("EG_RESOLUTION_ALL_UP");
+        *sf << SaveSystematic();
+    }
+    *sf << NewSystematic("shift in e-gamma resolution (DOWN)"); {
+        *sf << EventSystematic(NtSys::EG_RESOLUTION_ALL_DN);
+        *sf << TreeName("EG_RESOLUTION_ALL_DN");
+        *sf << SaveSystematic();
+    }
+    *sf << NewSystematic("shift in e-gamma scale (UP)"); {
+        *sf << EventSystematic(NtSys::EG_SCALE_ALL_UP);
+        *sf << TreeName("EG_SCALE_ALL_UP");
+        *sf << SaveSystematic();
+    }
 }
 
-bool is_1lep_trig_matched(Superlink* sl, string trig_name, LeptonVector leptons, float pt_min) {
-    for (Susy::Lepton* lep : leptons) {
-        if(!lep) continue;
-        if (lep->Pt() < pt_min) continue;
-        bool trig_fired = sl->tools->triggerTool().passTrigger(sl->nt->evt()->trigBits, trig_name);
-        if (!trig_fired) continue;
-        bool trig_matched = sl->tools->triggerTool().lepton_trigger_match(lep, trig_name);
-        if (trig_matched) return true;
-    }
+bool is_1lep_trig_matched(Superlink* sl, string trig_name, Susy::Lepton* lep, float pt_min) {
+    if(!lep) return false;
+    if (lep->Pt() < pt_min) return false;
+    bool trig_fired = sl->tools->triggerTool().passTrigger(sl->nt->evt()->trigBits, trig_name);
+    if (!trig_fired) return false;
+    bool trig_matched = sl->tools->triggerTool().lepton_trigger_match(lep, trig_name);
+    if (trig_matched) return true;
     return false;
 }
 
@@ -1902,7 +2415,13 @@ bool is_2lep_trig_matched(Superlink* sl, string trig_name, Susy::Lepton* lep1, S
     if (lep1->Pt() < pt_min1 || lep2->Pt() < pt_min2) return false;
     bool trig_fired = sl->tools->triggerTool().passTrigger(sl->nt->evt()->trigBits, trig_name);
     if (!trig_fired) return false;
-    bool trig_matched = sl->tools->triggerTool().dilepton_trigger_match(sl->nt->evt(), lep1, lep2, trig_name);
+    bool trig_matched = false;
+    if (lep1->isMu() && lep2->isEle()) {
+        // electron must be first argument for different flavor triggers
+        trig_matched = sl->tools->triggerTool().dilepton_trigger_match(sl->nt->evt(), lep2, lep1, trig_name);
+    } else {
+        trig_matched = sl->tools->triggerTool().dilepton_trigger_match(sl->nt->evt(), lep1, lep2, trig_name);
+    }
     return trig_matched;
 }
 

@@ -286,6 +286,7 @@ function process_samples() {
         sample_name=$(get_sample_name $sample)
         susynt_dir="${SUSYNT_DIR}/${sample}"
         ofile="${sample_name}_FlatNt" #extensions added by run_SuperflowAnaStop2l
+        #selection="baseline_SS_den"
         selection="fake_zjets3l"
         #selection="baseline_DF"
         run_SuperflowAnaStop2l $susynt_dir $selection $ofile $NEVTS
@@ -326,7 +327,7 @@ function strip_file_of_timestamps() {
 function extract_cutflow_result() {
     local log=${1}
     local ofile=${2}
-    Superflow::Terminate
+    #Superflow::Terminate
     sed '1,/Superflow::Terminate/d' $log > $ofile
 }
 

@@ -6,7 +6,7 @@ import importlib
 import ROOT as r
 r.PyConfig.IgnoreCommandLineOptions = True # don't let root steal cmd-line options
 import atlasrootstyle.AtlasStyle
-r.SetAtlasStyle()
+#r.SetAtlasStyle()
 from copy import deepcopy
 import PlotTools.plot_utils as pu
 

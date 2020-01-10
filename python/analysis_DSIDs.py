@@ -49,7 +49,7 @@ DSID_GROUPS = {
     'stop2l_600_510' : ['436232'], # MGPy8EG_A14N23LO_TT_bWN_600_510_MadSpin_2L15 (DeltaM =  90)
     'stop2l_600_480' : ['436233'], # MGPy8EG_A14N23LO_TT_bWN_600_480_MadSpin_2L15 (DeltaM = 120)
     'stop2l_600_450' : ['436234'], # MGPy8EG_A14N23LO_TT_bWN_600_450_MadSpin_2L15 (DeltaM = 150)
-    'stop2l_600_435' : ['436235'], # MGPy8EG_A14N23LO_TT_bWN_600_435_MadSpin_2L15 (DeltaM = 165) 
+    'stop2l_600_435' : ['436235'], # MGPy8EG_A14N23LO_TT_bWN_600_435_MadSpin_2L15 (DeltaM = 165)
 
     ############################################################################
     # TOP
@@ -58,7 +58,7 @@ DSID_GROUPS = {
     "ttbar_dilep" : [
                 "410472", #PhPy8EG_A14_ttbar_hdamp258p75_dilep
     ],
-    "ttbar_nonallhad" : [
+    "ttbar_nonallhad" : [ # NOTE: Overlaps with ttbar_dilep
                 "410470", #PhPy8EG_A14_ttbar_hdamp258p75_nonallhad
     ],
 
@@ -232,6 +232,7 @@ DSID_GROUPS = {
             #"364510", #Sherpa_222_NNPDF30NNLO_tautaugamma_pty_7_15
             "364511", #Sherpa_222_NNPDF30NNLO_tautaugamma_pty_15_35
             "364512", #Sherpa_222_NNPDF30NNLO_tautaugamma_pty_35_70
+            "364513", #Sherpa_222_NNPDF30NNLO_tautaugamma_pty_70_140
             "364514", #Sherpa_222_NNPDF30NNLO_tautaugamma_pty_140_E_CMS
     ],
     "wgamma" : [
@@ -317,7 +318,7 @@ DSID_GROUPS = {
                 "345120", #PowhegPy8EG_NNLOPS_nnlo_30_ggH125_tautaul13l7
                 "345121", #PowhegPy8EG_NNLOPS_nnlo_30_ggH125_tautaulm15hp20
                 "345122", #PowhegPy8EG_NNLOPS_nnlo_30_ggH125_tautaulp15hm20
-                "343393", #PowhegPy8EG_CT10_AZNLOCTEQ6L1_ggH125_WWlvlv_EF_15_5_highMjj
+                #"343393", #PowhegPy8EG_CT10_AZNLOCTEQ6L1_ggH125_WWlvlv_EF_15_5_highMjj
     ],
 
     # Higgs VBF

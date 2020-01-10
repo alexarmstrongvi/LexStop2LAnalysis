@@ -26,6 +26,7 @@ log_file_dir = args.directory
 if superflow:
     print "INFO :: Setting up to check Superflow output"
     pass_phrase = "SuperflowAnaStop2L    Done." # For SuperflowAnaStop2L
+    #pass_phrase = "SuperflowAnaLFV    Done." # For SuperflowAnaLFV
 elif sumw:
     print "INFO :: Setting up to check SumW output"
     pass_phrase = "Sumw job done" # For grabSumw

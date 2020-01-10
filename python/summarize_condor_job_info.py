@@ -10,14 +10,13 @@ from collections import defaultdict, Counter
 ################################################################################
 # Configuration
 ################################################################################
-_work_dir = '/data/uclhc/uci/user/armstro1/SusyNt/Stop2l/SusyNt_master/susynt-read'
-_input_files_dir = '%s/run/lists/file_lists_prefixed' % _work_dir
+_work_dir = '/data/uclhc/uci/user/armstro1/Analysis_Stop2L/SusyNt_AB_21_2_79'
+_input_files_dir = '%s/run/flatNts/sample_lists/fax_links/' % _work_dir
 _pass_phrase = "SuperflowAnaStop2L    Done." # For SuperflowAnaStop2L
 _condor_event_pattern = '"^[0-9]{3}( )"'
 # Example time pattern: 01/15 16:13:06
 _time_pattern = " [0-9][0-9]\/[0-9][0-9] [0-9][0-9]:[0-9][0-9]:[0-9][0-9] "
-_log_file_dir = '%s/run/batch/condor_output' % (_work_dir)
-#_log_file_dir = '%s/run/batch/output/test' % (_work_dir)
+_log_file_dir = '%s/run/flatNts/outputs/zjets3l' % (_work_dir)
 _ofile_name = "%s/condor_summary_ranking.txt" % _log_file_dir
 _csv_ofile_name = "%s/condor_summary.csv" % _log_file_dir 
 
